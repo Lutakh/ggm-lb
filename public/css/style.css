@@ -115,7 +115,7 @@ tbody tr:last-child td {
     word-wrap: break-word;
 }
 #leaderboard-table th:nth-child(1), #leaderboard-table td:nth-child(1) { width: 50px; text-align: center; } /* Rank */
-#leaderboard-table th:nth-child(2), #leaderboard-table td:nth-child(2) { width: 14%; } /* Player */
+#leaderboard-table th:nth-child(2), #leaderboard-table td:nth-child(2) { width: 15%; } /* Player */
 #leaderboard-table th:nth-child(3), #leaderboard-table td:nth-child(3) { width: 90px; text-align: center; }  /* Class */
 #leaderboard-table th:nth-child(4), #leaderboard-table td:nth-child(4) { width: 90px; text-align: right; } /* CP */
 #leaderboard-table th:nth-child(5), #leaderboard-table td:nth-child(5) { width: 300px; } /* Play Hours */
