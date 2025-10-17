@@ -1,35 +1,35 @@
 import { parseCpFilter } from './utils.js';
 
 export function initLeaderboardFilters() {
-    const teamFilterBtn = document.getElementById('team-filter-btn'); 
-    const guildFilterBtn = document.getElementById('guild-filter-btn'); 
-    
-    if (guildFilterBtn) {
-        guildFilterBtn.addEventListener('click', (e) => { 
-            const panel = e.target.nextElementSibling; 
-            panel.classList.toggle('show'); 
-            document.querySelectorAll('.dropdown-panel').forEach(p => { 
-                if (p !== panel) p.classList.remove('show'); 
-            }); 
+    // --- GESTION DES MENUS DÉROULANTS PERSONNALISÉS ---
+    document.querySelectorAll('.dropdown-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const panel = button.nextElementSibling;
+            // Ferme tous les autres panneaux avant d'ouvrir celui-ci
+            document.querySelectorAll('.dropdown-panel').forEach(p => {
+                if (p !== panel) {
+                    p.classList.remove('show');
+                }
+            });
+            panel.classList.toggle('show');
+            e.stopPropagation(); // Empêche la fermeture immédiate par le listener global
         });
-    }
+    });
 
-    if(teamFilterBtn) {
-        teamFilterBtn.addEventListener('click', (e) => { 
-            const panel = e.target.nextElementSibling; 
-            panel.classList.toggle('show'); 
-            document.querySelectorAll('.dropdown-panel').forEach(p => { 
-                if (p !== panel) p.classList.remove('show'); 
-            }); 
-        });
-    }
+    // Ferme les menus si on clique n'importe où ailleurs sur la page
+    window.addEventListener('click', (e) => {
+        if (!e.target.matches('.dropdown-btn')) {
+            document.querySelectorAll('.dropdown-panel.show').forEach(panel => {
+                panel.classList.remove('show');
+            });
+        }
+    });
 
-    window.addEventListener('click', (e) => { if (!e.target.matches('.dropdown-btn')) { document.querySelectorAll('.dropdown-panel.show').forEach(panel => { if (!panel.previousElementSibling.contains(e.target) && !panel.contains(e.target)) { panel.classList.remove('show'); } }); } });
-    
-    const classFilters = document.querySelectorAll('.class-filter input'); 
+    // --- LOGIQUE D'APPLICATION DES FILTRES (INCHANGÉE MAIS NÉCESSAIRE) ---
+    const classFilters = document.querySelectorAll('.class-filter');
     const teamFilters = document.querySelectorAll('#team-filter-panel input');
     const guildFilters = document.querySelectorAll('#guild-filter-panel input');
-    const cpMinFilter = document.getElementById('cp-min'); 
+    const cpMinFilter = document.getElementById('cp-min');
     const cpMaxFilter = document.getElementById('cp-max');
     const memberRows = document.querySelectorAll('#leaderboard-table tbody tr');
     const ptTagFilter = document.getElementById('pt-tag-filter');
@@ -68,15 +68,22 @@ export function initLeaderboardFilters() {
                 visibleRank++;
             } else { row.style.display = 'none'; }
         });
-        if(teamFilterBtn) teamFilterBtn.textContent = selectedTeams.length > 0 ? `${selectedTeams.length} team(s)` : 'All Teams';
-        if(guildFilterBtn) guildFilterBtn.textContent = selectedGuilds.length > 0 ? `${selectedGuilds.length} guild(s)` : 'All Guilds';
+
+        // Met à jour le texte des boutons de filtre
+        const teamFilterBtn = document.getElementById('team-filter-btn');
+        if (teamFilterBtn) teamFilterBtn.textContent = selectedTeams.length > 0 ? `${selectedTeams.length} team(s)` : 'All Teams';
+        
+        const guildFilterBtn = document.getElementById('guild-filter-btn');
+        if (guildFilterBtn) guildFilterBtn.textContent = selectedGuilds.length > 0 ? `${selectedGuilds.length} guild(s)` : 'All Guilds';
     }
 
+    // Attache les écouteurs d'événements
     document.querySelectorAll('#filters input, #filters select, .dropdown-panel input').forEach(el => { 
         el.addEventListener('change', applyFilters); 
         el.addEventListener('keyup', applyFilters); 
     });
 
+    // --- FILTRE POUR LE CLASSEMENT DES ÉQUIPES (INCHANGÉ) ---
     const teamGuildFilter = document.getElementById('team-guild-filter');
     const allTeamRows = document.querySelectorAll('#teams-leaderboard-table tbody tr.team-data-row');
     if(teamGuildFilter) {

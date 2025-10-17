@@ -148,9 +148,69 @@ body:not(.section-active) #top-nav { display: none; }
 .timer-value { font-family: 'Courier New', Courier, monospace; font-weight: bold; padding: 5px 10px; border-radius: 5px; color: white; background-color: var(--success-color); }
 .timer-value.urgent { background-color: var(--accent-color); }
 
-/* --- STYLES CORRIGÉS ET COMPLETS POUR TOUTES LES MODALES --- */
 
-/* Bouton Admin (engrenage) */
+/* --- STYLES POUR LES FILTRES --- */
+.leaderboard-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.filter-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.filter-group label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+}
+/* MODIFICATION : Réduction de la largeur des champs CP */
+#cp-min, #cp-max {
+    width: 140px;
+}
+.dropdown-filter {
+    position: relative;
+}
+.dropdown-btn {
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background-color: #f9f6f1;
+    cursor: pointer;
+    font-weight: 700;
+}
+.dropdown-panel {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 100;
+    margin-top: 5px;
+    max-height: 250px;
+    overflow-y: auto;
+}
+.dropdown-panel.show {
+    display: block;
+}
+.dropdown-panel label {
+    display: block;
+    margin-bottom: 8px;
+}
+.dropdown-panel label:last-child {
+    margin-bottom: 0;
+}
+
+
+/* --- STYLES CORRIGÉS ET COMPLETS POUR TOUTES LES MODALES --- */
 #admin-settings-btn {
     position: fixed; top: 20px; right: 20px;
     background: var(--surface-color); border: 1px solid var(--border-color);
@@ -161,8 +221,6 @@ body:not(.section-active) #top-nav { display: none; }
 }
 #admin-settings-btn:hover { transform: scale(1.1) rotate(15deg); }
 #admin-settings-btn svg { width: 24px; height: 24px; fill: var(--text-color); }
-
-/* Modale Admin (popup) */
 #admin-modal-backdrop {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.5); z-index: 999; display: none;
@@ -177,8 +235,6 @@ body:not(.section-active) #top-nav { display: none; }
 #admin-modal-content h3 { margin-top: 0; }
 #server-settings-form { display: flex; flex-direction: column; gap: 15px; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-
-/* UI DE SÉLECTION DE JOUEUR */
 .action-btn-main {
     background-color: var(--secondary-color); color: white; border: none;
     font-weight: bold; white-space: nowrap; margin-left: 10px;
@@ -191,8 +247,6 @@ body:not(.section-active) #top-nav { display: none; }
     background-color: #f9f6f1; border-radius: 10px;
     flex-grow: 1; color: var(--text-color);
 }
-
-/* UI DE PT */
 .pt-player-inputs {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 20px; width: 100%; margin-bottom: 20px;
@@ -212,8 +266,6 @@ body:not(.section-active) #top-nav { display: none; }
     border: 1px solid var(--border-color);
 }
 .pt-new-player-fields select[name*="[guild]"] { grid-column: 1 / -1; }
-
-/* MODALES DE SÉLECTION (LA RÈGLE CLÉ EST ICI) */
 .player-select-modal-backdrop {
     display: none; /* CACHÉ PAR DÉFAUT */
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -247,8 +299,6 @@ body:not(.section-active) #top-nav { display: none; }
 .suggestion-item:hover { background-color: #f9f6f1; }
 .suggestion-item .class-tag { font-size: 0.8em; padding: 4px 10px; }
 .suggestion-item.active { background-color: #e0e0e0; }
-
-/* LEADERBOARD PT */
 #perilous-trials-section .controls { display: flex; gap: 20px; margin-bottom: 20px; align-items: center; }
 #pt-leaderboard-table th:first-child { width: 10%; }
 #pt-leaderboard-table th:last-child { width: 90%; }
@@ -260,19 +310,23 @@ body:not(.section-active) #top-nav { display: none; }
 .pt-leaderboard-player .class-tag {
     width: 12px; height: 12px; font-size: 0; padding: 0; border-radius: 50%;
 }
-
-/* --- HIDE/SHOW ADMIN COLUMN --- */
 .admin-only-header,
 .admin-actions {
     display: none;
 }
-
 body.admin-mode .admin-only-header {
     display: table-cell;
 }
-
 body.admin-mode .admin-actions {
     display: flex;
     gap: 5px;
     justify-content: center;
+}
+/* --- MODALE DES NOTES --- */
+#notes-modal-body {
+    padding: 20px 25px;
+    white-space: pre-wrap; /* Conserve les sauts de ligne et espaces */
+    line-height: 1.6;      /* Améliore la lisibilité */
+    max-height: 60vh;      /* Empêche la modale d'être trop haute */
+    overflow-y: auto;      /* Ajoute une barre de défilement si nécessaire */
 }
