@@ -1,10 +1,11 @@
 #!/bin/bash
 # --- À CONFIGURER ---
-source .env
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+source ${SCRIPT_DIR}/.env
 DB_USER="${POSTGRES_USER}"
 DB_NAME="${POSTGRES_DB}"
 BACKUP_DIR="/volume1/docker/postgres_backups"
-# --------------------
+CONTAINER_NAME="${CONTAINER_NAME}-db"
 
 # Création d'un nom de fichier unique avec la date et l'heure
 DATE=$(date +%Y-%m-%d_%H-%M-%S)
