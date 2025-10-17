@@ -55,7 +55,6 @@
             <th>Combat Power</th>
             <th>Play Hours <span id="table-timezone-note" class="timezone-header-note"></span></th>
             <th>Guild</th>
-            <th>Team</th>
             <th>Notes</th>
             <th class="last-modified-col">Updated</th>
             <th class="admin-only-header">Actions</th>
@@ -89,7 +88,6 @@
                     </div>
                 </td>
                 <td><%= player.guild || '-' %></td>
-                <td><%= player.team || '-' %></td>
                 <td class="notes-col" onclick="showFullNote('<%= player.name %>', `<%= player.notes ? player.notes.replace(/[`"']/g, '\\$&') : '' %>`)">
                     <%= player.notes || '-' %>
                 </td>
