@@ -144,70 +144,41 @@ body:not(.section-active) #top-nav { display: none; }
 .timer-label { font-size: 0.8em; font-weight: bold; opacity: 0.7; text-transform: uppercase; }
 .timer-value { font-family: 'Courier New', Courier, monospace; font-weight: bold; padding: 5px 10px; border-radius: 5px; color: white; background-color: var(--success-color); }
 .timer-value.urgent { background-color: var(--accent-color); }
-#perilous-trials-section .controls { display: flex; gap: 20px; margin-bottom: 20px; align-items: center; }
-#pt-leaderboard-table th:first-child { width: 10%; }
-#pt-leaderboard-table th:last-child { width: 90%; }
 
-/* --- STYLES CORRIGÉS POUR L'ADMINISTRATION --- */
-
-/* Bouton Admin (engrenage) */
+/* STYLES ADMIN CORRIGÉS */
 #admin-settings-btn {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    cursor: pointer;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    display: flex; 
-    align-items: center;
-    justify-content: center;
-    z-index: 1001;
-    transition: transform 0.2s;
+    position: fixed; top: 20px; right: 20px;
+    background: var(--surface-color); border: 1px solid var(--border-color);
+    border-radius: 50%; width: 50px; height: 50px;
+    cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1001; transition: transform 0.2s;
 }
-#admin-settings-btn:hover {
-    transform: scale(1.1) rotate(15deg);
-}
+#admin-settings-btn:hover { transform: scale(1.1) rotate(15deg); }
 #admin-settings-btn svg { width: 24px; height: 24px; fill: var(--text-color); }
-
-/* Modale Admin (popup) */
 #admin-modal-backdrop {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5);
-    z-index: 999;
-    display: none; /* Caché par défaut */
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); z-index: 999; display: none;
 }
 #admin-modal {
-    position: fixed;
-    top: 50%; left: 50%;
+    position: fixed; top: 50%; left: 50%;
     transform: translate(-50%, -50%);
-    background: var(--surface-color);
-    padding: 30px; border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    z-index: 1000;
-    width: 90%; max-width: 600px;
-    display: none; /* Caché par défaut */
+    background: var(--surface-color); padding: 30px; border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 1000;
+    width: 90%; max-width: 600px; display: none;
 }
-#admin-modal.active, #admin-modal-backdrop.active {
-    display: block; /* Devient visible avec la classe 'active' */
-}
+#admin-modal.active, #admin-modal-backdrop.active { display: block; }
 #admin-modal-content h3 { margin-top: 0; }
 #server-settings-form { display: flex; flex-direction: column; gap: 15px; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
 
-/* STYLES POUR LA NOUVELLE UI DE SÉLECTION (UTILISÉ PAR LES DEUX FORMULAIRES) */
+/* UI DE SÉLECTION DE JOUEUR */
 .action-btn-main {
     background-color: var(--secondary-color); color: white; border: none;
     font-weight: bold; white-space: nowrap; margin-left: 10px;
     padding: 12px; border-radius: 10px; cursor: pointer; font-size: 1em;
 }
 .action-btn-main:hover { filter: brightness(1.1); }
-
-/* Page principale "Add/Update" */
 #player-selection-ui { flex-grow: 1; display: flex; align-items: center; }
 #player-name-display {
     padding: 12px; border: 1px solid var(--border-color);
@@ -215,7 +186,7 @@ body:not(.section-active) #top-nav { display: none; }
     flex-grow: 1; color: var(--text-color);
 }
 
-/* Page Perilous Trials */
+/* UI DE PT */
 .pt-player-inputs {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 20px; width: 100%; margin-bottom: 20px;
@@ -236,7 +207,7 @@ body:not(.section-active) #top-nav { display: none; }
 }
 .pt-new-player-fields select[name*="[guild]"] { grid-column: 1 / -1; }
 
-/* STYLES GÉNÉRIQUES POUR LES FENÊTRES MODALES DE SÉLECTION */
+/* MODALES DE SÉLECTION */
 .player-select-modal-backdrop {
     display: none; position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -248,7 +219,7 @@ body:not(.section-active) #top-nav { display: none; }
     width: 90%; max-width: 500px;
     background-color: var(--surface-color); border-radius: 15px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 1001;
-    flex-direction: column;
+    display: flex; flex-direction: column;
 }
 .player-select-modal-header {
     display: flex; justify-content: space-between; align-items: center;
@@ -270,3 +241,29 @@ body:not(.section-active) #top-nav { display: none; }
 .suggestion-item:hover { background-color: #f9f6f1; }
 .suggestion-item .class-tag { font-size: 0.8em; padding: 4px 10px; }
 .suggestion-item.active { background-color: #e0e0e0; }
+
+/* --- STYLES AJOUTÉS POUR LE LEADERBOARD PT --- */
+#perilous-trials-section .controls { display: flex; gap: 20px; margin-bottom: 20px; align-items: center; }
+#pt-leaderboard-table th:first-child { width: 10%; }
+#pt-leaderboard-table th:last-child { width: 90%; }
+.pt-leaderboard-team {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.pt-leaderboard-player {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background-color: #f9f6f1;
+    padding: 5px 10px;
+    border-radius: 8px;
+}
+.pt-leaderboard-player .class-tag {
+    width: 12px;
+    height: 12px;
+    font-size: 0;
+    padding: 0;
+    border-radius: 50%;
+}
