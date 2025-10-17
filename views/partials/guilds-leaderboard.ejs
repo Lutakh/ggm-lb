@@ -1,0 +1,28 @@
+<div class="view-tabs"><h2>Guild Leaderboard</h2></div>
+<div class="leaderboard-legend">
+    <div class="legend-item"><span class="class-tag class-tank"></span> Tank</div>
+    <div class="legend-item"><span class="class-tag class-heal"></span> Heal</div>
+    <div class="legend-item"><span class="class-tag class-dps"></span> DPS</div>
+</div>
+<table class="guild-leaderboard-table">
+    <thead>
+        <tr><th>Rank</th><th>Guild</th><th>Total CP</th><th>Members</th><th>Class Distribution</th></tr>
+    </thead>
+    <tbody>
+        <% rankedGuilds.forEach((guild, index) => { %>
+            <tr class="podium rank-<%= index + 1 %>">
+                <td class="rank-col"><%= index + 1 %></td>
+                <td><strong><%= guild.name %></strong></td>
+                <td class="cp-display" data-cp="<%= guild.total_cp %>"></td>
+                <td><%= guild.member_count %></td>
+                <td>
+                    <div class="class-distrib">
+                        <span class="class-tag class-tank" title="Tank"><%= guild.class_distribution.Tank %></span>
+                        <span class="class-tag class-heal" title="Heal"><%= guild.class_distribution.Heal %></span>
+                        <span class="class-tag class-dps" title="DPS"><%= guild.class_distribution.DPS %></span>
+                    </div>
+                </td>
+            </tr>
+        <% }); %>
+    </tbody>
+</table>

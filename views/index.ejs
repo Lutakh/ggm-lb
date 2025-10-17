@@ -1,0 +1,51 @@
+<%- include('partials/header') %>
+
+<main>
+    <%- include('partials/top-bar') %>
+    <%- include('partials/nav-menu') %>
+
+    <div id="add-update-section" class="main-section card">
+        <h2>Add / Update a Character</h2>
+        <form id="player-form" action="/add-player" method="POST">
+            <div id="player-image-container"></div>
+            <div class="form-step-1">
+                <input id="name-input" type="text" name="name" placeholder="Enter Player Name" required>
+                <button type="button" id="find-player-btn">Find / Add</button>
+            </div>
+            <div id="form-details">
+                <select id="class-select" name="pClass"><option value="" disabled selected>Class</option><option value="Tank">Tank</option><option value="Heal">Heal</option><option value="DPS">DPS</option></select>
+                <input id="cp-input" type="text" name="cp" placeholder="Combat Power (e.g., 554k)" required>
+                <select id="guild-select" name="guild"><option value="" selected>Guild (Optional)</option><% guilds.forEach(name => { %><option value="<%= name %>"><%= name %></option><% }); %></select>
+                <div class="admin-team-select">
+                    <select id="team-select" name="team"><option value="" disabled selected>Team</option><% allTeamNames.forEach(name => { %><option value="<%= name %>"><%= name %></option><% }); %><option value="No Team">No Team</option></select>
+                </div>
+                <div id="time-slots-container">
+                    <label>Play Hours <span id="local-timezone-note"></span></label>
+                </div>
+                <button type="button" id="add-slot-btn">+ Add Time Slot</button>
+                <input id="notes-input" type="text" name="notes" placeholder="Personal Notes">
+                <button id="submit-btn" type="submit" disabled>Submit Character</button>
+            </div>
+        </form>
+        <% if (notification) { %><div class="notification"><p><%= notification %></p></div><% } %>
+    </div>
+
+    <div id="players-leaderboard-section" class="main-section card">
+        <%- include('partials/players-leaderboard') %>
+    </div>
+
+    <div id="teams-leaderboard-section" class="main-section card">
+        <%- include('partials/teams-leaderboard') %>
+    </div>
+
+    <div id="guilds-leaderboard-section" class="main-section card">
+        <%- include('partials/guilds-leaderboard') %>
+    </div>
+    
+    <div id="perilous-trials-section" class="main-section card">
+        <%- include('partials/perilous-trials') %>
+    </div>
+</main>
+
+<%- include('partials/admin-modal') %>
+<%- include('partials/footer') %>

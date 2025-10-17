@@ -1,0 +1,11 @@
+# Ne jamais inclure les dépendances locales, elles seront installées dans le conteneur
+node_modules
+
+# Ne jamais inclure les fichiers de secrets
+.env
+
+# Ne pas inclure les journaux de debug de npm
+npm-debug.log
+
+# Ne pas inclure la base de données (elle sera gérée par un volume)
+database.sqlite

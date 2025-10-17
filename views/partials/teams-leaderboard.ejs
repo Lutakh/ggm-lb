@@ -1,0 +1,54 @@
+<div class="view-tabs"><h2>Teams Leaderboard</h2></div>
+<div id="teams-filters">
+    <label>Filter by Guild:</label>
+    <select id="team-guild-filter">
+        <option value="All">All Server Teams</option>
+        <option value="Incomplete">Incomplete Teams</option>
+        <% guilds.forEach(name => { %><option value="<%= name %>"><%= name %></option><% }); %>
+    </select>
+</div>
+<div class="leaderboard-legend">
+    <div class="legend-item"><span class="class-tag class-tank"></span> Tank</div>
+    <div class="legend-item"><span class="class-tag class-heal"></span> Heal</div>
+    <div class="legend-item"><span class="class-tag class-dps"></span> DPS</div>
+</div>
+<table id="teams-leaderboard-table">
+     <thead>
+        <tr><th>Rank</th><th>Team</th><th>Total CP</th><th>Members</th><th>Class Distribution</th></tr>
+    </thead>
+    <tbody>
+        <% rankedTeams.forEach((team, index) => { %>
+            <tr class="team-data-row podium rank-<%= index + 1 %>" data-guild="<%= team.guild %>" data-member-count="<%= team.member_count %>">
+                <td class="rank-col"><%= index + 1 %></td>
+                <td><strong><%= team.name %></strong><br><span class="guild-name"><%= team.guild %></span></td>
+                <td class="cp-display" data-cp="<%= team.total_cp %>"></td>
+                <td><%= team.member_count %> / 4</td>
+                <td>
+                    <div class="class-distrib">
+                        <span class="class-tag class-tank" title="Tank"><%= team.class_distribution.Tank %></span>
+                        <span class="class-tag class-heal" title="Heal"><%= team.class_distribution.Heal %></span>
+                        <span class="class-tag class-dps" title="DPS"><%= team.class_distribution.DPS %></span>
+                    </div>
+                </td>
+            </tr>
+            <tr class="team-members-row">
+                <td colspan="5" class="team-members-cell">
+                    <div class="team-members">
+                        <% team.members.forEach(player => { %>
+                            <div class="team-player-card">
+                                <span class="class-tag class-<%= player.class.toLowerCase() %>"><%= player.class %></span>
+                                <div class="team-player-info">
+                                    <strong><%= player.name %></strong>
+                                    <div class="team-player-details">
+                                        <span class="cp-display" data-cp="<%= player.combat_power %>"></span>
+                                        <span>Notes: <%= player.notes || '-' %></span>
+                                    </div>
+                                </div>
+                            </div>
+                        <% }); %>
+                    </div>
+                </td>
+            </tr>
+        <% }); %>
+    </tbody>
+</table>

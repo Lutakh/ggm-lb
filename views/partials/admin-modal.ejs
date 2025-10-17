@@ -1,0 +1,30 @@
+<div id="admin-modal-backdrop"></div>
+<div id="admin-modal">
+    <div id="admin-modal-content">
+        <h3>Admin Settings</h3>
+        <form id="server-settings-form">
+            <h4>Server Info</h4>
+            <div class="form-grid">
+                <div class="filter-group">
+                    <label for="server_name_modal">Server Name</label>
+                    <input type="text" name="server_name" id="server_name_modal" value="<%= serverSettings.server_name %>" required>
+                </div>
+                <div class="filter-group">
+                    <label for="server_open_date_modal">Server Open Date</label>
+                    <input type="date" name="server_open_date" id="server_open_date_modal" value="<%= new Date(serverSettings.server_open_date).toISOString().split('T')[0] %>" required>
+                </div>
+            </div>
+            <h4>Class Change Timers (Weeks After Start)</h4>
+            <div id="cc-timers-form">
+                <% classChangeTimers.forEach(timer => { %>
+                    <div class="timer-setting-row">
+                        <label for="cc_timer_<%= timer.id %>"><%= timer.label %></label>
+                        <input type="number" name="cc_timers[<%= timer.id %>]" value="<%= timer.weeks_after_start %>" min="0">
+                    </div>
+                <% }); %>
+            </div>
+            <button type="submit">Save Settings</button>
+        </form>
+        <button id="deactivate-admin-btn" style="margin-top: 20px; background-color: var(--accent-color); color: white;">Deactivate Admin Mode</button>
+    </div>
+</div>

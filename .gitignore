@@ -1,0 +1,10 @@
+
+# Fichier d'environnement
+.env
+
+# Base de données
+database.sqlite
+
+# Dépendances Node.js
+node_modules/
+
