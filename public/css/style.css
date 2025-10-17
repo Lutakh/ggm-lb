@@ -138,9 +138,9 @@ tbody tr:last-child td {
 }
 
 .class-swordbearer { background-color: #e57373; }
-.class-acolyte { background-color: #ffb74d; } /* Orange/Jaune */
-.class-wayfarer { background-color: #81c784; } /* Vert */
-.class-scholar { background-color: #64b5f6; } /* Bleu */
+.class-acolyte { background-color: #ffb74d; }
+.class-wayfarer { background-color: #81c784; }
+.class-scholar { background-color: #64b5f6; }
 .class-shadowlash { background-color: #9575cd; }
 .class-unknown { background-color: #9e9e9e; }
 
@@ -460,6 +460,10 @@ body:not(.section-active) #top-nav {
 .timer-value.urgent {
     background-color: var(--accent-color);
 }
+.timer-value.server-day {
+    background-color: var(--primary-color);
+    font-family: 'Nunito', sans-serif;
+}
 
 
 /* --- STYLES POUR LES FILTRES --- */
@@ -678,150 +682,3 @@ body:not(.section-active) #top-nav {
 }
 #player-name-display {
     padding: 12px;
-    border: 1px solid var(--border-color);
-    background-color: #f9f6f1;
-    border-radius: 10px;
-    flex-grow: 1;
-    color: var(--text-color);
-}
-.pt-player-inputs {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    width: 100%;
-    margin-bottom: 20px;
-}
-.pt-player-entry-container {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-.pt-player-entry-container label {
-    font-weight: bold;
-}
-.pt-player-selection-ui {
-    display: flex;
-    align-items: center;
-}
-.pt-player-name-display {
-    padding: 12px;
-    border: 1px solid var(--border-color);
-    background-color: #f9f6f1;
-    border-radius: 10px;
-    flex-grow: 1;
-    color: var(--text-color);
-}
-.pt-new-player-fields {
-    display: none;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-top: 10px;
-    padding: 10px;
-    background-color: #fdfaf5;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-}
-.pt-new-player-fields select[name*="[guild]"] {
-    grid-column: 1 / -1;
-}
-.player-select-modal-backdrop {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    z-index: 1000;
-}
-.player-select-modal {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 90%;
-    max-width: 500px;
-    background-color: var(--surface-color);
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    z-index: 1001;
-    flex-direction: column;
-}
-.player-select-modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 20px;
-    border-bottom: 1px solid var(--border-color);
-}
-.player-select-modal-header h3 {
-    margin: 0;
-}
-.player-select-close-btn {
-    background: none;
-    border: none;
-    font-size: 2em;
-    cursor: pointer;
-    line-height: 1;
-    padding: 0;
-}
-.player-select-controls {
-    display: flex;
-    padding: 15px 20px;
-    gap: 10px;
-    background-color: #f9f6f1;
-}
-.player-select-controls input {
-    width: 100%;
-}
-.player-select-list {
-    max-height: 40vh;
-    overflow-y: auto;
-}
-.suggestion-item {
-    padding: 12px 20px;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #f0f0f0;
-}
-.suggestion-item:last-child {
-    border-bottom: none;
-}
-.suggestion-item:hover {
-    background-color: #f9f6f1;
-}
-.suggestion-item .class-tag {
-    font-size: 0.8em;
-    padding: 4px 10px;
-}
-.suggestion-item.active {
-    background-color: #e0e0e0;
-}
-#perilous-trials-section .controls {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 20px;
-    align-items: center;
-}
-.admin-only-header,
-.admin-actions {
-    display: none;
-}
-body.admin-mode .admin-only-header {
-    display: table-cell;
-}
-body.admin-mode .admin-actions {
-    display: flex;
-    gap: 5px;
-    justify-content: center;
-}
-#notes-modal-body {
-    padding: 20px 25px;
-    white-space: pre-wrap;
-    line-height: 1.6;
-    max-height: 60vh;
-    overflow-y: auto;
-}

@@ -11,11 +11,11 @@ router.get('/', async (req, res) => {
                     FROM play_slots ps WHERE ps.player_id = p.id) as play_slots,
                    (SELECT json_agg(pt.name)
                     FROM player_pt_tags ppt
-                    JOIN perilous_trials pt ON pt.id = ppt.pt_id
+                             JOIN perilous_trials pt ON pt.id = ppt.pt_id
                     WHERE ppt.player_id = p.id) as pt_tags
             FROM players p
             ORDER BY p.combat_power DESC, p.name;`;
-        
+
         const [
             playersResult,
             guildsResult,
@@ -64,34 +64,42 @@ router.get('/', async (req, res) => {
             return acc;
         }, {});
         const rankedGuilds = Object.entries(guildsData).map(([name, data]) => ({ name, total_cp: data.total_cp, member_count: data.members.length, class_distribution: data.class_distribution })).sort((a, b) => b.total_cp - a.total_cp);
-        // --- LOGIQUE DE CALCUL DES TIMERS RESTAURÉE ---
-        const serverOffsetHours = -4; 
-        const now = new Date(); 
-        const serverTime = new Date(now.valueOf() + (serverOffsetHours * 60 * 60 * 1000)); 
+
+        // --- LOGIQUE DES TIMERS ---
+        const serverOffsetHours = -4;
+        const now = new Date();
+        const serverTime = new Date(now.valueOf() + (serverOffsetHours * 60 * 60 * 1000));
         const serverDay = serverTime.getUTCDay();
-        const getNextReset = (targetDay) => { 
-            const reset = new Date(serverTime); 
-            reset.setUTCHours(5, 0, 0, 0); 
-            if (targetDay !== undefined) { 
-                const daysUntilTarget = (targetDay - serverDay + 7) % 7; 
-                reset.setUTCDate(reset.getUTCDate() + daysUntilTarget); 
-            } 
-            if (reset < serverTime) { 
-                reset.setUTCDate(reset.getUTCDate() + (targetDay === undefined ? 1 : 7)); 
-            } 
-            return reset; 
+
+        const getNextReset = (targetDay) => {
+            const reset = new Date(serverTime);
+            reset.setUTCHours(5, 0, 0, 0);
+            if (targetDay !== undefined) {
+                const daysUntilTarget = (targetDay - serverDay + 7) % 7;
+                reset.setUTCDate(reset.getUTCDate() + daysUntilTarget);
+            }
+            if (reset < serverTime) {
+                reset.setUTCDate(reset.getUTCDate() + (targetDay === undefined ? 1 : 7));
+            }
+            return reset;
         };
+
         const classChangeTimer = calculateClassChangeTimers(serverSettings.server_open_date, ccTimersResult.rows);
 
-        res.render('index', { 
+        const serverStartDate = new Date(serverSettings.server_open_date);
+        const serverAgeInDays = Math.floor((now - serverStartDate) / (1000 * 60 * 60 * 24));
+
+
+        res.render('index', {
             players, rankedTeams, rankedGuilds, allTeamNames, guilds, perilousTrials, serverSettings,
             classChangeTimers: ccTimersResult.rows,
             notification: req.query.notification || null,
-            timers: { 
-                daily: getNextReset() - serverTime, 
-                weekly: getNextReset(1) - serverTime, 
+            timers: {
+                daily: getNextReset() - serverTime,
+                weekly: getNextReset(1) - serverTime,
                 event: getNextReset(3) - serverTime,
-                classChange: classChangeTimer
+                classChange: classChangeTimer,
+                serverDay: serverAgeInDays
             },
         });
     } catch (err) {
