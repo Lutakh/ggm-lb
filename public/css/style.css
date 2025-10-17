@@ -118,7 +118,7 @@ tbody tr:last-child td {
 #leaderboard-table th:nth-child(2), #leaderboard-table td:nth-child(2) { width: 14%; } /* Player */
 #leaderboard-table th:nth-child(3), #leaderboard-table td:nth-child(3) { width: 90px; text-align: center; }  /* Class */
 #leaderboard-table th:nth-child(4), #leaderboard-table td:nth-child(4) { width: 90px; text-align: right; } /* CP */
-#leaderboard-table th:nth-child(5), #leaderboard-table td:nth-child(5) { width: 200px; } /* Play Hours */
+#leaderboard-table th:nth-child(5), #leaderboard-table td:nth-child(5) { width: 300px; } /* Play Hours */
 #leaderboard-table th:nth-child(6), #leaderboard-table td:nth-child(6) { width: 90px; } /* Guild */
 #leaderboard-table th:nth-child(7), #leaderboard-table td:nth-child(7) { width: 15%; } /* Notes */
 #leaderboard-table th:nth-child(8), #leaderboard-table td:nth-child(8) { width: 90px; }  /* Updated */
