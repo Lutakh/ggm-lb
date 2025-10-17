@@ -46,14 +46,21 @@ table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 th, td { padding: 15px 10px; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: middle; word-wrap: break-word; }
 thead th { color: var(--primary-color); font-size: 1.1em; font-weight: 800; }
 tbody tr:last-child td { border-bottom: none; }
-#leaderboard-table th:nth-child(1), #leaderboard-table td:nth-child(1) { width: 8%; }
-#leaderboard-table th:nth-child(2), #leaderboard-table td:nth-child(2) { width: 14%; }
-#leaderboard-table th:nth-child(3), #leaderboard-table td:nth-child(3) { width: 8%; }
-#leaderboard-table th:nth-child(4), #leaderboard-table td:nth-child(4) { width: 10%; }
-#leaderboard-table th:nth-child(5), #leaderboard-table td:nth-child(5) { width: 20%; }
-#leaderboard-table th:nth-child(6), #leaderboard-table td:nth-child(6) { width: 12%; }
-#leaderboard-table th:nth-child(7), #leaderboard-table td:nth-child(7) { width: 10%; }
-#leaderboard-table th:nth-child(9), #leaderboard-table td:nth-child(9) { width: 8%; }
+
+/* --- REVISED TABLE COLUMN WIDTHS --- */
+#leaderboard-table th, #leaderboard-table td { word-wrap: break-word; }
+#leaderboard-table th:nth-child(1), #leaderboard-table td:nth-child(1) { width: 5%; text-align: center; } /* Rank */
+#leaderboard-table th:nth-child(2), #leaderboard-table td:nth-child(2) { width: 14%; } /* Player */
+#leaderboard-table th:nth-child(3), #leaderboard-table td:nth-child(3) { width: 8%; }  /* Class */
+#leaderboard-table th:nth-child(4), #leaderboard-table td:nth-child(4) { width: 10%; } /* CP */
+#leaderboard-table th:nth-child(5), #leaderboard-table td:nth-child(5) { width: 16%; } /* Play Hours */
+#leaderboard-table th:nth-child(6), #leaderboard-table td:nth-child(6) { width: 12%; } /* Guild */
+#leaderboard-table th:nth-child(7), #leaderboard-table td:nth-child(7) { width: 10%; } /* Team */
+#leaderboard-table th:nth-child(8), #leaderboard-table td:nth-child(8) { width: 12%; } /* Notes */
+#leaderboard-table th:nth-child(9), #leaderboard-table td:nth-child(9) { width: 8%; }  /* Last Modified */
+#leaderboard-table th:nth-child(10), #leaderboard-table td:nth-child(10){ width: 5%; text-align: center; } /* Actions */
+
+
 .class-tag { padding: 5px 12px; border-radius: 15px; color: white; font-weight: bold; font-size: 0.9em; text-align: center; display: inline-block; }
 .class-tank { background-color: #e57373; }
 .class-heal { background-color: #81c784; }
@@ -61,8 +68,7 @@ tbody tr:last-child td { border-bottom: none; }
 .class-unknown { background-color: #9e9e9e; }
 .notification { padding: 15px; background-color: #fffbe0; border: 1px solid var(--secondary-color); border-radius: 10px; margin-top: 20px; text-align: center; font-weight: bold; }
 #local-timezone-note, .timezone-header-note { font-size: 0.9em; opacity: 0.8; font-weight: normal; }
-.admin-actions { display: none; }
-body.admin-mode .admin-actions { display: flex; gap: 10px; align-items: center; }
+
 .action-btn { background: none; border: none; font-size: 1.2em; padding: 5px; cursor: pointer; transition: transform 0.2s; }
 .action-btn:hover { transform: scale(1.2); }
 .rank-col { text-align: center !important; font-weight: 800; font-size: 1.2em; color: var(--primary-color); }
@@ -77,7 +83,12 @@ tr.rank-3, .team-entry.rank-3, tr.rank-3 { background: linear-gradient(145deg, #
 .legend-item { display: flex; align-items: center; gap: 5px; }
 .play-hours-container { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .play-hours-cell { white-space: nowrap; }
-.notes-col { max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.notes-col {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+}
 .main-section { display: none; }
 .main-section.active { display: block; }
 body.admin-mode .admin-team-select { display: block; }
@@ -248,4 +259,20 @@ body:not(.section-active) #top-nav { display: none; }
 }
 .pt-leaderboard-player .class-tag {
     width: 12px; height: 12px; font-size: 0; padding: 0; border-radius: 50%;
+}
+
+/* --- HIDE/SHOW ADMIN COLUMN --- */
+.admin-only-header,
+.admin-actions {
+    display: none;
+}
+
+body.admin-mode .admin-only-header {
+    display: table-cell;
+}
+
+body.admin-mode .admin-actions {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
 }
