@@ -112,44 +112,18 @@ tbody tr:last-child td {
 
 /* --- REVISED TABLE COLUMN WIDTHS --- */
 #leaderboard-table th, #leaderboard-table td {
-    word-wrap: break-word;
+    word-wrap: break-word; /* Garde le retour à la ligne si nécessaire */
 }
-#leaderboard-table th:nth-child(1), #leaderboard-table td:nth-child(1) {
-    width: 5%;
-    text-align: center;
-} /* Rank */
-#leaderboard-table th:nth-child(2), #leaderboard-table td:nth-child(2) {
-    width: 14%;
-} /* Player */
-#leaderboard-table th:nth-child(3), #leaderboard-table td:nth-child(3) {
-    width: 130px;
-    min-width: 130px;
-    text-align: center;
-}  /* Class */
-#leaderboard-table th:nth-child(4), #leaderboard-table td:nth-child(4) {
-    width: 120px;
-    min-width: 120px;
-    text-align: right;
-} /* CP */
-#leaderboard-table th:nth-child(5), #leaderboard-table td:nth-child(5) {
-    width: 16%;
-} /* Play Hours */
-#leaderboard-table th:nth-child(6), #leaderboard-table td:nth-child(6) {
-    width: 12%;
-} /* Guild */
-#leaderboard-table th:nth-child(7), #leaderboard-table td:nth-child(7) {
-    width: 10%;
-} /* Team */
-#leaderboard-table th:nth-child(8), #leaderboard-table td:nth-child(8) {
-    width: 12%;
-} /* Notes */
-#leaderboard-table th:nth-child(9), #leaderboard-table td:nth-child(9) {
-    width: 8%;
-}  /* Last Modified */
-#leaderboard-table th:nth-child(10), #leaderboard-table td:nth-child(10){
-    width: 5%;
-    text-align: center;
-} /* Actions */
+#leaderboard-table th:nth-child(1), #leaderboard-table td:nth-child(1) { width: 60px; text-align: center; } /* Rank */
+#leaderboard-table th:nth-child(2), #leaderboard-table td:nth-child(2) { width: 13%; } /* Player */
+#leaderboard-table th:nth-child(3), #leaderboard-table td:nth-child(3) { width: 110px; text-align: center; }  /* Class */
+#leaderboard-table th:nth-child(4), #leaderboard-table td:nth-child(4) { width: 120px; text-align: right; } /* CP */
+#leaderboard-table th:nth-child(5), #leaderboard-table td:nth-child(5) { width: 18%; min-width: 150px; } /* Play Hours */
+#leaderboard-table th:nth-child(6), #leaderboard-table td:nth-child(6) { width: 12%; } /* Guild */
+#leaderboard-table th:nth-child(7), #leaderboard-table td:nth-child(7) { width: 11%; } /* Team */
+#leaderboard-table th:nth-child(8), #leaderboard-table td:nth-child(8) { width: 12%; } /* Notes */
+#leaderboard-table th:nth-child(9), #leaderboard-table td:nth-child(9) { width: 10%; }  /* Updated */
+#leaderboard-table th:nth-child(10), #leaderboard-table td:nth-child(10){ width: 70px; text-align: center; } /* Actions */
 
 
 .class-tag {
