@@ -55,38 +55,60 @@ export function initPerilousTrials() {
         loadPtLeaderboard(ptIdFromUrl);
     }
 
-    const ptPlayerInputs = document.querySelectorAll('#pt-admin-form .pt-player-inputs input[list]');
+    const ptAdminForm = document.getElementById('pt-admin-form');
+    if (!ptAdminForm) return;
+
+    const ptPlayerInputs = ptAdminForm.querySelectorAll('.pt-player-inputs input[list]');
+    const submitBtn = ptAdminForm.querySelector('button[type="submit"]');
     const mainDatalist = document.getElementById('player-datalist-main');
     
     if (mainDatalist && ptPlayerInputs.length > 0) {
         const allPlayerOptions = Array.from(mainDatalist.options);
+
+        function validateTeamSubmission() {
+            const selectedNames = Array.from(ptPlayerInputs)
+                .map(input => input.value.trim().toLowerCase())
+                .filter(Boolean);
+            
+            const uniqueNames = new Set(selectedNames);
+
+            if (selectedNames.length > uniqueNames.size) {
+                submitBtn.disabled = true;
+                submitBtn.style.backgroundColor = 'var(--accent-color)';
+                submitBtn.textContent = 'Duplicate Player';
+            } else {
+                submitBtn.disabled = false;
+                submitBtn.style.backgroundColor = ''; // Revert to CSS default
+                submitBtn.textContent = 'Submit Team';
+            }
+        }
 
         function updateDatalists() {
             const selectedNames = Array.from(ptPlayerInputs)
                 .map(input => input.value.trim().toLowerCase())
                 .filter(Boolean);
             
+// ... (début du fichier inchangé)
+
             ptPlayerInputs.forEach(input => {
                 const currentVal = input.value.trim().toLowerCase();
                 const otherSelectedNames = selectedNames.filter(name => name !== currentVal);
                 
                 const datalistId = input.getAttribute('list');
-                let datalist = document.getElementById(datalistId);
-                if (!datalist) {
-                    datalist = document.createElement('datalist');
-                    datalist.id = datalistId;
-                    document.body.appendChild(datalist);
-                }
-                datalist.innerHTML = '';
+                // On récupère la datalist qui existe déjà, on ne la crée plus
+                const datalist = document.getElementById(datalistId);
                 
-                allPlayerOptions.forEach(option => {
-                    if (!otherSelectedNames.includes(option.value.toLowerCase())) {
-                        datalist.appendChild(option.cloneNode(true));
-                    }
-                });
+                if (datalist) {
+                    datalist.innerHTML = '';
+                    allPlayerOptions.forEach(option => {
+                        if (!otherSelectedNames.includes(option.value.toLowerCase())) {
+                            datalist.appendChild(option.cloneNode(true));
+                        }
+                    });
+                }
             });
         }
-
+// ... (fin du fichier inchangée)
         ptPlayerInputs.forEach(input => {
             const checkNewPlayer = () => {
                 const playerName = input.value.trim().toLowerCase();
@@ -112,9 +134,12 @@ export function initPerilousTrials() {
             input.addEventListener('input', () => {
                 updateDatalists();
                 checkNewPlayer();
+                validateTeamSubmission();
             });
 
             input.addEventListener('focus', updateDatalists);
         });
+        
+        validateTeamSubmission(); // Initial check
     }
 }

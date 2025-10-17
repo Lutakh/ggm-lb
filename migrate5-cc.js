@@ -18,7 +18,7 @@ async function migrate() {
         console.log('\n--- Starting V5 Migration (Class Change Timers) ---');
         await client.query('BEGIN');
 
-        // 1. Create class_change_timers table
+        // 1. Create class_change_timers table if it doesn't exist
         await client.query(`
             CREATE TABLE IF NOT EXISTS class_change_timers (
                 id SERIAL PRIMARY KEY,
@@ -29,27 +29,30 @@ async function migrate() {
         `);
         console.log('✅ Table "class_change_timers" created or already exists.');
 
-        // 2. Populate with default values if the table is empty
-        const { rows } = await client.query('SELECT COUNT(*) as count FROM class_change_timers');
-        if (rows[0].count === '0') {
-            const defaultTimers = [
-                { label: 'Class Change 1', weeks: 2 },
-                { label: 'Class Change 2', weeks: 5 },
-                { label: 'Class Change 3', weeks: 14 },
-                { label: 'Class Change 4', weeks: 20 },
-                { label: 'Class Change 5', weeks: 28 },
-                { label: 'Class Change 6', weeks: 36 },
-            ];
-            for (const timer of defaultTimers) {
-                await client.query(
-                    'INSERT INTO class_change_timers (label, weeks_after_start) VALUES ($1, $2)',
-                    [timer.label, timer.weeks]
-                );
-            }
-            console.log('✅ Populated "class_change_timers" with default values.');
-        } else {
-            console.log('☑️ "class_change_timers" table already contains data, skipping population.');
+        // 2. Vide la table pour s'assurer que les nouvelles valeurs sont les seules présentes
+        await client.query('TRUNCATE TABLE class_change_timers RESTART IDENTITY;');
+        console.log('🗑️ "class_change_timers" table has been cleared.');
+        
+        // 3. Insère les nouvelles valeurs fixes
+        const defaultTimers = [
+            { label: 'Class Change 1', weeks: 1 },
+            { label: 'Class Change 2', weeks: 4 },
+            { label: 'Class Change 3', weeks: 13 },
+            { label: 'Class Change 4', weeks: 22 },
+            { label: 'Class Change 5', weeks: 31 },
+            { label: 'Class Change 6', weeks: 42 },
+            { label: 'Class Change 7', weeks: 53 },
+            { label: 'Class Change 8', weeks: 64 },
+            { label: 'Class Change 9', weeks: 75 },
+            { label: 'Class Change 10', weeks: 86 },
+        ];
+        for (const timer of defaultTimers) {
+            await client.query(
+                'INSERT INTO class_change_timers (label, weeks_after_start) VALUES ($1, $2)',
+                [timer.label, timer.weeks]
+            );
         }
+        console.log('✅ Populated "class_change_timers" with new fixed values.');
 
         await client.query('COMMIT');
         console.log('\n--- 🎉 Migration V5 completed successfully! ---');

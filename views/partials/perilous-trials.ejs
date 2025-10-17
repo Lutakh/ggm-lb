@@ -33,34 +33,36 @@
             </div>
         </div>
         
-        <div class="pt-player-inputs">
-            <% for(let i = 0; i < 4; i++) { %>
-            <div class="pt-player-entry">
-                <label for="player_<%= i %>">Player <%= i + 1 %></label>
-                <input list="player-datalist-<%= i %>" id="player_<%= i %>" name="player_names[]" placeholder="Player <%= i + 1 %> Name" autocomplete="off" data-player-index="<%= i %>">
-                <div class="pt-new-player-fields" id="new-player-fields-<%= i %>">
-                    <select name="player_classes[]">
-                        <option value="" disabled selected>Class</option>
-                        <option value="Tank">Tank</option>
-                        <option value="Heal">Heal</option>
-                        <option value="DPS">DPS</option>
-                    </select>
-                    <input type="text" name="player_cps[]" placeholder="CP (e.g., 1.2M)">
-                    <select name="player_guilds[]">
-                        <option value="">Guild (Optional)</option>
-                        <% guilds.forEach(name => { %><option value="<%= name %>"><%= name %></option><% }); %>
-                    </select>
-                </div>
-            </div>
-            <% } %>
+<div class="pt-player-inputs">
+    <% for(let i = 0; i < 4; i++) { %>
+    <div class="pt-player-entry">
+        <label for="player_<%= i %>">Player <%= i + 1 %></label>
+        <input list="player-datalist-<%= i %>" id="player_<%= i %>" name="player_names[]" placeholder="Player <%= i + 1 %> Name" autocomplete="off" data-player-index="<%= i %>">
+        <div class="pt-new-player-fields" id="new-player-fields-<%= i %>">
+            <select name="player_classes[]">
+                <option value="" disabled selected>Class</option>
+                <option value="Tank">Tank</option>
+                <option value="Heal">Heal</option>
+                <option value="DPS">DPS</option>
+            </select>
+            <input type="text" name="player_cps[]" placeholder="CP (e.g., 1.2M)">
+            <select name="player_guilds[]">
+                <option value="">Guild (Optional)</option>
+                <% guilds.forEach(name => { %><option value="<%= name %>"><%= name %></option><% }); %>
+            </select>
         </div>
+    </div>
+    <%# Cette balise vide est ajoutée pour la compatibilité avec Safari %>
+    <datalist id="player-datalist-<%= i %>"></datalist>
+    <% } %>
+</div>
+
+<button type="submit">Submit Team</button>
         
-        <button type="submit">Submit Team</button>
-        
-        <datalist id="player-datalist-main">
-            <% players.forEach(p => { %> 
-                <option value="<%= p.name %>"></option> 
-            <% }); %>
-        </datalist>
+<datalist id="player-datalist-main">
+    <% players.forEach(p => { %> 
+        <option value="<%= p.name %>"><%= p.name %></option> 
+    <% }); %>
+</datalist>
     </form>
 </div>

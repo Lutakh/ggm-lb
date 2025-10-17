@@ -14,15 +14,6 @@
                     <input type="date" name="server_open_date" id="server_open_date_modal" value="<%= new Date(serverSettings.server_open_date).toISOString().split('T')[0] %>" required>
                 </div>
             </div>
-            <h4>Class Change Timers (Weeks After Start)</h4>
-            <div id="cc-timers-form">
-                <% classChangeTimers.forEach(timer => { %>
-                    <div class="timer-setting-row">
-                        <label for="cc_timer_<%= timer.id %>"><%= timer.label %></label>
-                        <input type="number" name="cc_timers[<%= timer.id %>]" value="<%= timer.weeks_after_start %>" min="0">
-                    </div>
-                <% }); %>
-            </div>
             <button type="submit">Save Settings</button>
         </form>
         <button id="deactivate-admin-btn" style="margin-top: 20px; background-color: var(--accent-color); color: white;">Deactivate Admin Mode</button>

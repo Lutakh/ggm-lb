@@ -60,6 +60,7 @@ router.post('/pt-leaderboard', async (req, res) => {
         
         const playerIds = [];
         const finalPlayerNames = [];
+        let newPlayerIndex = 0; // Index pour les tableaux de données des nouveaux joueurs
 
         for (let i = 0; i < 4; i++) {
             const name = player_names[i];
@@ -69,9 +70,11 @@ router.post('/pt-leaderboard', async (req, res) => {
                 let playerId = playerRes.rows[0]?.id;
 
                 if (!playerId) { // Si le joueur n'existe pas
-                    const newPlayerClass = player_classes[i] || 'Unknown';
-                    const newPlayerCp = parseCombatPower(player_cps[i]) || 0;
-                    const newPlayerGuild = player_guilds[i] || null;
+                    // On utilise le compteur pour lire les bonnes données
+                    const newPlayerClass = player_classes[newPlayerIndex] || 'Unknown';
+                    const newPlayerCp = parseCombatPower(player_cps[newPlayerIndex]) || 0;
+                    const newPlayerGuild = player_guilds[newPlayerIndex] || null;
+                    newPlayerIndex++; // On incrémente pour le prochain nouveau joueur
 
                     const newPlayerRes = await client.query(
                         `INSERT INTO players (name, class, combat_power, guild, team, notes) 
@@ -116,5 +119,4 @@ router.post('/pt-leaderboard', async (req, res) => {
         client.release();
     }
 });
-
 module.exports = router;

@@ -33,7 +33,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(res => res.json()).then(data => { 
                     if (data.success) { 
                         activateAdminMode(password);
-                        alert('Admin mode activated. Click the wrench to open settings.');
+                        // LA LIGNE SUIVANTE A ÉTÉ SUPPRIMÉE
+                        // alert('Admin mode activated. Click the wrench to open settings.');
                     } 
                     else { alert('Incorrect Password'); } 
                 });
@@ -55,12 +56,8 @@ document.addEventListener('DOMContentLoaded', function() {
             server_name: formData.get('server_name'),
             server_open_date: formData.get('server_open_date'),
             admin_password: sessionStorage.getItem('adminPassword'),
-            cc_timers: []
+            cc_timers: [] // N'est plus utilisé mais gardé pour éviter des erreurs
         };
-        document.querySelectorAll('#cc-timers-form .timer-setting-row input').forEach(input => {
-            const id = input.name.match(/\[(\d+)\]/)[1];
-            data.cc_timers.push({ id: id, weeks: input.value });
-        });
         
         const response = await fetch('/update-server-settings', {
             method: 'POST',
