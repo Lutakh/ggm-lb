@@ -1,5 +1,5 @@
 export function initPerilousTrials() {
-    // --- Logique d'affichage du classement (inchangée) ---
+    // --- Logique d'affichage du classement ---
     const ptSelect = document.getElementById('pt-select');
     const ptTableBody = document.getElementById('pt-leaderboard-table')?.querySelector('tbody');
     const ptIdInputAdmin = document.getElementById('pt-id-input');
@@ -22,7 +22,11 @@ export function initPerilousTrials() {
                 const name = entry[`player${i}_name`];
                 const pClass = entry[`player${i}_class`];
                 if (name) {
-                    teamHtml += `<div class="pt-leaderboard-player"><span class="class-tag class-${(pClass || 'unknown').toLowerCase()}"></span><span>${name}</span></div>`;
+                    // Structure "pastille de couleur + nom"
+                    teamHtml += `<div class="pt-leaderboard-player">
+                                    <span class="class-tag class-${(pClass || 'unknown').toLowerCase()}"></span>
+                                    <span>${name}</span>
+                                 </div>`;
                 }
             }
             teamHtml += '</div>';
@@ -42,7 +46,7 @@ export function initPerilousTrials() {
         loadPtLeaderboard(ptIdFromUrl);
     }
 
-    // --- NOUVELLE LOGIQUE DU FORMULAIRE PT ---
+    // --- Logique du formulaire PT (inchangée) ---
     const ptAdminForm = document.getElementById('pt-admin-form');
     if (!ptAdminForm) return;
 
@@ -86,7 +90,7 @@ export function initPerilousTrials() {
                 playerListContainer.appendChild(item);
             });
     };
-    
+
     const openModal = (playerIndex) => {
         activePlayerIndex = playerIndex;
         filterInput.value = '';
@@ -107,13 +111,13 @@ export function initPerilousTrials() {
         if (activePlayerIndex === null) return;
 
         const isExistingPlayer = allPlayers.some(p => p.name.toLowerCase() === name.toLowerCase());
-        
+
         document.getElementById(`pt-player-display-${activePlayerIndex}`).textContent = name;
         document.getElementById(`pt-player-name-hidden-${activePlayerIndex}`).value = name;
-        
+
         const newPlayerFields = document.getElementById(`pt-new-player-fields-${activePlayerIndex}`);
         const fields = newPlayerFields.querySelectorAll('select, input');
-        
+
         if (!isExistingPlayer && name) {
             newPlayerFields.style.display = 'grid';
             fields.forEach(field => {
@@ -146,13 +150,12 @@ export function initPerilousTrials() {
         const selectedItem = e.target.closest('.suggestion-item');
         if (selectedItem) selectPlayer(selectedItem.dataset.playerName);
     });
-    
+
     createPlayerBtn.addEventListener('click', () => {
         const newName = filterInput.value.trim();
         if (newName) selectPlayer(newName);
     });
 
-    // NOUVELLE LOGIQUE DE NAVIGATION CLAVIER
     const updateActiveSuggestion = (items) => {
         items.forEach((item, index) => {
             if (index === activeSuggestionIndex) {
@@ -190,16 +193,16 @@ export function initPerilousTrials() {
             }
         }
     });
-    
+
     const validateTeamSubmission = () => {
         const names = [];
         for (let i = 0; i < 4; i++) {
             const name = ptAdminForm.querySelector(`#pt-player-name-hidden-${i}`).value;
             if (name) names.push(name.toLowerCase());
         }
-        
+
         const uniqueNames = new Set(names);
-        
+
         if (names.length > 0 && names.length > uniqueNames.size) {
             submitBtn.disabled = true;
             submitBtn.style.backgroundColor = 'var(--accent-color)';
@@ -210,6 +213,6 @@ export function initPerilousTrials() {
             submitBtn.textContent = 'Submit Team';
         }
     };
-    
+
     validateTeamSubmission();
 }

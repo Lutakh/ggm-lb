@@ -1,10 +1,15 @@
 <div class="view-tabs"><h2>Players Leaderboard</h2></div>
 
 <div id="filters" class="leaderboard-filters">
-    <div class="filter-group class-filters">
-        <label><input type="checkbox" class="class-filter" data-class="Tank"> Tank</label>
-        <label><input type="checkbox" class="class-filter" data-class="Heal"> Heal</label>
-        <label><input type="checkbox" class="class-filter" data-class="DPS"> DPS</label>
+    <div class="filter-group dropdown-filter">
+        <button id="class-filter-btn" class="dropdown-btn">All Classes</button>
+        <div id="class-filter-panel" class="dropdown-panel">
+            <label><input type="checkbox" data-class="Swordbearer"> Swordbearer</label>
+            <label><input type="checkbox" data-class="Acolyte"> Acolyte</label>
+            <label><input type="checkbox" data-class="Wayfarer"> Wayfarer</label>
+            <label><input type="checkbox" data-class="Scholar"> Scholar</label>
+            <label><input type="checkbox" data-class="Shadowlash"> Shadowlash</label>
+        </div>
     </div>
     <div class="filter-group">
         <input type="text" id="cp-min" placeholder="Min CP (e.g., 500k)">
@@ -47,21 +52,20 @@
             <th class="rank-col">Rank</th>
             <th>Player</th>
             <th>Class</th>
-            <th>Combat Power</th>
+            <th>CP</th>
             <th>Play Hours <span id="table-timezone-note" class="timezone-header-note"></span></th>
             <th>Guild</th>
-            <th>Team</th>
             <th>Notes</th>
-            <th class="last-modified-col">Last Modified</th>
+            <th class="last-modified-col">Updated</th>
             <th class="admin-only-header">Actions</th>
         </tr>
     </thead>
     <tbody>
         <% players.forEach((player, index) => { %>
-            <tr class="podium rank-<%= index + 1 %>" 
-                data-cp="<%= player.combat_power %>" 
-                data-class="<%= player.class %>" 
-                data-team="<%= player.team || 'No Team' %>" 
+            <tr class="podium rank-<%= index + 1 %>"
+                data-cp="<%= player.combat_power %>"
+                data-class="<%= player.class %>"
+                data-team="<%= player.team || 'No Team' %>"
                 data-guild="<%= player.guild || '' %>"
                 data-pt-tags="<%= JSON.stringify(player.pt_tags) %>">
                 <td class="rank-col"><%= index + 1 %></td>
@@ -84,7 +88,6 @@
                     </div>
                 </td>
                 <td><%= player.guild || '-' %></td>
-                <td><%= player.team || '-' %></td>
                 <td class="notes-col" onclick="showFullNote('<%= player.name %>', `<%= player.notes ? player.notes.replace(/[`"']/g, '\\$&') : '' %>`)">
                     <%= player.notes || '-' %>
                 </td>

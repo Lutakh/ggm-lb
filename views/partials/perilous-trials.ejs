@@ -8,6 +8,15 @@
         <% }); %>
     </select>
 </div>
+
+<div class="leaderboard-legend">
+    <div class="legend-item"><span class="class-tag class-swordbearer"></span> Swordbearer</div>
+    <div class="legend-item"><span class="class-tag class-acolyte"></span> Acolyte</div>
+    <div class="legend-item"><span class="class-tag class-wayfarer"></span> Wayfarer</div>
+    <div class="legend-item"><span class="class-tag class-scholar"></span> Scholar</div>
+    <div class="legend-item"><span class="class-tag class-shadowlash"></span> Shadowlash</div>
+</div>
+
 <table id="pt-leaderboard-table">
     <thead><tr><th>Rank</th><th>Team</th></tr></thead>
     <tbody></tbody>
@@ -45,9 +54,11 @@
                 <div class="pt-new-player-fields" id="pt-new-player-fields-<%= i %>">
                     <select name="players[<%= i %>][class]">
                         <option value="" disabled selected>Class</option>
-                        <option value="Tank">Tank</option>
-                        <option value="Heal">Heal</option>
-                        <option value="DPS">DPS</option>
+                        <option value="Swordbearer">Swordbearer</option>
+                        <option value="Acolyte">Acolyte</option>
+                        <option value="Wayfarer">Wayfarer</option>
+                        <option value="Scholar">Scholar</option>
+                        <option value="Shadowlash">Shadowlash</option>
                     </select>
                     <input type="text" name="players[<%= i %>][cp]" placeholder="CP (e.g., 1.2M)">
                     <select name="players[<%= i %>][guild]">
@@ -58,7 +69,7 @@
             </div>
             <% } %>
         </div>
-        
+
         <button type="submit">Submit Team</button>
     </form>
 </div>
