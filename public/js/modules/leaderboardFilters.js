@@ -25,8 +25,8 @@ export function initLeaderboardFilters() {
         }
     });
 
-    // --- LOGIQUE D'APPLICATION DES FILTRES (INCHANGÉE MAIS NÉCESSAIRE) ---
-    const classFilters = document.querySelectorAll('.class-filter');
+    // --- LOGIQUE D'APPLICATION DES FILTRES ---
+    const classFilters = document.querySelectorAll('#class-filter-panel input');
     const teamFilters = document.querySelectorAll('#team-filter-panel input');
     const guildFilters = document.querySelectorAll('#guild-filter-panel input');
     const cpMinFilter = document.getElementById('cp-min');
@@ -34,7 +34,7 @@ export function initLeaderboardFilters() {
     const memberRows = document.querySelectorAll('#leaderboard-table tbody tr');
     const ptTagFilter = document.getElementById('pt-tag-filter');
     const ptTagMode = document.getElementById('pt-tag-mode');
-    
+
     function applyFilters() {
         const selectedClasses = Array.from(classFilters).filter(c => c.checked).map(c => c.dataset.class);
         const selectedTeams = Array.from(teamFilters).filter(c => c.checked).map(c => c.dataset.team);
@@ -50,7 +50,7 @@ export function initLeaderboardFilters() {
             const teamMatch = selectedTeams.length === 0 || selectedTeams.includes(row.dataset.team);
             const guildMatch = selectedGuilds.length === 0 || selectedGuilds.includes(row.dataset.guild);
             const cpMatch = parseInt(row.dataset.cp, 10) >= cpMin && parseInt(row.dataset.cp, 10) <= cpMax;
-            
+
             let ptMatch = true;
             if (selectedPtTag) {
                 const playerTags = JSON.parse(row.dataset.ptTags || '[]');
@@ -70,17 +70,20 @@ export function initLeaderboardFilters() {
         });
 
         // Met à jour le texte des boutons de filtre
+        const classFilterBtn = document.getElementById('class-filter-btn');
+        if (classFilterBtn) classFilterBtn.textContent = selectedClasses.length > 0 ? `${selectedClasses.length} class(es)` : 'All Classes';
+
         const teamFilterBtn = document.getElementById('team-filter-btn');
         if (teamFilterBtn) teamFilterBtn.textContent = selectedTeams.length > 0 ? `${selectedTeams.length} team(s)` : 'All Teams';
-        
+
         const guildFilterBtn = document.getElementById('guild-filter-btn');
         if (guildFilterBtn) guildFilterBtn.textContent = selectedGuilds.length > 0 ? `${selectedGuilds.length} guild(s)` : 'All Guilds';
     }
 
     // Attache les écouteurs d'événements
-    document.querySelectorAll('#filters input, #filters select, .dropdown-panel input').forEach(el => { 
-        el.addEventListener('change', applyFilters); 
-        el.addEventListener('keyup', applyFilters); 
+    document.querySelectorAll('#filters input, #filters select, .dropdown-panel input').forEach(el => {
+        el.addEventListener('change', applyFilters);
+        el.addEventListener('keyup', applyFilters);
     });
 
     // --- FILTRE POUR LE CLASSEMENT DES ÉQUIPES (INCHANGÉ) ---

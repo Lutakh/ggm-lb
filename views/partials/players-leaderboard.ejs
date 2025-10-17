@@ -1,10 +1,15 @@
 <div class="view-tabs"><h2>Players Leaderboard</h2></div>
 
 <div id="filters" class="leaderboard-filters">
-    <div class="filter-group class-filters">
-        <label><input type="checkbox" class="class-filter" data-class="Tank"> Tank</label>
-        <label><input type="checkbox" class="class-filter" data-class="Heal"> Heal</label>
-        <label><input type="checkbox" class="class-filter" data-class="DPS"> DPS</label>
+    <div class="filter-group dropdown-filter">
+        <button id="class-filter-btn" class="dropdown-btn">All Classes</button>
+        <div id="class-filter-panel" class="dropdown-panel">
+            <label><input type="checkbox" data-class="Swordbearer"> Swordbearer</label>
+            <label><input type="checkbox" data-class="Acolyte"> Acolyte</label>
+            <label><input type="checkbox" data-class="Wayfarer"> Wayfarer</label>
+            <label><input type="checkbox" data-class="Scholar"> Scholar</label>
+            <label><input type="checkbox" data-class="Shadowlash"> Shadowlash</label>
+        </div>
     </div>
     <div class="filter-group">
         <input type="text" id="cp-min" placeholder="Min CP (e.g., 500k)">
@@ -32,7 +37,7 @@
             <option value="">All PT Progress</option>
              <% perilousTrials.forEach(pt => { %>
                 <option value="<%= pt.name %>"><%= pt.name %></option>
-            <% }); %>
+             <% }); %>
         </select>
         <select id="pt-tag-mode">
             <option value="has">Has Tag</option>
@@ -58,10 +63,10 @@
     </thead>
     <tbody>
         <% players.forEach((player, index) => { %>
-            <tr class="podium rank-<%= index + 1 %>" 
-                data-cp="<%= player.combat_power %>" 
-                data-class="<%= player.class %>" 
-                data-team="<%= player.team || 'No Team' %>" 
+            <tr class="podium rank-<%= index + 1 %>"
+                data-cp="<%= player.combat_power %>"
+                data-class="<%= player.class %>"
+                data-team="<%= player.team || 'No Team' %>"
                 data-guild="<%= player.guild || '' %>"
                 data-pt-tags="<%= JSON.stringify(player.pt_tags) %>">
                 <td class="rank-col"><%= index + 1 %></td>

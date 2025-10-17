@@ -35,11 +35,11 @@ router.get('/', async (req, res) => {
         const guilds = guildsResult.rows.map(g => g.name);
         const perilousTrials = trialsResult.rows;
         const allTeamNames = [...new Set(players.map(p => p.team).filter(Boolean).filter(t => t !== 'No Team'))];
-        
+
         const teamsData = players.reduce((acc, player) => {
             const teamName = player.team;
             if (teamName && teamName !== 'No Team') {
-                if (!acc[teamName]) acc[teamName] = { members: [], total_cp: 0, guilds: new Set(), class_distribution: { Tank: 0, Heal: 0, DPS: 0 } };
+                if (!acc[teamName]) acc[teamName] = { members: [], total_cp: 0, guilds: new Set(), class_distribution: { Swordbearer: 0, Acolyte: 0, Wayfarer: 0, Scholar: 0, Shadowlash: 0 } };
                 acc[teamName].members.push(player);
                 acc[teamName].total_cp += Number(player.combat_power);
                 if(player.guild) acc[teamName].guilds.add(player.guild);
@@ -54,7 +54,7 @@ router.get('/', async (req, res) => {
         const guildsData = players.reduce((acc, player) => {
             const guildName = player.guild;
             if (guildName) {
-                if (!acc[guildName]) acc[guildName] = { members: [], total_cp: 0, class_distribution: { Tank: 0, Heal: 0, DPS: 0 } };
+                if (!acc[guildName]) acc[guildName] = { members: [], total_cp: 0, class_distribution: { Swordbearer: 0, Acolyte: 0, Wayfarer: 0, Scholar: 0, Shadowlash: 0 } };
                 acc[guildName].members.push(player);
                 acc[guildName].total_cp += Number(player.combat_power);
                 if (acc[guildName].class_distribution[player.class] !== undefined) {
@@ -64,7 +64,6 @@ router.get('/', async (req, res) => {
             return acc;
         }, {});
         const rankedGuilds = Object.entries(guildsData).map(([name, data]) => ({ name, total_cp: data.total_cp, member_count: data.members.length, class_distribution: data.class_distribution })).sort((a, b) => b.total_cp - a.total_cp);
-
         // --- LOGIQUE DE CALCUL DES TIMERS RESTAURÉE ---
         const serverOffsetHours = -4; 
         const now = new Date(); 

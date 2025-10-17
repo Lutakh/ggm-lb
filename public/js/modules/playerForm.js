@@ -133,8 +133,14 @@ export function initPlayerForm() {
     const notesInput = document.getElementById('notes-input');
     const slotsContainer = document.getElementById('time-slots-container');
     const addSlotBtn = document.getElementById('add-slot-btn');
-    const classImages = { new: `<img src="/images/new-player.png" alt="New Player">`, Tank: `<img src="/images/Tank.png" alt="Tank Class">`, Heal: `<img src="/images/Heal.png" alt="Heal Class">`, DPS: `<img src="/images/DPS.png" alt="DPS Class">`};
-
+    const classImages = {
+        new: `<img src="/images/new-player.png" alt="New Player">`,
+        Swordbearer: `<img src="/images/Swordbearer.png" alt="Swordbearer Class">`,
+        Acolyte: `<img src="/images/Acolyte.png" alt="Acolyte Class">`,
+        Wayfarer: `<img src="/images/Wayfarer.png" alt="Wayfarer Class">`,
+        Scholar: `<img src="/images/Scholar.png" alt="Scholar Class">`,
+        Shadowlash: `<img src="/images/Shadowlash.png" alt="Shadowlash Class">`
+    };
     function validateForm() {
         const isPlayerSelected = hiddenNameInput.value.trim() !== '';
         const isClassValid = classSelect.required ? classSelect.value.trim() !== '' : true;

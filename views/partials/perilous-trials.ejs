@@ -45,9 +45,11 @@
                 <div class="pt-new-player-fields" id="pt-new-player-fields-<%= i %>">
                     <select name="players[<%= i %>][class]">
                         <option value="" disabled selected>Class</option>
-                        <option value="Tank">Tank</option>
-                        <option value="Heal">Heal</option>
-                        <option value="DPS">DPS</option>
+                        <option value="Swordbearer">Swordbearer</option>
+                        <option value="Acolyte">Acolyte</option>
+                        <option value="Wayfarer">Wayfarer</option>
+                        <option value="Scholar">Scholar</option>
+                        <option value="Shadowlash">Shadowlash</option>
                     </select>
                     <input type="text" name="players[<%= i %>][cp]" placeholder="CP (e.g., 1.2M)">
                     <select name="players[<%= i %>][guild]">
@@ -58,7 +60,7 @@
             </div>
             <% } %>
         </div>
-        
+
         <button type="submit">Submit Team</button>
     </form>
 </div>

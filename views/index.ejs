@@ -16,7 +16,14 @@
                 <button type="button" id="open-player-select-btn" class="action-btn-main">Select Player</button>
             </div>
             <div id="form-details">
-                <select id="class-select" name="pClass"><option value="" disabled selected>Class</option><option value="Tank">Tank</option><option value="Heal">Heal</option><option value="DPS">DPS</option></select>
+                <select id="class-select" name="pClass">
+                    <option value="" disabled selected>Class</option>
+                    <option value="Swordbearer">Swordbearer</option>
+                    <option value="Acolyte">Acolyte</option>
+                    <option value="Wayfarer">Wayfarer</option>
+                    <option value="Scholar">Scholar</option>
+                    <option value="Shadowlash">Shadowlash</option>
+                </select>
                 <input id="cp-input" type="text" name="cp" placeholder="Combat Power (e.g., 554k)" required>
                 <select id="guild-select" name="guild"><option value="" selected>Guild (Optional)</option><% guilds.forEach(name => { %><option value="<%= name %>"><%= name %></option><% }); %></select>
                 <div class="admin-team-select">
