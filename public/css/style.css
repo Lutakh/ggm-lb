@@ -112,16 +112,16 @@ tbody tr:last-child td {
 
 /* --- REVISED TABLE COLUMN WIDTHS --- */
 #leaderboard-table th, #leaderboard-table td {
-    word-wrap: break-word; /* Garde le retour à la ligne si nécessaire */
+    word-wrap: break-word;
 }
 #leaderboard-table th:nth-child(1), #leaderboard-table td:nth-child(1) { width: 60px; text-align: center; } /* Rank */
-#leaderboard-table th:nth-child(2), #leaderboard-table td:nth-child(2) { width: 13%; } /* Player */
-#leaderboard-table th:nth-child(3), #leaderboard-table td:nth-child(3) { width: 110px; text-align: center; }  /* Class */
-#leaderboard-table th:nth-child(4), #leaderboard-table td:nth-child(4) { width: 120px; text-align: right; } /* CP */
-#leaderboard-table th:nth-child(5), #leaderboard-table td:nth-child(5) { width: 18%; min-width: 150px; } /* Play Hours */
-#leaderboard-table th:nth-child(6), #leaderboard-table td:nth-child(6) { width: 12%; } /* Guild */
-#leaderboard-table th:nth-child(7), #leaderboard-table td:nth-child(7) { width: 11%; } /* Team */
-#leaderboard-table th:nth-child(8), #leaderboard-table td:nth-child(8) { width: 12%; } /* Notes */
+#leaderboard-table th:nth-child(2), #leaderboard-table td:nth-child(2) { width: 14%; } /* Player */
+#leaderboard-table th:nth-child(3), #leaderboard-table td:nth-child(3) { width: 100px; text-align: center; }  /* Class */
+#leaderboard-table th:nth-child(4), #leaderboard-table td:nth-child(4) { width: 110px; text-align: right; } /* CP */
+#leaderboard-table th:nth-child(5), #leaderboard-table td:nth-child(5) { width: 20%; min-width: 160px; } /* Play Hours */
+#leaderboard-table th:nth-child(6), #leaderboard-table td:nth-child(6) { width: 11%; } /* Guild */
+#leaderboard-table th:nth-child(7), #leaderboard-table td:nth-child(7) { width: 10%; } /* Team */
+#leaderboard-table th:nth-child(8), #leaderboard-table td:nth-child(8) { width: auto; } /* Notes */
 #leaderboard-table th:nth-child(9), #leaderboard-table td:nth-child(9) { width: 10%; }  /* Updated */
 #leaderboard-table th:nth-child(10), #leaderboard-table td:nth-child(10){ width: 70px; text-align: center; } /* Actions */
 
@@ -478,7 +478,6 @@ body:not(.section-active) #top-nav {
     gap: 5px;
     cursor: pointer;
 }
-/* MODIFICATION : Réduction de la largeur des champs CP */
 #cp-min, #cp-max {
     width: 140px;
 }
@@ -527,7 +526,36 @@ body:not(.section-active) #top-nav {
     margin-right: 8px;
 }
 
-/* --- STYLES CORRIGÉS ET COMPLETS POUR TOUTES LES MODALES --- */
+/* --- GUILD & TEAM LEADERBOARDS --- */
+.guild-leaderboard-table th:nth-child(1), .guild-leaderboard-table td:nth-child(1),
+#teams-leaderboard-table th:nth-child(1), #teams-leaderboard-table td:nth-child(1) { width: 8%; } /* Rank */
+
+.guild-leaderboard-table th:nth-child(3), .guild-leaderboard-table td:nth-child(3),
+#teams-leaderboard-table th:nth-child(3), #teams-leaderboard-table td:nth-child(3) { width: 15%; } /* Total CP */
+
+.guild-leaderboard-table th:nth-child(4), .guild-leaderboard-table td:nth-child(4),
+#teams-leaderboard-table th:nth-child(4), #teams-leaderboard-table td:nth-child(4) { width: 12%; } /* Members */
+
+.class-distrib {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    align-items: center;
+}
+.class-distrib .class-tag {
+    min-width: 32px;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1em;
+    line-height: 32px;
+}
+
+/* --- MODALS --- */
 #admin-settings-btn {
     position: fixed;
     top: 20px;
@@ -662,7 +690,7 @@ body:not(.section-active) #top-nav {
     grid-column: 1 / -1;
 }
 .player-select-modal-backdrop {
-    display: none; /* CACHÉ PAR DÉFAUT */
+    display: none;
     position: fixed;
     top: 0;
     left: 0;
@@ -672,7 +700,7 @@ body:not(.section-active) #top-nav {
     z-index: 1000;
 }
 .player-select-modal {
-    display: none; /* CACHÉ PAR DÉFAUT */
+    display: none;
     position: fixed;
     top: 50%;
     left: 50%;
@@ -782,11 +810,10 @@ body.admin-mode .admin-actions {
     gap: 5px;
     justify-content: center;
 }
-/* --- MODALE DES NOTES --- */
 #notes-modal-body {
     padding: 20px 25px;
-    white-space: pre-wrap; /* Conserve les sauts de ligne et espaces */
-    line-height: 1.6;      /* Améliore la lisibilité */
-    max-height: 60vh;      /* Empêche la modale d'être trop haute */
-    overflow-y: auto;      /* Ajoute une barre de défilement si nécessaire */
+    white-space: pre-wrap;
+    line-height: 1.6;
+    max-height: 60vh;
+    overflow-y: auto;
 }
