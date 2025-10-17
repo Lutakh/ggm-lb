@@ -16,6 +16,43 @@
             </div>
             <button type="submit">Save Settings</button>
         </form>
+
+        <hr style="margin: 20px 0;">
+
+        <h4>Guild Management</h4>
+        <form action="/add-guild" method="POST" style="margin-bottom: 15px;">
+            <input type="hidden" name="admin_password" class="admin-pass-input">
+            <div class="form-grid" style="grid-template-columns: 2fr 1fr; gap: 10px;">
+                <input type="text" name="guild_name" placeholder="Add new guild..." required>
+                <button type="submit">Add Guild</button>
+            </div>
+        </form>
+        <form action="/rename-guild" method="POST" style="margin-bottom: 15px;">
+            <input type="hidden" name="admin_password" class="admin-pass-input">
+            <div class="form-grid" style="grid-template-columns: 1fr 1fr auto; gap: 10px;">
+                <select name="old_guild_name" required>
+                    <option value="" disabled selected>Select guild to rename</option>
+                    <% guilds.forEach(name => { %>
+                        <option value="<%= name %>"><%= name %></option>
+                    <% }); %>
+                </select>
+                <input type="text" name="new_guild_name" placeholder="New name" required>
+                <button type="submit">Rename</button>
+            </div>
+        </form>
+        <form action="/delete-guild" method="POST" id="delete-guild-form">
+            <input type="hidden" name="admin_password" class="admin-pass-input">
+             <div class="form-grid" style="grid-template-columns: 2fr 1fr; gap: 10px;">
+                <select name="guild_name" required>
+                    <option value="" disabled selected>Select guild to delete</option>
+                     <% guilds.forEach(name => { %>
+                        <option value="<%= name %>"><%= name %></option>
+                    <% }); %>
+                </select>
+                <button type="submit" style="background-color: var(--accent-color); color: white;">Delete</button>
+            </div>
+        </form>
+
         <button id="deactivate-admin-btn" style="margin-top: 20px; background-color: var(--accent-color); color: white;">Deactivate Admin Mode</button>
     </div>
 </div>

@@ -1,12 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
-    function activateAdminMode(password) { 
-        sessionStorage.setItem('adminPassword', password); 
+    function activateAdminMode(password) {
+        sessionStorage.setItem('adminPassword', password);
         document.body.classList.add('admin-mode');
         document.querySelectorAll('.admin-pass-input').forEach(input => input.value = password);
     }
 
     function deactivateAdminMode() {
-        sessionStorage.removeItem('adminPassword'); 
+        sessionStorage.removeItem('adminPassword');
         document.body.classList.remove('admin-mode');
         alert('Admin mode deactivated.');
         adminModal.classList.remove('active');
@@ -17,38 +17,36 @@ document.addEventListener('DOMContentLoaded', function() {
     const adminBackdrop = document.getElementById('admin-modal-backdrop');
     const adminSettingsBtn = document.getElementById('admin-settings-btn');
     const deactivateAdminBtn = document.getElementById('deactivate-admin-btn');
-    
+
     adminSettingsBtn.addEventListener('click', () => {
         if (document.body.classList.contains('admin-mode')) {
             adminModal.classList.add('active');
             adminBackdrop.classList.add('active');
         } else {
-             const password = prompt("Enter Admin Password:");
-             if (password) {
-                fetch('/verify-admin', { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ password }) 
+            const password = prompt("Enter Admin Password:");
+            if (password) {
+                fetch('/verify-admin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
                 })
-                .then(res => res.json()).then(data => { 
-                    if (data.success) { 
+                    .then(res => res.json()).then(data => {
+                    if (data.success) {
                         activateAdminMode(password);
-                        // LA LIGNE SUIVANTE A ÉTÉ SUPPRIMÉE
-                        // alert('Admin mode activated. Click the wrench to open settings.');
-                    } 
-                    else { alert('Incorrect Password'); } 
+                    }
+                    else { alert('Incorrect Password'); }
                 });
-             }
+            }
         }
     });
-    
+
     adminBackdrop.addEventListener('click', () => {
         adminModal.classList.remove('active');
         adminBackdrop.classList.remove('active');
     });
 
     deactivateAdminBtn.addEventListener('click', deactivateAdminMode);
-    
+
     document.getElementById('server-settings-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
@@ -56,9 +54,9 @@ document.addEventListener('DOMContentLoaded', function() {
             server_name: formData.get('server_name'),
             server_open_date: formData.get('server_open_date'),
             admin_password: sessionStorage.getItem('adminPassword'),
-            cc_timers: [] // N'est plus utilisé mais gardé pour éviter des erreurs
+            cc_timers: []
         };
-        
+
         const response = await fetch('/update-server-settings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -99,7 +97,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
+
+    const deleteGuildForm = document.getElementById('delete-guild-form');
+    if (deleteGuildForm) {
+        deleteGuildForm.addEventListener('submit', function(e) {
+            const guildName = this.elements.guild_name.value;
+            if (!guildName || !confirm(`Are you sure you want to delete the guild "${guildName}"? This will remove the guild from all associated players.`)) {
+                e.preventDefault();
+            }
+        });
+    }
+
     if (sessionStorage.getItem('adminPassword')) {
         activateAdminMode(sessionStorage.getItem('adminPassword'));
     }
@@ -108,5 +116,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function deletePlayer(id) { const password = sessionStorage.getItem('adminPassword'); if (password) { document.getElementById(`delete-password-${id}`).value = password; document.getElementById(`delete-form-${id}`).submit(); } }
 function updateTeam(id) { const password = sessionStorage.getItem('adminPassword'); if (!password) return;
-const newTeam = prompt("Enter the new team name (e.g., Team A, No Team):"); if (newTeam === null) return;
-const form = document.createElement('form'); form.method = 'POST'; form.action = `/update-team/${id}`; form.innerHTML = `<input type="hidden" name="admin_password" value="${password}"><input type="hidden" name="team" value="${newTeam}">`; document.body.appendChild(form); form.submit(); }
+    const newTeam = prompt("Enter the new team name (e.g., Team A, No Team):"); if (newTeam === null) return;
+    const form = document.createElement('form'); form.method = 'POST'; form.action = `/update-team/${id}`; form.innerHTML = `<input type="hidden" name="admin_password" value="${password}"><input type="hidden" name="team" value="${newTeam}">`; document.body.appendChild(form); form.submit(); }
