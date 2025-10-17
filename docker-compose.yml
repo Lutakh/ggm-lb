@@ -3,29 +3,29 @@ version: '3.8'
 services:
   db:
     image: postgres:15-alpine
-    container_name: ggm-s81-db
+    container_name: ${CONTAINER_NAME}-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: olympus_roster
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - ggm-s81-postgres_data:/var/lib/postgresql/data
+      - ${CONTAINER_NAME}-postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d olympus_roster"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   web:
     build: .
-    container_name: ggm-s81-roster
+    container_name: ${CONTAINER_NAME}-roster
     restart: unless-stopped
     volumes:
       # Monte le fichier SQLite en lecture seule
       - ./database.sqlite:/usr/src/app/database.sqlite
     ports:
-      - "8081:3000"
+      - "${PORT_WEB}:3000"
     depends_on:
       db:
         condition: service_healthy
@@ -33,9 +33,9 @@ services:
       DB_HOST: db
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
-      DB_NAME: olympus_roster
+      DB_NAME: ${POSTGRES_DB}
       DB_PORT: 5432
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
 
 volumes:
-  ggm-s81-postgres_data:
+  ${CONTAINER_NAME}-postgres_data:
