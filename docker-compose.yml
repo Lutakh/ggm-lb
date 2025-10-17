@@ -21,9 +21,6 @@ services:
     build: .
     container_name: ${CONTAINER_NAME}-roster
     restart: unless-stopped
-    volumes:
-      # Monte le fichier SQLite en lecture seule
-      - ./database.sqlite:/usr/src/app/database.sqlite
     ports:
       - "${PORT_WEB}:3000"
     depends_on:
