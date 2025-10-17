@@ -9,8 +9,11 @@
         <form id="player-form" action="/add-player" method="POST">
             <div id="player-image-container"></div>
             <div class="form-step-1">
-                <input id="name-input" type="text" name="name" placeholder="Enter Player Name" required>
-                <button type="button" id="find-player-btn">Find / Add</button>
+                <div id="player-selection-ui">
+                    <div id="player-name-display">No player selected</div>
+                    <input type="hidden" name="name" id="name-input-hidden">
+                </div>
+                <button type="button" id="open-player-select-btn" class="action-btn-main">Select Player</button>
             </div>
             <div id="form-details">
                 <select id="class-select" name="pClass"><option value="" disabled selected>Class</option><option value="Tank">Tank</option><option value="Heal">Heal</option><option value="DPS">DPS</option></select>
@@ -33,19 +36,34 @@
     <div id="players-leaderboard-section" class="main-section card">
         <%- include('partials/players-leaderboard') %>
     </div>
-
     <div id="teams-leaderboard-section" class="main-section card">
         <%- include('partials/teams-leaderboard') %>
     </div>
-
     <div id="guilds-leaderboard-section" class="main-section card">
         <%- include('partials/guilds-leaderboard') %>
     </div>
-    
     <div id="perilous-trials-section" class="main-section card">
         <%- include('partials/perilous-trials') %>
     </div>
 </main>
+
+<div id="player-select-modal-backdrop" class="player-select-modal-backdrop"></div>
+<div id="player-select-modal" class="player-select-modal">
+    <div class="player-select-modal-header">
+        <h3>Select or Create a Player</h3>
+        <button type="button" class="player-select-close-btn">&times;</button>
+    </div>
+    <div class="player-select-controls">
+        <input type="text" id="player-filter-input" placeholder="Filter or type new name...">
+        <button type="button" id="create-new-player-btn" class="action-btn-main">Create New</button>
+    </div>
+    <div id="player-select-list" class="player-select-list">
+    </div>
+</div>
+
+<script id="players-data" type="application/json">
+    <%- JSON.stringify(players.map(p => ({id: p.id, name: p.name, class: p.class}))) %>
+</script>
 
 <%- include('partials/admin-modal') %>
 <%- include('partials/footer') %>

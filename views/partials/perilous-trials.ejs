@@ -33,36 +33,50 @@
             </div>
         </div>
         
-<div class="pt-player-inputs">
-    <% for(let i = 0; i < 4; i++) { %>
-    <div class="pt-player-entry">
-        <label for="player_<%= i %>">Player <%= i + 1 %></label>
-        <input list="player-datalist-<%= i %>" id="player_<%= i %>" name="player_names[]" placeholder="Player <%= i + 1 %> Name" autocomplete="off" data-player-index="<%= i %>">
-        <div class="pt-new-player-fields" id="new-player-fields-<%= i %>">
-            <select name="player_classes[]">
-                <option value="" disabled selected>Class</option>
-                <option value="Tank">Tank</option>
-                <option value="Heal">Heal</option>
-                <option value="DPS">DPS</option>
-            </select>
-            <input type="text" name="player_cps[]" placeholder="CP (e.g., 1.2M)">
-            <select name="player_guilds[]">
-                <option value="">Guild (Optional)</option>
-                <% guilds.forEach(name => { %><option value="<%= name %>"><%= name %></option><% }); %>
-            </select>
+        <div class="pt-player-inputs">
+            <% for(let i = 0; i < 4; i++) { %>
+            <div class="pt-player-entry-container">
+                <label>Player <%= i + 1 %></label>
+                <div class="pt-player-selection-ui">
+                    <div class="pt-player-name-display" id="pt-player-display-<%= i %>">No player selected</div>
+                    <input type="hidden" name="players[<%= i %>][name]" id="pt-player-name-hidden-<%= i %>">
+                    <button type="button" class="pt-open-modal-btn action-btn-main" data-player-index="<%= i %>">Select</button>
+                </div>
+                <div class="pt-new-player-fields" id="pt-new-player-fields-<%= i %>">
+                    <select name="players[<%= i %>][class]">
+                        <option value="" disabled selected>Class</option>
+                        <option value="Tank">Tank</option>
+                        <option value="Heal">Heal</option>
+                        <option value="DPS">DPS</option>
+                    </select>
+                    <input type="text" name="players[<%= i %>][cp]" placeholder="CP (e.g., 1.2M)">
+                    <select name="players[<%= i %>][guild]">
+                        <option value="">Guild (Optional)</option>
+                        <% guilds.forEach(name => { %><option value="<%= name %>"><%= name %></option><% }); %>
+                    </select>
+                </div>
+            </div>
+            <% } %>
         </div>
-    </div>
-    <%# Cette balise vide est ajoutée pour la compatibilité avec Safari %>
-    <datalist id="player-datalist-<%= i %>"></datalist>
-    <% } %>
-</div>
-
-<button type="submit">Submit Team</button>
         
-<datalist id="player-datalist-main">
-    <% players.forEach(p => { %> 
-        <option value="<%= p.name %>"><%= p.name %></option> 
-    <% }); %>
-</datalist>
+        <button type="submit">Submit Team</button>
     </form>
 </div>
+
+<div id="pt-player-select-modal-backdrop" class="player-select-modal-backdrop"></div>
+<div id="pt-player-select-modal" class="player-select-modal">
+    <div class="player-select-modal-header">
+        <h3>Select or Create a Player</h3>
+        <button type="button" id="pt-player-select-close-btn" class="player-select-close-btn">&times;</button>
+    </div>
+    <div class="player-select-controls">
+        <input type="text" id="pt-player-filter-input" placeholder="Filter or type new name...">
+        <button type="button" id="pt-create-new-player-btn" class="action-btn-main">Create New</button>
+    </div>
+    <div id="pt-player-select-list" class="player-select-list">
+        </div>
+</div>
+
+<script id="pt-players-data-source" type="application/json">
+    <%- JSON.stringify(players.map(p => ({id: p.id, name: p.name, class: p.class}))) %>
+</script>

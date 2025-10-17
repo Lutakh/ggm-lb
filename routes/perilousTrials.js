@@ -45,36 +45,39 @@ router.get('/pt-leaderboard/:ptId/rank/:rank', async (req, res) => {
     }
 });
 
-// Route de soumission du classement (MISE À JOUR)
+// Route de soumission du classement (NOUVELLE LOGIQUE)
 router.post('/pt-leaderboard', async (req, res) => {
     if (req.body.admin_password !== process.env.ADMIN_PASSWORD) {
         return res.status(403).redirect('/?notification=' + encodeURIComponent('Incorrect admin password.'));
     }
 
-    const { pt_id, rank, player_names, player_classes, player_cps, player_guilds } = req.body;
+    const { pt_id, rank, players: teamData } = req.body;
     
     const client = await db.getClient();
 
     try {
         await client.query('BEGIN');
         
-        const playerIds = [];
-        const finalPlayerNames = [];
-        let newPlayerIndex = 0; // Index pour les tableaux de données des nouveaux joueurs
+        const playerIds = [null, null, null, null];
+        const finalPlayerNames = [null, null, null, null];
 
+        // On itère sur les 4 joueurs de l'équipe
         for (let i = 0; i < 4; i++) {
-            const name = player_names[i];
+            const playerData = teamData[i];
+            const name = playerData.name;
+
             if (name && name.trim() !== '') {
                 const capitalizedName = capitalize(name.trim());
+                
+                // 1. Chercher si le joueur existe déjà
                 let playerRes = await client.query('SELECT id FROM players WHERE name ILIKE $1', [capitalizedName]);
                 let playerId = playerRes.rows[0]?.id;
 
-                if (!playerId) { // Si le joueur n'existe pas
-                    // On utilise le compteur pour lire les bonnes données
-                    const newPlayerClass = player_classes[newPlayerIndex] || 'Unknown';
-                    const newPlayerCp = parseCombatPower(player_cps[newPlayerIndex]) || 0;
-                    const newPlayerGuild = player_guilds[newPlayerIndex] || null;
-                    newPlayerIndex++; // On incrémente pour le prochain nouveau joueur
+                // 2. S'il n'existe pas, le créer
+                if (!playerId) {
+                    const newPlayerClass = playerData.class || 'Unknown';
+                    const newPlayerCp = parseCombatPower(playerData.cp) || 0;
+                    const newPlayerGuild = playerData.guild || null;
 
                     const newPlayerRes = await client.query(
                         `INSERT INTO players (name, class, combat_power, guild, team, notes) 
@@ -85,18 +88,19 @@ router.post('/pt-leaderboard', async (req, res) => {
                     playerId = newPlayerRes.rows[0].id;
                 }
                 
+                // 3. Ajouter le tag PT
                 await client.query(
                     'INSERT INTO player_pt_tags (player_id, pt_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
                     [playerId, pt_id]
                 );
-                playerIds.push(playerId);
-                finalPlayerNames.push(capitalizedName);
-            } else {
-                playerIds.push(null);
-                finalPlayerNames.push(null);
+                
+                // 4. Stocker les infos pour la table leaderboard
+                playerIds[i] = playerId;
+                finalPlayerNames[i] = capitalizedName;
             }
         }
 
+        // 5. Insérer ou mettre à jour le classement
         await client.query(
             `INSERT INTO pt_leaderboard (pt_id, rank, player1_id, player2_id, player3_id, player4_id, player1_name, player2_name, player3_name, player4_name) 
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
@@ -119,4 +123,5 @@ router.post('/pt-leaderboard', async (req, res) => {
         client.release();
     }
 });
+
 module.exports = router;

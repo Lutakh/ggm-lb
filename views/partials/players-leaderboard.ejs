@@ -1,9 +1,18 @@
 <div class="view-tabs"><h2>Players Leaderboard</h2></div>
-<div id="filters">
-    </div>
 <table id="leaderboard-table">
     <thead>
-        <tr><th class="rank-col">Rank</th><th>Player</th><th>Class</th><th>Combat Power</th><th>Play Hours <span id="table-timezone-note" class="timezone-header-note"></span></th><th>Guild</th><th>Team</th><th>Notes</th><th>Actions</th></tr>
+        <tr>
+            <th class="rank-col">Rank</th>
+            <th>Player</th>
+            <th>Class</th>
+            <th>Combat Power</th>
+            <th>Play Hours <span id="table-timezone-note" class="timezone-header-note"></span></th>
+            <th>Guild</th>
+            <th>Team</th>
+            <th>Notes</th>
+            <th class="last-modified-col">Last Modified</th>
+            <th class="admin-only-header">Actions</th>
+        </tr>
     </thead>
     <tbody>
         <% players.forEach((player, index) => { %>
@@ -16,10 +25,8 @@
                 <td class="rank-col"><%= index + 1 %></td>
                 <td>
                     <%= player.name %>
-                    <% 
-                        if (player.pt_tags && player.pt_tags.length > 0) {
-                            const maxPt = Math.max(...player.pt_tags.map(tag => parseInt(tag.replace('PT', ''))));
-                    %>
+                    <% if (player.pt_tags && player.pt_tags.length > 0) {
+                        const maxPt = Math.max(...player.pt_tags.map(tag => parseInt(tag.replace('PT', '')))); %>
                         <span class="pt-tag">PT<%= maxPt %></span>
                     <% } %>
                 </td>
@@ -36,7 +43,10 @@
                 </td>
                 <td><%= player.guild || '-' %></td>
                 <td><%= player.team || '-' %></td>
-                <td class="notes-col" onclick="showFullNote('<%= player.name %>', `<%= player.notes ? player.notes.replace(/[`"']/g, '\\$&') : '' %>`)"><%= player.notes || '-' %></td>
+                <td class="notes-col" onclick="showFullNote('<%= player.name %>', `<%= player.notes ? player.notes.replace(/[`"']/g, '\\$&') : '' %>`)">
+                    <%= player.notes || '-' %>
+                </td>
+                <td class="last-modified-col" data-timestamp="<%= player.updated_at %>"></td>
                 <td>
                     <div class="admin-actions">
                         <button class="action-btn" title="Update Team (Admin)" onclick="updateTeam('<%= player.id %>')">🔄</button>

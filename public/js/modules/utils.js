@@ -31,20 +31,33 @@ export function minutesToFormattedTime(minutes) {
 }
 
 export function updateTimers() {
-    const timerElements = document.querySelectorAll('.timer-value');
-    timerElements.forEach(el => {
+    document.querySelectorAll('.timer-value').forEach(el => {
         let ms = parseInt(el.dataset.milliseconds, 10); if (isNaN(ms)) return;
         ms -= 1000; if (ms < 0) ms = 0;
         el.dataset.milliseconds = ms;
-        const totalSeconds = Math.floor(ms / 1000); const days = Math.floor(totalSeconds / 86400); const hours = Math.floor((totalSeconds % 86400) / 3600); const minutes = Math.floor((totalSeconds % 3600) / 60); const seconds = totalSeconds % 60;
-        let text = ''; if (days > 0) text += `${days}d `; text += `${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`;
-        let urgencyClass = '';
-        if (el.dataset.type === 'daily' && totalSeconds < 3600) {
-            urgencyClass = 'urgent';
-        } else if (el.dataset.type === 'weekly' && totalSeconds < 86400) {
-            urgencyClass = 'urgent';
-        }
+        const s = Math.floor(ms / 1000);
+        const d = Math.floor(s / 86400);
+        const h = Math.floor((s % 86400) / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        const sec = s % 60;
+        let text = '';
+        if (d > 0) text += `${d}d `;
+        text += `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m ${String(sec).padStart(2, '0')}s`;
         el.textContent = text;
-        el.className = `timer-value ${urgencyClass}`;
     });
+}
+
+export function formatRelativeTime(isoString) {
+    if (!isoString) return '-';
+    const date = new Date(isoString);
+    const now = new Date();
+    const seconds = Math.round((now - date) / 1000);
+    
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.round(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.round(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.round(hours / 24);
+    return `${days}d ago`;
 }

@@ -5,6 +5,8 @@ export function initNavigation() {
     const urlParams = new URLSearchParams(window.location.search);
     const section = urlParams.get('section');
 
+    if (!mainNav || !topNav) return;
+
     const homeBtn = document.createElement('a');
     homeBtn.href = '/';
     homeBtn.className = 'nav-btn';
@@ -18,6 +20,10 @@ export function initNavigation() {
         { target: 'perilous-trials-section', svg: '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>', label: 'Perilous Trials' },
     ];
     
+    // Vider les conteneurs pour éviter les doublons au rechargement à chaud
+    mainNav.innerHTML = '';
+    topNav.innerHTML = '';
+
     navButtons.forEach(b => {
         const btn = document.createElement('button');
         btn.className = 'nav-btn';
