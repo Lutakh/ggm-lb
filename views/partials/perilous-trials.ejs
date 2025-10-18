@@ -7,6 +7,7 @@
             <option value="<%= pt.id %>"><%= pt.name %></option>
         <% }); %>
     </select>
+    <button id="pt-help-btn" class="help-button">Help</button>
 </div>
 
 <div class="leaderboard-legend">
@@ -34,7 +35,6 @@
     </thead>
     <tbody></tbody>
 </table>
-
 
 <div class="admin-actions" id="pt-admin-form-container">
     <h3>Update Leaderboard</h3>
@@ -84,6 +84,7 @@
             </div>
             <% } %>
         </div>
+
         <button type="submit">Submit Team</button>
     </form>
 </div>
@@ -99,6 +100,34 @@
         <button type="button" id="pt-create-new-player-btn" class="action-btn-main">Create New</button>
     </div>
     <div id="pt-player-select-list" class="player-select-list">
+    </div>
+</div>
+
+<div id="pt-help-modal-backdrop" class="player-select-modal-backdrop"></div>
+<div id="pt-help-modal" class="player-select-modal">
+    <div class="player-select-modal-header">
+        <h3>Global Leaderboard Rules</h3>
+        <button type="button" id="pt-help-close-btn" class="player-select-close-btn">&times;</button>
+    </div>
+    <div id="pt-help-modal-body">
+        <p>The Global PT Leaderboard provides an overall ranking of players based on their performance across all individual Perilous Trial leaderboards.</p>
+        <strong>Point System:</strong>
+        <ul>
+            <li>Points are awarded to players who are part of a team ranked in the <strong>Top 50</strong> of any Perilous Trial.</li>
+            <li>The point distribution is as follows:
+                <ul>
+                    <li><strong>Rank 1:</strong> 50 points</li>
+                    <li><strong>Rank 2:</strong> 49 points</li>
+                    <li>...and so on, down to...</li>
+                    <li><strong>Rank 50:</strong> 1 point</li>
+                </ul>
+            </li>
+            <li>Each player in a ranked team receives the full amount of points for that rank.</li>
+        </ul>
+        <strong>Calculation:</strong>
+        <p>A player's total score is the sum of all points they have earned from all Perilous Trial leaderboards.</p>
+        <p>For example, if a player is in the Rank 1 team for PT1 (50 points) and the Rank 10 team for PT2 (41 points), their total score on the global leaderboard will be 91 points.</p>
+        <p>The final ranking is determined by sorting all players by their total accumulated points in descending order.</p>
     </div>
 </div>
 
