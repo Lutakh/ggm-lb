@@ -155,6 +155,24 @@ export function initPerilousTrials() {
     let activePlayerIndex = null;
     let activeSuggestionIndex = -1;
 
+    async function findNextAvailableRank(ptId) {
+        if (!ptId) {
+            ptRankInput.value = '';
+            validatePtForm();
+            return;
+        }
+        try {
+            const response = await fetch(`/pt-leaderboard/${ptId}/next-rank`);
+            const data = await response.json();
+            ptRankInput.value = data.nextRank || 1;
+            validatePtForm();
+        } catch (error) {
+            console.error('Failed to fetch next rank:', error);
+            ptRankInput.value = 1; // Fallback
+            validatePtForm();
+        }
+    }
+
     const getCurrentlySelectedNames = () => {
         const names = [];
         for (let i = 0; i < 4; i++) {
@@ -340,7 +358,7 @@ export function initPerilousTrials() {
     };
 
     // Add event listeners to all relevant inputs
-    ptIdInput.addEventListener('change', validatePtForm);
+    ptIdInput.addEventListener('change', () => findNextAvailableRank(ptIdInput.value));
     ptRankInput.addEventListener('input', validatePtForm);
     for (let i = 0; i < 4; i++) {
         const fieldsContainer = document.getElementById(`pt-new-player-fields-${i}`);
