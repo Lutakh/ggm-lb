@@ -135,7 +135,7 @@ export function initPerilousTrials() {
 
     ptClassFilters.forEach(input => input.addEventListener('change', applyGlobalPtFilters));
 
-    // --- Logique du formulaire PT (inchangée) ---
+    // --- Logique du formulaire PT (MODIFIÉE) ---
     const ptAdminForm = document.getElementById('pt-admin-form');
     if (!ptAdminForm) return;
 
@@ -146,6 +146,8 @@ export function initPerilousTrials() {
     const closeModalBtn = document.getElementById('pt-player-select-close-btn');
     const createPlayerBtn = document.getElementById('pt-create-new-player-btn');
     const submitBtn = ptAdminForm.querySelector('button[type="submit"]');
+    const ptIdInput = document.getElementById('pt-id-input');
+    const ptRankInput = document.getElementById('pt-team-rank');
 
     const playersDataElement = document.getElementById('pt-players-data-source');
     const allPlayers = playersDataElement ? JSON.parse(playersDataElement.textContent) : [];
@@ -205,23 +207,30 @@ export function initPerilousTrials() {
         document.getElementById(`pt-player-name-hidden-${activePlayerIndex}`).value = name;
 
         const newPlayerFields = document.getElementById(`pt-new-player-fields-${activePlayerIndex}`);
-        const fields = newPlayerFields.querySelectorAll('select, input');
+        const classInput = newPlayerFields.querySelector('select[name*="[class]"]');
+        const guildInput = newPlayerFields.querySelector('select[name*="[guild]"]');
+        const cpInput = newPlayerFields.querySelector('input[name*="[cp]"]');
 
-        if (!isExistingPlayer && name) {
-            newPlayerFields.style.display = 'grid';
-            fields.forEach(field => {
-                if (field.name.includes('[class]') || field.name.includes('[cp]')) field.required = true;
-            });
+        newPlayerFields.style.display = 'grid'; // Toujours afficher le conteneur
+
+        if (isExistingPlayer) {
+            classInput.style.display = 'none';
+            guildInput.style.display = 'none';
+            classInput.required = false;
+            cpInput.placeholder = "Update CP (Optional)";
+            cpInput.required = false; // Le CP est optionnel pour un joueur existant
         } else {
-            newPlayerFields.style.display = 'none';
-            fields.forEach(field => {
-                field.required = false;
-                field.value = '';
-            });
+            classInput.style.display = 'block';
+            guildInput.style.display = 'block';
+            classInput.required = true;
+            cpInput.placeholder = "CP (e.g., 1.2M)";
+            cpInput.required = true; // Le CP est requis pour un nouveau joueur
         }
+
         closeModal();
-        validateTeamSubmission();
+        validatePtForm();
     };
+
 
     ptAdminForm.querySelectorAll('.pt-open-modal-btn').forEach(btn => {
         btn.addEventListener('click', () => openModal(parseInt(btn.dataset.playerIndex, 10)));
@@ -283,25 +292,63 @@ export function initPerilousTrials() {
         }
     });
 
-    const validateTeamSubmission = () => {
+    const validatePtForm = () => {
+        const ptId = ptIdInput.value;
+        const rank = ptRankInput.value;
+        let isFormValid = true;
+        let playerCount = 0;
+
         const names = [];
         for (let i = 0; i < 4; i++) {
-            const name = ptAdminForm.querySelector(`#pt-player-name-hidden-${i}`).value;
-            if (name) names.push(name.toLowerCase());
+            const nameInput = ptAdminForm.querySelector(`#pt-player-name-hidden-${i}`);
+            const name = nameInput.value.trim();
+
+            if (name) {
+                playerCount++;
+                names.push(name.toLowerCase());
+
+                const isExistingPlayer = allPlayers.some(p => p.name.toLowerCase() === name.toLowerCase());
+                if (!isExistingPlayer) {
+                    const classInput = ptAdminForm.querySelector(`select[name="players[${i}][class]"]`);
+                    const cpInput = ptAdminForm.querySelector(`input[name="players[${i}][cp]"]`);
+                    if (!classInput.value || !cpInput.value) {
+                        isFormValid = false;
+                    }
+                }
+            } else {
+                // Si un joueur est manquant, le formulaire n'est pas valide
+                isFormValid = false;
+            }
         }
 
         const uniqueNames = new Set(names);
-
         if (names.length > 0 && names.length > uniqueNames.size) {
             submitBtn.disabled = true;
             submitBtn.style.backgroundColor = 'var(--accent-color)';
             submitBtn.textContent = 'Duplicate Player';
+            return; // Exit early for this specific error
         } else {
-            submitBtn.disabled = false;
             submitBtn.style.backgroundColor = '';
             submitBtn.textContent = 'Submit Team';
         }
+
+        if (!ptId || !rank || playerCount !== 4) {
+            isFormValid = false;
+        }
+
+        submitBtn.disabled = !isFormValid;
     };
 
-    validateTeamSubmission();
+    // Add event listeners to all relevant inputs
+    ptIdInput.addEventListener('change', validatePtForm);
+    ptRankInput.addEventListener('input', validatePtForm);
+    for (let i = 0; i < 4; i++) {
+        const fieldsContainer = document.getElementById(`pt-new-player-fields-${i}`);
+        fieldsContainer.querySelectorAll('select, input').forEach(input => {
+            input.addEventListener('input', validatePtForm);
+            input.addEventListener('change', validatePtForm);
+        });
+    }
+
+    validatePtForm(); // Initial validation check on page load
 }

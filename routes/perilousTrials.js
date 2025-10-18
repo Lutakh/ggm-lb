@@ -98,7 +98,7 @@ router.get('/pt-leaderboard/:ptId/rank/:rank', async (req, res) => {
     }
 });
 
-// Route de soumission du classement (inchangée)
+// Route de soumission du classement (MODIFIÉE)
 router.post('/pt-leaderboard', async (req, res) => {
     if (req.body.admin_password !== process.env.ADMIN_PASSWORD) {
         return res.status(403).redirect('/?notification=' + encodeURIComponent('Incorrect admin password.'));
@@ -120,13 +120,19 @@ router.post('/pt-leaderboard', async (req, res) => {
 
             if (name && name.trim() !== '') {
                 const trimmedName = name.trim();
+                const newPlayerCp = parseCombatPower(playerData.cp) || 0;
 
                 let playerRes = await client.query('SELECT id FROM players WHERE name ILIKE $1', [trimmedName]);
                 let playerId = playerRes.rows[0]?.id;
 
-                if (!playerId) {
+                if (playerId) {
+                    // Si le joueur existe et qu'un CP est fourni, on le met à jour
+                    if (newPlayerCp > 0) {
+                        await client.query('UPDATE players SET combat_power = $1 WHERE id = $2', [newPlayerCp, playerId]);
+                    }
+                } else {
+                    // Si le joueur n'existe pas, on le crée
                     const newPlayerClass = playerData.class || 'Unknown';
-                    const newPlayerCp = parseCombatPower(playerData.cp) || 0;
                     const newPlayerGuild = playerData.guild || null;
 
                     const newPlayerRes = await client.query(
