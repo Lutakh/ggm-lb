@@ -835,3 +835,53 @@ body.admin-mode .admin-actions {
     color: var(--success-color);
     font-weight: bold;
 }
+
+/* --- BOUTON D'AIDE ET MODAL --- */
+.help-button {
+    background-color: #64b5f6; /* Bleu Scholar */
+    color: white;
+    border: none;
+    font-weight: bold;
+    padding: 10px 15px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 0.9em;
+    margin-left: 15px;
+    transition: filter 0.2s;
+}
+.help-button:hover {
+    filter: brightness(1.1);
+}
+
+#pt-help-modal-body {
+    padding: 20px 25px;
+    white-space: normal;
+    line-height: 1.6;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+#pt-help-modal-body p {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+#pt-help-modal-body strong {
+    display: block;
+    margin-top: 15px;
+    margin-bottom: 5px;
+    color: var(--primary-color);
+    font-size: 1.1em;
+}
+
+#pt-help-modal-body ul {
+    list-style-type: disc;
+    padding-left: 25px;
+    margin-top: 5px;
+    margin-bottom: 15px;
+}
+
+#pt-help-modal-body ul ul {
+    list-style-type: circle;
+    margin-top: 5px;
+}

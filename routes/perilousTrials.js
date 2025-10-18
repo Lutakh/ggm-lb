@@ -3,6 +3,59 @@ const router = express.Router();
 const db = require('../services/db');
 const { capitalize, parseCombatPower } = require('../utils/helpers');
 
+// NOUVELLE ROUTE : Obtenir le classement global des PT
+router.get('/pt-leaderboard/global', async (req, res) => {
+    const sql = `
+        SELECT
+            rank,
+            player1_id, player2_id, player3_id, player4_id
+        FROM pt_leaderboard
+        WHERE rank <= 50;
+    `;
+    try {
+        const leaderboardEntries = await db.query(sql);
+        const playerPoints = {};
+
+        // Calcul des points
+        leaderboardEntries.rows.forEach(entry => {
+            const points = 51 - entry.rank;
+            for (let i = 1; i <= 4; i++) {
+                const playerId = entry[`player${i}_id`];
+                if (playerId) {
+                    if (!playerPoints[playerId]) {
+                        playerPoints[playerId] = 0;
+                    }
+                    playerPoints[playerId] += points;
+                }
+            }
+        });
+
+        const playerIds = Object.keys(playerPoints);
+        if (playerIds.length === 0) {
+            return res.json([]);
+        }
+
+        // Récupération des détails des joueurs
+        const playersInfoSql = `
+            SELECT id, name, class, combat_power
+            FROM players
+            WHERE id = ANY($1::int[]);
+        `;
+        const playersInfo = await db.query(playersInfoSql, [playerIds]);
+
+        const globalLeaderboard = playersInfo.rows.map(player => ({
+            ...player,
+            points: playerPoints[player.id]
+        })).sort((a, b) => b.points - a.points);
+
+        res.json(globalLeaderboard);
+    } catch (err) {
+        console.error(`Error fetching global PT leaderboard:`, err);
+        res.status(500).json([]);
+    }
+});
+
+
 // Route pour obtenir le classement d'un PT (inchangée)
 router.get('/pt-leaderboard/:ptId', async (req, res) => {
     const { ptId } = req.params;
@@ -45,74 +98,68 @@ router.get('/pt-leaderboard/:ptId/rank/:rank', async (req, res) => {
     }
 });
 
-// Route de soumission du classement (NOUVELLE LOGIQUE)
+// Route de soumission du classement (inchangée)
 router.post('/pt-leaderboard', async (req, res) => {
     if (req.body.admin_password !== process.env.ADMIN_PASSWORD) {
         return res.status(403).redirect('/?notification=' + encodeURIComponent('Incorrect admin password.'));
     }
 
     const { pt_id, rank, players: teamData } = req.body;
-    
+
     const client = await db.getClient();
 
     try {
         await client.query('BEGIN');
-        
+
         const playerIds = [null, null, null, null];
         const finalPlayerNames = [null, null, null, null];
 
-        // On itère sur les 4 joueurs de l'équipe
         for (let i = 0; i < 4; i++) {
             const playerData = teamData[i];
             const name = playerData.name;
 
             if (name && name.trim() !== '') {
                 const capitalizedName = capitalize(name.trim());
-                
-                // 1. Chercher si le joueur existe déjà
+
                 let playerRes = await client.query('SELECT id FROM players WHERE name ILIKE $1', [capitalizedName]);
                 let playerId = playerRes.rows[0]?.id;
 
-                // 2. S'il n'existe pas, le créer
                 if (!playerId) {
                     const newPlayerClass = playerData.class || 'Unknown';
                     const newPlayerCp = parseCombatPower(playerData.cp) || 0;
                     const newPlayerGuild = playerData.guild || null;
 
                     const newPlayerRes = await client.query(
-                        `INSERT INTO players (name, class, combat_power, guild, team, notes) 
-                         VALUES ($1, $2, $3, $4, 'No Team', 'Created from PT leaderboard') 
+                        `INSERT INTO players (name, class, combat_power, guild, team, notes)
+                         VALUES ($1, $2, $3, $4, 'No Team', 'Created from PT leaderboard')
                          RETURNING id`,
                         [capitalizedName, newPlayerClass, newPlayerCp, newPlayerGuild]
                     );
                     playerId = newPlayerRes.rows[0].id;
                 }
-                
-                // 3. Ajouter le tag PT
+
                 await client.query(
                     'INSERT INTO player_pt_tags (player_id, pt_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
                     [playerId, pt_id]
                 );
-                
-                // 4. Stocker les infos pour la table leaderboard
+
                 playerIds[i] = playerId;
                 finalPlayerNames[i] = capitalizedName;
             }
         }
 
-        // 5. Insérer ou mettre à jour le classement
         await client.query(
-            `INSERT INTO pt_leaderboard (pt_id, rank, player1_id, player2_id, player3_id, player4_id, player1_name, player2_name, player3_name, player4_name) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
-             ON CONFLICT (pt_id, rank) 
-             DO UPDATE SET 
+            `INSERT INTO pt_leaderboard (pt_id, rank, player1_id, player2_id, player3_id, player4_id, player1_name, player2_name, player3_name, player4_name)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+             ON CONFLICT (pt_id, rank)
+             DO UPDATE SET
                 player1_id = EXCLUDED.player1_id, player2_id = EXCLUDED.player2_id, player3_id = EXCLUDED.player3_id, player4_id = EXCLUDED.player4_id,
                 player1_name = EXCLUDED.player1_name, player2_name = EXCLUDED.player2_name, player3_name = EXCLUDED.player3_name, player4_name = EXCLUDED.player4_name`,
             [pt_id, rank, ...playerIds, ...finalPlayerNames]
         );
-        
+
         await client.query('COMMIT');
-        
+
         res.redirect(`/?notification=${encodeURIComponent(`Leaderboard updated!`)}&section=perilous-trials-section&pt_id=${pt_id}`);
 
     } catch (err) {
