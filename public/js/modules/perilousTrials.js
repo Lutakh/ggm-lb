@@ -1,49 +1,85 @@
+import { formatCP } from './utils.js';
+
 export function initPerilousTrials() {
-    // --- Logique d'affichage du classement ---
     const ptSelect = document.getElementById('pt-select');
-    const ptTableBody = document.getElementById('pt-leaderboard-table')?.querySelector('tbody');
+    const ptTable = document.getElementById('pt-leaderboard-table');
+    const ptTableBody = ptTable?.querySelector('tbody');
+    const ptGlobalTable = document.getElementById('pt-global-leaderboard-table');
+    const ptGlobalTableBody = ptGlobalTable?.querySelector('tbody');
     const ptIdInputAdmin = document.getElementById('pt-id-input');
     const urlParams = new URLSearchParams(window.location.search);
     const ptIdFromUrl = urlParams.get('pt_id');
 
     async function loadPtLeaderboard(ptId) {
-        if (!ptId || !ptTableBody) return;
-        if (ptIdInputAdmin) ptIdInputAdmin.value = ptId;
-        const response = await fetch(`/pt-leaderboard/${ptId}`);
-        const leaderboard = await response.json();
-        ptTableBody.innerHTML = '';
-        if (leaderboard.length === 0) {
-            ptTableBody.innerHTML = '<tr><td colspan="2" style="text-align: center;">No data for this trial yet.</td></tr>';
-            return;
-        }
-        leaderboard.forEach(entry => {
-            let teamHtml = '<div class="pt-leaderboard-team">';
-            for (let i = 1; i <= 4; i++) {
-                const name = entry[`player${i}_name`];
-                const pClass = entry[`player${i}_class`];
-                if (name) {
-                    // Structure "pastille de couleur + nom"
-                    teamHtml += `<div class="pt-leaderboard-player">
-                                    <span class="class-tag class-${(pClass || 'unknown').toLowerCase()}"></span>
-                                    <span>${name}</span>
-                                 </div>`;
-                }
+        if (!ptId || !ptTableBody || !ptGlobalTable) return;
+
+        // Afficher le bon tableau
+        const isGlobal = ptId === 'global';
+        ptTable.style.display = isGlobal ? 'none' : 'table';
+        ptGlobalTable.style.display = isGlobal ? 'table' : 'none';
+
+        if (isGlobal) {
+            // Charger le classement global
+            const response = await fetch(`/pt-leaderboard/global`);
+            const leaderboard = await response.json();
+            ptGlobalTableBody.innerHTML = '';
+            if (leaderboard.length === 0) {
+                ptGlobalTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No global data available yet.</td></tr>';
+                return;
             }
-            teamHtml += '</div>';
-            const row = document.createElement('tr');
-            row.classList.add('podium');
-            if(entry.rank <= 3) row.classList.add(`rank-${entry.rank}`);
-            row.innerHTML = `<td class="rank-col">${entry.rank}</td><td>${teamHtml}</td>`;
-            ptTableBody.appendChild(row);
-        });
+            leaderboard.forEach((player, index) => {
+                const row = document.createElement('tr');
+                row.classList.add('podium');
+                if(index < 3) row.classList.add(`rank-${index + 1}`);
+
+                row.innerHTML = `
+                    <td class="rank-col">${index + 1}</td>
+                    <td>${player.name}</td>
+                    <td><span class="class-tag class-${player.class.toLowerCase()}">${player.class}</span></td>
+                    <td class="cp-display">${formatCP(player.combat_power)}</td>
+                    <td><strong>${player.points}</strong></td>
+                `;
+                ptGlobalTableBody.appendChild(row);
+            });
+
+        } else {
+            // Charger un classement de PT spécifique
+            if (ptIdInputAdmin) ptIdInputAdmin.value = ptId;
+            const response = await fetch(`/pt-leaderboard/${ptId}`);
+            const leaderboard = await response.json();
+            ptTableBody.innerHTML = '';
+            if (leaderboard.length === 0) {
+                ptTableBody.innerHTML = '<tr><td colspan="2" style="text-align: center;">No data for this trial yet.</td></tr>';
+                return;
+            }
+            leaderboard.forEach(entry => {
+                let teamHtml = '<div class="pt-leaderboard-team">';
+                for (let i = 1; i <= 4; i++) {
+                    const name = entry[`player${i}_name`];
+                    const pClass = entry[`player${i}_class`];
+                    if (name) {
+                        teamHtml += `<div class="pt-leaderboard-player">
+                                        <span class="class-tag class-${(pClass || 'unknown').toLowerCase()}"></span>
+                                        <span>${name}</span>
+                                     </div>`;
+                    }
+                }
+                teamHtml += '</div>';
+                const row = document.createElement('tr');
+                row.classList.add('podium');
+                if(entry.rank <= 3) row.classList.add(`rank-${entry.rank}`);
+                row.innerHTML = `<td class="rank-col">${entry.rank}</td><td>${teamHtml}</td>`;
+                ptTableBody.appendChild(row);
+            });
+        }
     }
 
     if (ptSelect) {
         ptSelect.addEventListener('change', () => loadPtLeaderboard(ptSelect.value));
-    }
-    if (ptIdFromUrl && ptSelect) {
-        ptSelect.value = ptIdFromUrl;
-        loadPtLeaderboard(ptIdFromUrl);
+        // Chargement initial
+        const initialPtId = ptIdFromUrl || 'global';
+        ptSelect.value = initialPtId;
+        loadPtLeaderboard(initialPtId);
     }
 
     // --- Logique du formulaire PT (inchangée) ---

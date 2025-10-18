@@ -2,7 +2,7 @@
 <div class="controls">
     <label for="pt-select" style="font-weight: bold;">Select a Trial to View:</label>
     <select id="pt-select">
-        <option value="" disabled selected>Choose a PT</option>
+        <option value="global" selected>Global PT Ranking</option>
         <% perilousTrials.forEach(pt => { %>
             <option value="<%= pt.id %>"><%= pt.name %></option>
         <% }); %>
@@ -21,11 +21,26 @@
     <thead><tr><th>Rank</th><th>Team</th></tr></thead>
     <tbody></tbody>
 </table>
+
+<table id="pt-global-leaderboard-table" style="display: none;">
+    <thead>
+        <tr>
+            <th class="rank-col">Rank</th>
+            <th>Player</th>
+            <th>Class</th>
+            <th>CP</th>
+            <th>Total Points</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+
 <div class="admin-actions" id="pt-admin-form-container">
     <h3>Update Leaderboard</h3>
     <form id="pt-admin-form" action="/pt-leaderboard" method="POST">
         <input type="hidden" name="admin_password" class="admin-pass-input">
-        
+
         <div class="pt-admin-form-row">
             <div class="filter-group" style="flex-grow: 1;">
                 <label for="pt-id-input">Perilous Trial</label>
@@ -41,7 +56,7 @@
                 <input type="number" name="rank" min="1" class="pt-team-rank-input" id="pt-team-rank" required>
             </div>
         </div>
-        
+
         <div class="pt-player-inputs">
             <% for(let i = 0; i < 4; i++) { %>
             <div class="pt-player-entry-container">
@@ -69,7 +84,6 @@
             </div>
             <% } %>
         </div>
-
         <button type="submit">Submit Team</button>
     </form>
 </div>
@@ -85,7 +99,7 @@
         <button type="button" id="pt-create-new-player-btn" class="action-btn-main">Create New</button>
     </div>
     <div id="pt-player-select-list" class="player-select-list">
-        </div>
+    </div>
 </div>
 
 <script id="pt-players-data-source" type="application/json">
