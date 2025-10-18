@@ -1,5 +1,3 @@
-const capitalize = (s) => (s && typeof s === 'string' ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '');
-
 const parseCombatPower = (cpString) => {
     if (!cpString) return 0;
     const text = String(cpString).trim().toUpperCase();
@@ -17,7 +15,6 @@ const timeToMinutes = (timeStr) => {
 };
 
 module.exports = {
-    capitalize,
     parseCombatPower,
     timeToMinutes
 };

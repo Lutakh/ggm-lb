@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../services/db');
-const { capitalize, parseCombatPower } = require('../utils/helpers');
+const { parseCombatPower } = require('../utils/helpers');
 
 // NOUVELLE ROUTE : Obtenir le classement global des PT
 router.get('/pt-leaderboard/global', async (req, res) => {
@@ -67,10 +67,10 @@ router.get('/pt-leaderboard/:ptId', async (req, res) => {
             lb.player3_name, p3.class as player3_class,
             lb.player4_name, p4.class as player4_class
         FROM pt_leaderboard lb
-        LEFT JOIN players p1 ON lb.player1_id = p1.id
-        LEFT JOIN players p2 ON lb.player2_id = p2.id
-        LEFT JOIN players p3 ON lb.player3_id = p3.id
-        LEFT JOIN players p4 ON lb.player4_id = p4.id
+                 LEFT JOIN players p1 ON lb.player1_id = p1.id
+                 LEFT JOIN players p2 ON lb.player2_id = p2.id
+                 LEFT JOIN players p3 ON lb.player3_id = p3.id
+                 LEFT JOIN players p4 ON lb.player4_id = p4.id
         WHERE lb.pt_id = $1
         ORDER BY lb.rank;
     `;
@@ -119,9 +119,9 @@ router.post('/pt-leaderboard', async (req, res) => {
             const name = playerData.name;
 
             if (name && name.trim() !== '') {
-                const capitalizedName = capitalize(name.trim());
+                const trimmedName = name.trim();
 
-                let playerRes = await client.query('SELECT id FROM players WHERE name ILIKE $1', [capitalizedName]);
+                let playerRes = await client.query('SELECT id FROM players WHERE name ILIKE $1', [trimmedName]);
                 let playerId = playerRes.rows[0]?.id;
 
                 if (!playerId) {
@@ -133,7 +133,7 @@ router.post('/pt-leaderboard', async (req, res) => {
                         `INSERT INTO players (name, class, combat_power, guild, team, notes)
                          VALUES ($1, $2, $3, $4, 'No Team', 'Created from PT leaderboard')
                          RETURNING id`,
-                        [capitalizedName, newPlayerClass, newPlayerCp, newPlayerGuild]
+                        [trimmedName, newPlayerClass, newPlayerCp, newPlayerGuild]
                     );
                     playerId = newPlayerRes.rows[0].id;
                 }
@@ -144,7 +144,7 @@ router.post('/pt-leaderboard', async (req, res) => {
                 );
 
                 playerIds[i] = playerId;
-                finalPlayerNames[i] = capitalizedName;
+                finalPlayerNames[i] = trimmedName;
             }
         }
 
@@ -152,9 +152,9 @@ router.post('/pt-leaderboard', async (req, res) => {
             `INSERT INTO pt_leaderboard (pt_id, rank, player1_id, player2_id, player3_id, player4_id, player1_name, player2_name, player3_name, player4_name)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
              ON CONFLICT (pt_id, rank)
-             DO UPDATE SET
-                player1_id = EXCLUDED.player1_id, player2_id = EXCLUDED.player2_id, player3_id = EXCLUDED.player3_id, player4_id = EXCLUDED.player4_id,
-                player1_name = EXCLUDED.player1_name, player2_name = EXCLUDED.player2_name, player3_name = EXCLUDED.player3_name, player4_name = EXCLUDED.player4_name`,
+                 DO UPDATE SET
+                               player1_id = EXCLUDED.player1_id, player2_id = EXCLUDED.player2_id, player3_id = EXCLUDED.player3_id, player4_id = EXCLUDED.player4_id,
+                               player1_name = EXCLUDED.player1_name, player2_name = EXCLUDED.player2_name, player3_name = EXCLUDED.player3_name, player4_name = EXCLUDED.player4_name`,
             [pt_id, rank, ...playerIds, ...finalPlayerNames]
         );
 

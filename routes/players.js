@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../services/db');
-const { capitalize, parseCombatPower, timeToMinutes } = require('../utils/helpers');
+const { parseCombatPower, timeToMinutes } = require('../utils/helpers');
 
 router.get('/player-details/:name', async (req, res) => {
     const sql = `SELECT p.*,
-                 json_agg(json_build_object('start_minutes', ps.start_minutes, 'end_minutes', ps.end_minutes)) FILTER (WHERE ps.id IS NOT NULL) as play_slots
+                        json_agg(json_build_object('start_minutes', ps.start_minutes, 'end_minutes', ps.end_minutes)) FILTER (WHERE ps.id IS NOT NULL) as play_slots
                  FROM players p
-                 LEFT JOIN play_slots ps ON p.id = ps.player_id
+                          LEFT JOIN play_slots ps ON p.id = ps.player_id
                  WHERE p.name ILIKE $1 GROUP BY p.id`;
     try {
         const result = await db.query(sql, [req.params.name]);
@@ -22,7 +22,7 @@ router.get('/player-details/:name', async (req, res) => {
 
 router.post('/add-player', async (req, res) => {
     let { name, pClass, cp, team, guild, notes, play_start = [], play_end = [] } = req.body;
-    name = capitalize(name);
+    name = name.trim();
 
     const client = await db.getClient();
     try {
@@ -43,17 +43,17 @@ router.post('/add-player', async (req, res) => {
             const finalTeam = team === undefined ? existingPlayer.team : (team || 'No Team');
             const finalGuild = guild === undefined ? existingPlayer.guild : guild;
             const finalNotes = notes !== undefined ? notes : existingPlayer.notes;
-            
-            await client.query(`UPDATE players SET class = $1, combat_power = $2, team = $3, guild = $4, notes = $5 WHERE id = $6`, 
-                [finalClass, finalCp, finalTeam, finalGuild, finalNotes, playerId]);
-            
+
+            await client.query(`UPDATE players SET name = $1, class = $2, combat_power = $3, team = $4, guild = $5, notes = $6 WHERE id = $7`,
+                [name, finalClass, finalCp, finalTeam, finalGuild, finalNotes, playerId]);
+
             await client.query(`DELETE FROM play_slots WHERE player_id = $1`, [playerId]);
             for (const slot of newSlots) {
                 await client.query(`INSERT INTO play_slots (player_id, start_minutes, end_minutes) VALUES ($1, $2, $3)`, [playerId, slot.start, slot.end]);
             }
         } else {
             if (!name || !pClass || !cp) { return res.redirect(`/?notification=${encodeURIComponent(`Name, Class and CP are required for new players.`)}`); }
-            const insertRes = await client.query(`INSERT INTO players (name, class, combat_power, team, guild, notes) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`, 
+            const insertRes = await client.query(`INSERT INTO players (name, class, combat_power, team, guild, notes) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
                 [name, pClass, combatPowerNumeric, team || 'No Team', guild || null, notes]);
             playerId = insertRes.rows[0].id;
             for (const slot of newSlots) {
@@ -92,7 +92,7 @@ router.post('/rename-team', async (req, res) => {
     if (req.body.admin_password !== process.env.ADMIN_PASSWORD) { return res.redirect('/?notification=' + encodeURIComponent('Incorrect admin password.')); }
     try {
         await db.query('UPDATE players SET team = $1 WHERE team = $2', [req.body.new_team_name, req.body.old_team_name]);
-        res.redirect('/?notification=' + encodeURIComponent(`Team '${req.body.old_team_name}' renamed to '${req.body.new_team_name}'.`));
+        res.redirect(`/?notification=` + encodeURIComponent(`Team '${req.body.old_team_name}' renamed to '${req.body.new_team_name}'.`));
     } catch (err) { console.error("Error renaming team:", err); res.redirect('/?notification=Error renaming team.'); }
 });
 
