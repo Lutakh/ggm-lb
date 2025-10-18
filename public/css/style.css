@@ -885,3 +885,46 @@ body.admin-mode .admin-actions {
     list-style-type: circle;
     margin-top: 5px;
 }
+
+/* --- STYLES POUR LE FILTRE DANS L'EN-TÊTE DU TABLEAU --- */
+.class-header-cell {
+    position: relative;
+}
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+.header-filter-btn {
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    padding: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+.header-filter-btn svg {
+    width: 18px;
+    height: 18px;
+    fill: var(--text-color);
+}
+.header-filter-btn:hover {
+    background-color: #f0e6d6;
+    border-color: var(--border-color);
+}
+.header-filter-btn.active {
+    background-color: var(--secondary-color);
+}
+.header-filter-btn.active svg {
+    fill: white;
+}
+.class-header-cell .dropdown-panel {
+    top: 100%;
+    right: 0;
+    left: auto;
+    margin-top: 5px;
+}
