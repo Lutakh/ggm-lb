@@ -829,3 +829,9 @@ body.admin-mode .admin-actions {
     max-height: 60vh;
     overflow-y: auto;
 }
+
+/* AJOUT : Style pour le compteur en ligne de Discord */
+#discord-online-count {
+    color: var(--success-color);
+    font-weight: bold;
+}

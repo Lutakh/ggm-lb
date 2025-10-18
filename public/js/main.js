@@ -3,6 +3,7 @@ import { initPlayerForm } from './modules/playerForm.js';
 import { initLeaderboardFilters } from './modules/leaderboardFilters.js';
 import { initPerilousTrials } from './modules/perilousTrials.js';
 import { updateTimers, formatCP, formatRelativeTime } from './modules/utils.js';
+import { initDiscordWidget } from './modules/discordWidget.js'; // AJOUT : Import de la nouvelle fonction
 
 // --- NOUVELLE LOGIQUE POUR LA MODALE DES NOTES ---
 const notesModal = document.getElementById('notes-modal');
@@ -21,7 +22,7 @@ window.showFullNote = function(playerName, note) {
     if (!note || note.trim() === '' || note.trim() === '-') {
         return;
     }
-    
+
     notesTitle.textContent = `Notes for ${playerName}`;
     notesBody.textContent = note;
 
@@ -34,6 +35,9 @@ document.addEventListener('DOMContentLoaded', function() {
     initPlayerForm();
     initLeaderboardFilters();
     initPerilousTrials();
+
+    // AJOUT : Appel de la fonction pour le widget Discord
+    initDiscordWidget('https://discord.com/api/guilds/1425816979641466912/widget.json');
 
     setInterval(updateTimers, 1000);
     updateTimers();
