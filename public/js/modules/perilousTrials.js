@@ -33,10 +33,25 @@ export function initPerilousTrials() {
     const ptIdInputAdmin = document.getElementById('pt-id-input');
     const urlParams = new URLSearchParams(window.location.search);
     const ptIdFromUrl = urlParams.get('pt_id');
-    const ptGlobalFilters = document.getElementById('pt-global-filters');
+
+    // NOUVEAUX SÉLECTEURS POUR LE FILTRE DANS L'EN-TÊTE
+    const ptClassFilterBtn = document.getElementById('pt-class-filter-btn');
+    const ptClassFilterPanel = document.getElementById('pt-class-filter-panel');
     const ptClassFilters = document.querySelectorAll('#pt-class-filter-panel input');
 
-    // NOUVELLE FONCTION : Applique les filtres et redessine le tableau global
+    // Logique pour ouvrir/fermer le panneau de filtre
+    if (ptClassFilterBtn) {
+        ptClassFilterBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            ptClassFilterPanel.classList.toggle('show');
+        });
+    }
+    window.addEventListener('click', (e) => {
+        if (ptClassFilterPanel && !ptClassFilterPanel.contains(e.target) && !ptClassFilterBtn.contains(e.target)) {
+            ptClassFilterPanel.classList.remove('show');
+        }
+    });
+
     function applyGlobalPtFilters() {
         const selectedClasses = Array.from(ptClassFilters).filter(c => c.checked).map(c => c.dataset.class);
 
@@ -64,9 +79,9 @@ export function initPerilousTrials() {
             ptGlobalTableBody.appendChild(row);
         });
 
-        // Mettre à jour le bouton de filtre
-        const classFilterBtn = document.getElementById('pt-class-filter-btn');
-        if (classFilterBtn) classFilterBtn.textContent = selectedClasses.length > 0 ? `${selectedClasses.length} class(es)` : 'All Classes';
+        if (ptClassFilterBtn) {
+            ptClassFilterBtn.classList.toggle('active', selectedClasses.length > 0);
+        }
     }
 
     async function loadPtLeaderboard(ptId) {
@@ -75,14 +90,39 @@ export function initPerilousTrials() {
         const isGlobal = ptId === 'global';
         ptTable.style.display = isGlobal ? 'none' : 'table';
         ptGlobalTable.style.display = isGlobal ? 'table' : 'none';
-        ptGlobalFilters.style.display = isGlobal ? 'flex' : 'none'; // Affiche/masque les filtres
 
         if (isGlobal) {
             const response = await fetch(`/pt-leaderboard/global`);
-            fullGlobalLeaderboard = await response.json(); // Stocke les données
-            applyGlobalPtFilters(); // Appelle la fonction de filtrage
+            fullGlobalLeaderboard = await response.json();
+            applyGlobalPtFilters();
         } else {
-            // ... (logique inchangée pour les PT individuels)
+            if (ptIdInputAdmin) ptIdInputAdmin.value = ptId;
+            const response = await fetch(`/pt-leaderboard/${ptId}`);
+            const leaderboard = await response.json();
+            ptTableBody.innerHTML = '';
+            if (leaderboard.length === 0) {
+                ptTableBody.innerHTML = '<tr><td colspan="2" style="text-align: center;">No data for this trial yet.</td></tr>';
+                return;
+            }
+            leaderboard.forEach(entry => {
+                let teamHtml = '<div class="pt-leaderboard-team">';
+                for (let i = 1; i <= 4; i++) {
+                    const name = entry[`player${i}_name`];
+                    const pClass = entry[`player${i}_class`];
+                    if (name) {
+                        teamHtml += `<div class="pt-leaderboard-player">
+                                        <span class="class-tag class-${(pClass || 'unknown').toLowerCase()}"></span>
+                                        <span>${name}</span>
+                                     </div>`;
+                    }
+                }
+                teamHtml += '</div>';
+                const row = document.createElement('tr');
+                row.classList.add('podium');
+                if(entry.rank <= 3) row.classList.add(`rank-${entry.rank}`);
+                row.innerHTML = `<td class="rank-col">${entry.rank}</td><td>${teamHtml}</td>`;
+                ptTableBody.appendChild(row);
+            });
         }
     }
 
@@ -93,14 +133,12 @@ export function initPerilousTrials() {
         loadPtLeaderboard(initialPtId);
     }
 
-    // Ajoute les écouteurs pour les filtres de classe
     ptClassFilters.forEach(input => input.addEventListener('change', applyGlobalPtFilters));
 
-
     // --- Logique du formulaire PT (inchangée) ---
-    // ... (le reste du code est identique)
     const ptAdminForm = document.getElementById('pt-admin-form');
     if (!ptAdminForm) return;
+
     const modal = document.getElementById('pt-player-select-modal');
     const backdrop = document.getElementById('pt-player-select-modal-backdrop');
     const filterInput = document.getElementById('pt-player-filter-input');
@@ -108,10 +146,13 @@ export function initPerilousTrials() {
     const closeModalBtn = document.getElementById('pt-player-select-close-btn');
     const createPlayerBtn = document.getElementById('pt-create-new-player-btn');
     const submitBtn = ptAdminForm.querySelector('button[type="submit"]');
+
     const playersDataElement = document.getElementById('pt-players-data-source');
     const allPlayers = playersDataElement ? JSON.parse(playersDataElement.textContent) : [];
+
     let activePlayerIndex = null;
     let activeSuggestionIndex = -1;
+
     const getCurrentlySelectedNames = () => {
         const names = [];
         for (let i = 0; i < 4; i++) {
@@ -122,10 +163,12 @@ export function initPerilousTrials() {
         }
         return names;
     };
+
     const populatePlayerList = (filter = '') => {
         playerListContainer.innerHTML = '';
         const query = filter.toLowerCase();
         const selectedNames = getCurrentlySelectedNames();
+
         allPlayers
             .filter(p => p.name.toLowerCase().includes(query) && !selectedNames.includes(p.name.toLowerCase()))
             .forEach(player => {
@@ -136,6 +179,7 @@ export function initPerilousTrials() {
                 playerListContainer.appendChild(item);
             });
     };
+
     const openModal = (playerIndex) => {
         activePlayerIndex = playerIndex;
         filterInput.value = '';
@@ -145,18 +189,24 @@ export function initPerilousTrials() {
         filterInput.focus();
         activeSuggestionIndex = -1;
     };
+
     const closeModal = () => {
         modal.style.display = 'none';
         backdrop.style.display = 'none';
         activePlayerIndex = null;
     };
+
     const selectPlayer = (name) => {
         if (activePlayerIndex === null) return;
+
         const isExistingPlayer = allPlayers.some(p => p.name.toLowerCase() === name.toLowerCase());
+
         document.getElementById(`pt-player-display-${activePlayerIndex}`).textContent = name;
         document.getElementById(`pt-player-name-hidden-${activePlayerIndex}`).value = name;
+
         const newPlayerFields = document.getElementById(`pt-new-player-fields-${activePlayerIndex}`);
         const fields = newPlayerFields.querySelectorAll('select, input');
+
         if (!isExistingPlayer && name) {
             newPlayerFields.style.display = 'grid';
             fields.forEach(field => {
@@ -172,23 +222,29 @@ export function initPerilousTrials() {
         closeModal();
         validateTeamSubmission();
     };
+
     ptAdminForm.querySelectorAll('.pt-open-modal-btn').forEach(btn => {
         btn.addEventListener('click', () => openModal(parseInt(btn.dataset.playerIndex, 10)));
     });
+
     closeModalBtn.addEventListener('click', closeModal);
     backdrop.addEventListener('click', closeModal);
+
     filterInput.addEventListener('input', () => {
         populatePlayerList(filterInput.value);
         activeSuggestionIndex = -1;
     });
+
     playerListContainer.addEventListener('click', (e) => {
         const selectedItem = e.target.closest('.suggestion-item');
         if (selectedItem) selectPlayer(selectedItem.dataset.playerName);
     });
+
     createPlayerBtn.addEventListener('click', () => {
         const newName = filterInput.value.trim();
         if (newName) selectPlayer(newName);
     });
+
     const updateActiveSuggestion = (items) => {
         items.forEach((item, index) => {
             if (index === activeSuggestionIndex) {
@@ -199,6 +255,7 @@ export function initPerilousTrials() {
             }
         });
     };
+
     filterInput.addEventListener('keydown', (e) => {
         const items = playerListContainer.querySelectorAll('.suggestion-item');
         if (e.key === 'ArrowDown') {
@@ -225,13 +282,16 @@ export function initPerilousTrials() {
             }
         }
     });
+
     const validateTeamSubmission = () => {
         const names = [];
         for (let i = 0; i < 4; i++) {
             const name = ptAdminForm.querySelector(`#pt-player-name-hidden-${i}`).value;
             if (name) names.push(name.toLowerCase());
         }
+
         const uniqueNames = new Set(names);
+
         if (names.length > 0 && names.length > uniqueNames.size) {
             submitBtn.disabled = true;
             submitBtn.style.backgroundColor = 'var(--accent-color)';
@@ -242,5 +302,6 @@ export function initPerilousTrials() {
             submitBtn.textContent = 'Submit Team';
         }
     };
+
     validateTeamSubmission();
 }
