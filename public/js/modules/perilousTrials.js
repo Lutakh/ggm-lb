@@ -14,7 +14,6 @@ export function initPerilousTrials() {
     const ptGlobalTable = document.getElementById('pt-global-leaderboard-table');
     const ptGlobalTableBody = ptGlobalTable?.querySelector('tbody');
     const ptClassFilterBtn = document.getElementById('pt-class-filter-btn');
-    const ptClassFilterPanel = document.getElementById('pt-class-filter-panel');
     const ptClassFilters = document.querySelectorAll('#pt-class-filter-panel input');
     const ptAdminForm = document.getElementById('pt-admin-form');
 
@@ -34,8 +33,42 @@ export function initPerilousTrials() {
 
     // --- GESTION DES CLASSEMENTS ET FILTRES ---
     function applyGlobalPtFilters() {
-        // ... (Code inchangé)
+        if (!ptGlobalTableBody) return;
+
+        const selectedClasses = Array.from(ptClassFilters)
+            .filter(c => c.checked)
+            .map(c => c.dataset.class);
+
+        const filteredLeaderboard = fullGlobalLeaderboard.filter(player => {
+            return selectedClasses.length === 0 || selectedClasses.includes(player.class);
+        });
+
+        ptGlobalTableBody.innerHTML = '';
+
+        if (filteredLeaderboard.length === 0) {
+            ptGlobalTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No data for the global ranking yet.</td></tr>';
+            return;
+        }
+
+        filteredLeaderboard.forEach((player, index) => {
+            const rank = index + 1;
+            const row = document.createElement('tr');
+            row.classList.add('podium');
+            if (rank <= 3) {
+                row.classList.add(`rank-${rank}`);
+            }
+
+            row.innerHTML = `
+                <td class="rank-col">${rank}</td>
+                <td>${player.name}</td>
+                <td><span class="class-tag class-${String(player.class || 'unknown').toLowerCase()}">${player.class || 'N/A'}</span></td>
+                <td class="cp-display" data-cp="${player.combat_power}">${formatCP(player.combat_power)}</td>
+                <td>${player.points}</td>
+            `;
+            ptGlobalTableBody.appendChild(row);
+        });
     }
+
 
     async function loadPtLeaderboard(ptId) {
         if (!ptId || !ptTableBody || !ptGlobalTable) return;
@@ -79,7 +112,8 @@ export function initPerilousTrials() {
             const newPtId = ptSelect.value;
             loadPtLeaderboard(newPtId);
             if (ptAdminForm) {
-                ptAdminForm.querySelector('#pt-id-input').value = newPtId;
+                const ptIdInput = ptAdminForm.querySelector('#pt-id-input');
+                if (ptIdInput) ptIdInput.value = newPtId;
                 findNextAvailableRank(newPtId);
             }
         });
@@ -108,8 +142,8 @@ export function initPerilousTrials() {
     let activeSuggestionIndex = -1;
 
     async function findNextAvailableRank(ptId) {
-        if (!ptId || ptId === 'global') {
-            ptRankInput.value = '';
+        if (!ptId || ptId === 'global' || !ptRankInput) {
+            if (ptRankInput) ptRankInput.value = '';
             validatePtForm();
             return;
         }
@@ -125,19 +159,20 @@ export function initPerilousTrials() {
         }
     }
 
-    // --- GESTION DE LA MODALE DE SÉLECTION DE JOUEUR ---
+    // ... Le reste du fichier reste identique
     const getCurrentlySelectedNames = () => {
         const names = [];
         for (let i = 0; i < 4; i++) {
             if (i !== activePlayerIndex) {
-                const name = ptAdminForm.querySelector(`#pt-player-name-hidden-${i}`).value;
-                if (name) names.push(name.toLowerCase());
+                const nameInput = ptAdminForm.querySelector(`#pt-player-name-hidden-${i}`);
+                if (nameInput && nameInput.value) names.push(nameInput.value.toLowerCase());
             }
         }
         return names;
     };
 
     const populatePlayerList = (filter = '') => {
+        if(!playerListContainer) return;
         playerListContainer.innerHTML = '';
         const query = filter.toLowerCase();
         const selectedNames = getCurrentlySelectedNames();
@@ -155,17 +190,17 @@ export function initPerilousTrials() {
 
     const openModal = (playerIndex) => {
         activePlayerIndex = playerIndex;
-        filterInput.value = '';
+        if(filterInput) filterInput.value = '';
         populatePlayerList();
-        modal.style.display = 'flex';
-        backdrop.style.display = 'block';
-        filterInput.focus();
+        if(modal) modal.style.display = 'flex';
+        if(backdrop) backdrop.style.display = 'block';
+        if(filterInput) filterInput.focus();
         activeSuggestionIndex = -1;
     };
 
     const closeModal = () => {
-        modal.style.display = 'none';
-        backdrop.style.display = 'none';
+        if(modal) modal.style.display = 'none';
+        if(backdrop) backdrop.style.display = 'none';
         activePlayerIndex = null;
     };
 
@@ -177,24 +212,26 @@ export function initPerilousTrials() {
         document.getElementById(`pt-player-name-hidden-${activePlayerIndex}`).value = name;
 
         const newPlayerFields = document.getElementById(`pt-new-player-fields-${activePlayerIndex}`);
-        const classInput = newPlayerFields.querySelector('select[name*="[class]"]');
-        const guildContainer = newPlayerFields.querySelector('.custom-guild-select');
-        const cpInput = newPlayerFields.querySelector('input[name*="[cp]"]');
+        if(newPlayerFields) {
+            const classInput = newPlayerFields.querySelector('select[name*="[class]"]');
+            const guildContainer = newPlayerFields.querySelector('.custom-guild-select');
+            const cpInput = newPlayerFields.querySelector('input[name*="[cp]"]');
 
-        newPlayerFields.style.display = 'grid';
+            newPlayerFields.style.display = 'grid';
 
-        if (isExistingPlayer) {
-            classInput.style.display = 'none';
-            guildContainer.style.display = 'none';
-            classInput.required = false;
-            cpInput.placeholder = "Update CP (Optional)";
-            cpInput.required = false;
-        } else {
-            classInput.style.display = 'block';
-            guildContainer.style.display = 'block';
-            classInput.required = true;
-            cpInput.placeholder = "CP (e.g., 1.2M)";
-            cpInput.required = true;
+            if (isExistingPlayer) {
+                if(classInput) classInput.style.display = 'none';
+                if(guildContainer) guildContainer.style.display = 'none';
+                if(classInput) classInput.required = false;
+                if(cpInput) cpInput.placeholder = "Update CP (Optional)";
+                if(cpInput) cpInput.required = false;
+            } else {
+                if(classInput) classInput.style.display = 'block';
+                if(guildContainer) guildContainer.style.display = 'block';
+                if(classInput) classInput.required = true;
+                if(cpInput) cpInput.placeholder = "CP (e.g., 1.2M)";
+                if(cpInput) cpInput.required = true;
+            }
         }
         closeModal();
         validatePtForm();
@@ -204,21 +241,21 @@ export function initPerilousTrials() {
         btn.addEventListener('click', () => openModal(parseInt(btn.dataset.playerIndex, 10)));
     });
 
-    closeModalBtn.addEventListener('click', closeModal);
-    backdrop.addEventListener('click', closeModal);
-    filterInput.addEventListener('input', () => {
+    if(closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+    if(backdrop) backdrop.addEventListener('click', closeModal);
+    if(filterInput) filterInput.addEventListener('input', () => {
         populatePlayerList(filterInput.value);
         activeSuggestionIndex = -1;
     });
-    playerListContainer.addEventListener('click', (e) => {
+    if(playerListContainer) playerListContainer.addEventListener('click', (e) => {
         const selectedItem = e.target.closest('.suggestion-item');
         if (selectedItem) selectPlayer(selectedItem.dataset.playerName);
     });
-    createPlayerBtn.addEventListener('click', () => {
+    if(createPlayerBtn) createPlayerBtn.addEventListener('click', () => {
         const newName = filterInput.value.trim();
         if (newName) selectPlayer(newName);
     });
-    filterInput.addEventListener('keydown', (e) => {
+    if(filterInput) filterInput.addEventListener('keydown', (e) => {
         const items = playerListContainer.querySelectorAll('.suggestion-item');
         if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
             e.preventDefault();
@@ -241,19 +278,20 @@ export function initPerilousTrials() {
         }
     });
 
-    // --- GESTION DU SÉLECTEUR DE GUILDE PERSONNALISÉ ---
     document.querySelectorAll('.custom-guild-select').forEach(container => {
         const input = container.querySelector('.guild-select-input');
         const panel = container.querySelector('.guild-select-panel');
         let guildSuggestionIndex = -1;
 
         const updateActiveGuildSuggestion = () => {
+            if(!panel) return;
             panel.querySelectorAll('.guild-option').forEach((opt, index) => {
                 opt.classList.toggle('active', index === guildSuggestionIndex);
             });
         };
 
         const populateGuildOptions = (filter = '') => {
+            if(!panel) return;
             panel.innerHTML = '';
             guildSuggestionIndex = -1;
             const lowerFilter = filter.toLowerCase();
@@ -287,62 +325,45 @@ export function initPerilousTrials() {
             }
         };
 
-        input.addEventListener('focus', () => {
-            populateGuildOptions(input.value);
-            container.classList.add('open');
-        });
-        input.addEventListener('blur', () => setTimeout(() => container.classList.remove('open'), 150));
-        input.addEventListener('input', () => {
-            if (!container.classList.contains('open')) container.classList.add('open');
-            populateGuildOptions(input.value);
-        });
-        input.addEventListener('keydown', (e) => {
-            const options = panel.querySelectorAll('.guild-option');
-            if (!options.length) return;
+        if(input) {
+            input.addEventListener('focus', () => {
+                populateGuildOptions(input.value);
+                container.classList.add('open');
+            });
+            input.addEventListener('blur', () => setTimeout(() => container.classList.remove('open'), 150));
+            input.addEventListener('input', () => {
+                if (!container.classList.contains('open')) container.classList.add('open');
+                populateGuildOptions(input.value);
+            });
+            input.addEventListener('keydown', (e) => {
+                if(!panel) return;
+                const options = panel.querySelectorAll('.guild-option');
+                if (!options.length) return;
 
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                guildSuggestionIndex = (guildSuggestionIndex + 1) % options.length;
-                updateActiveGuildSuggestion();
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                guildSuggestionIndex = (guildSuggestionIndex - 1 + options.length) % options.length;
-                updateActiveGuildSuggestion();
-            } else if (e.key === 'Enter') {
-                e.preventDefault();
-                if (guildSuggestionIndex > -1 && options[guildSuggestionIndex]) {
-                    options[guildSuggestionIndex].dispatchEvent(new MouseEvent('mousedown'));
-                } else if (options.length > 0) {
-                    options[0].dispatchEvent(new MouseEvent('mousedown'));
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    guildSuggestionIndex = (guildSuggestionIndex + 1) % options.length;
+                    updateActiveGuildSuggestion();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    guildSuggestionIndex = (guildSuggestionIndex - 1 + options.length) % options.length;
+                    updateActiveGuildSuggestion();
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (guildSuggestionIndex > -1 && options[guildSuggestionIndex]) {
+                        options[guildSuggestionIndex].dispatchEvent(new MouseEvent('mousedown'));
+                    } else if (options.length > 0) {
+                        options[0].dispatchEvent(new MouseEvent('mousedown'));
+                    }
+                    container.classList.remove('open');
                 }
-            }
-        });
-        input.addEventListener('keydown', (e) => {
-            const options = panel.querySelectorAll('.guild-option');
-            if (!options.length) return;
-
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                guildSuggestionIndex = (guildSuggestionIndex + 1) % options.length;
-                updateActiveGuildSuggestion();
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                guildSuggestionIndex = (guildSuggestionIndex - 1 + options.length) % options.length;
-                updateActiveGuildSuggestion();
-            } else if (e.key === 'Enter') {
-                e.preventDefault();
-                if (guildSuggestionIndex > -1 && options[guildSuggestionIndex]) {
-                    options[guildSuggestionIndex].dispatchEvent(new MouseEvent('mousedown'));
-                } else if (options.length > 0) {
-                    options[0].dispatchEvent(new MouseEvent('mousedown'));
-                }
-                container.classList.remove('open');
-            }
-        });
+            });
+        }
     });
 
-    // --- VALIDATION DU FORMULAIRE ---
     const validatePtForm = () => {
+        if(!submitBtn || !ptIdInput || !ptRankInput) return;
+
         const ptId = ptIdInput.value;
         const rank = ptRankInput.value;
         let playerCount = 0;
@@ -350,7 +371,10 @@ export function initPerilousTrials() {
         let isFormValid = true;
 
         for (let i = 0; i < 4; i++) {
-            const name = ptAdminForm.querySelector(`#pt-player-name-hidden-${i}`).value.trim();
+            const nameInput = ptAdminForm.querySelector(`#pt-player-name-hidden-${i}`);
+            if(!nameInput) continue;
+
+            const name = nameInput.value.trim();
             if (name) {
                 playerCount++;
                 names.add(name.toLowerCase());
@@ -358,7 +382,7 @@ export function initPerilousTrials() {
                 if (!isExistingPlayer) {
                     const classInput = ptAdminForm.querySelector(`select[name="players[${i}][class]"]`);
                     const cpInput = ptAdminForm.querySelector(`input[name="players[${i}][cp]"]`);
-                    if (!classInput.value || !cpInput.value.trim()) {
+                    if (!classInput || !cpInput || !classInput.value || !cpInput.value.trim()) {
                         isFormValid = false;
                     }
                 }
@@ -375,27 +399,22 @@ export function initPerilousTrials() {
             submitBtn.style.backgroundColor = '';
         }
 
-        if (!ptId || !rank || playerCount !== 4 || !isFormValid) {
+        if (!ptId || !rank || playerCount < 1 || !isFormValid) {
             submitBtn.disabled = true;
         } else {
             submitBtn.disabled = false;
         }
     };
 
-    // --- INITIALISATION ---
     const urlParams = new URLSearchParams(window.location.search);
-    const sectionFromUrl = urlParams.get('section');
     const ptIdFromUrl = urlParams.get('pt_id');
 
-    // Initialisation au chargement de la page
-    const initialPtId = ptIdFromUrl || ptSelect.value;
-    ptSelect.value = initialPtId;
-    ptIdInput.value = initialPtId;
+    const initialPtId = ptIdFromUrl || (ptSelect ? ptSelect.value : 'global');
+    if (ptSelect) ptSelect.value = initialPtId;
+    if (ptIdInput) ptIdInput.value = initialPtId;
     loadPtLeaderboard(initialPtId);
     findNextAvailableRank(initialPtId);
 
-    // Attacher les écouteurs d'événements
-    ptIdInput.addEventListener('change', () => findNextAvailableRank(ptIdInput.value));
     ptAdminForm.querySelectorAll('select, input').forEach(input => {
         input.addEventListener('input', validatePtForm);
         input.addEventListener('change', validatePtForm);
