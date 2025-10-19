@@ -53,7 +53,7 @@ router.post('/add-player', async (req, res) => {
             }
         } else {
             if (!name || !pClass || !cp) { return res.redirect(`/?notification=${encodeURIComponent(`Name, Class and CP are required for new players.`)}`); }
-            const insertRes = await client.query(`INSERT INTO players (name, class, combat_power, team, guild, notes) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+            const insertRes = await client.query(`INSERT INTO players (name, class, combat_power, team, guild, notes, updated_at) VALUES ($1, $2, $3, $4, $5, $6, NOW()) RETURNING id`,
                 [name, pClass, combatPowerNumeric, team || 'No Team', guild || null, notes]);
             playerId = insertRes.rows[0].id;
             for (const slot of newSlots) {
