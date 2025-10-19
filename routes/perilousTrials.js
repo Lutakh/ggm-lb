@@ -3,47 +3,35 @@ const router = express.Router();
 const db = require('../services/db');
 const { parseCombatPower } = require('../utils/helpers');
 
-// Obtenir le classement global des PT
+// Obtenir le classement global des PT (version corrigée avec calcul SQL)
 router.get('/pt-leaderboard/global', async (req, res) => {
     const sql = `
+        WITH player_points AS (
+            SELECT player_id, SUM(points) as total_points
+            FROM (
+                     SELECT player1_id AS player_id, 51 - rank AS points FROM pt_leaderboard WHERE player1_id IS NOT NULL AND rank <= 50
+                     UNION ALL
+                     SELECT player2_id AS player_id, 51 - rank AS points FROM pt_leaderboard WHERE player2_id IS NOT NULL AND rank <= 50
+                     UNION ALL
+                     SELECT player3_id AS player_id, 51 - rank AS points FROM pt_leaderboard WHERE player3_id IS NOT NULL AND rank <= 50
+                     UNION ALL
+                     SELECT player4_id AS player_id, 51 - rank AS points FROM pt_leaderboard WHERE player4_id IS NOT NULL AND rank <= 50
+                 ) as scores
+            GROUP BY player_id
+        )
         SELECT
-            rank,
-            player1_id, player2_id, player3_id, player4_id
-        FROM pt_leaderboard
-        WHERE rank <= 50;
+            p.id,
+            p.name,
+            p.class,
+            p.combat_power,
+            pp.total_points as points
+        FROM players p
+                 JOIN player_points pp ON p.id = pp.player_id
+        ORDER BY pp.total_points DESC, p.combat_power DESC;
     `;
     try {
-        const leaderboardEntries = await db.query(sql);
-        const playerPoints = {};
-
-        leaderboardEntries.rows.forEach(entry => {
-            const points = 51 - entry.rank;
-            for (let i = 1; i <= 4; i++) {
-                const playerId = entry[`player${i}_id`];
-                if (playerId) {
-                    playerPoints[playerId] = (playerPoints[playerId] || 0) + points;
-                }
-            }
-        });
-
-        const playerIds = Object.keys(playerPoints);
-        if (playerIds.length === 0) {
-            return res.json([]);
-        }
-
-        const playersInfoSql = `
-            SELECT id, name, class, combat_power
-            FROM players
-            WHERE id = ANY($1::int[]);
-        `;
-        const playersInfo = await db.query(playersInfoSql, [playerIds]);
-
-        const globalLeaderboard = playersInfo.rows.map(player => ({
-            ...player,
-            points: playerPoints[player.id]
-        })).sort((a, b) => b.points - a.points);
-
-        res.json(globalLeaderboard);
+        const result = await db.query(sql);
+        res.json(result.rows);
     } catch (err) {
         console.error(`Error fetching global PT leaderboard:`, err);
         res.status(500).json([]);
@@ -167,14 +155,13 @@ router.post('/pt-leaderboard', async (req, res) => {
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
              ON CONFLICT (pt_id, rank)
                  DO UPDATE SET
-                               player1_id = EXCLUDED.player1_id, player2_id = EXCLUDED.player2_id, player3_id = EXCLUDED.player3_id, player4_id = EXCLUDED.player4_id,
+                               player1_id = EXCLUDED.player1_id, player2_id = EXCLUDED.player2_id, player3_id = EXcluded.player3_id, player4_id = EXCLUDED.player4_id,
                                player1_name = EXCLUDED.player1_name, player2_name = EXCLUDED.player2_name, player3_name = EXCLUDED.player3_name, player4_name = EXCLUDED.player4_name`,
             [pt_id, rank, ...playerIds, ...finalPlayerNames]
         );
 
         await client.query('COMMIT');
 
-        // --- NOUVELLE LOGIQUE DE CRÉATION AUTOMATIQUE DES PT ---
         try {
             const highestPtWithTeamResult = await db.query(`
                 SELECT pt.id FROM perilous_trials pt
@@ -198,7 +185,6 @@ router.post('/pt-leaderboard', async (req, res) => {
         } catch (autoCreateError) {
             console.error("❌ Error during automatic PT creation:", autoCreateError);
         }
-        // --- FIN DE LA NOUVELLE LOGIQUE ---
 
         res.redirect(`/?notification=${encodeURIComponent(`Leaderboard updated!`)}&section=perilous-trials-section&pt_id=${pt_id}`);
     } catch (err) {
