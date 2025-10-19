@@ -13,7 +13,6 @@ export function initPerilousTrials() {
     const ptTableBody = ptTable?.querySelector('tbody');
     const ptGlobalTable = document.getElementById('pt-global-leaderboard-table');
     const ptGlobalTableBody = ptGlobalTable?.querySelector('tbody');
-    const ptClassFilterBtn = document.getElementById('pt-class-filter-btn');
     const ptClassFilters = document.querySelectorAll('#pt-class-filter-panel input');
     const ptAdminForm = document.getElementById('pt-admin-form');
 
@@ -69,7 +68,6 @@ export function initPerilousTrials() {
         });
     }
 
-
     async function loadPtLeaderboard(ptId) {
         if (!ptId || !ptTableBody || !ptGlobalTable) return;
         const isGlobal = ptId === 'global';
@@ -121,7 +119,6 @@ export function initPerilousTrials() {
 
     ptClassFilters.forEach(input => input.addEventListener('change', applyGlobalPtFilters));
 
-
     // --- GESTION DU FORMULAIRE D'ADMINISTRATION ---
     if (!ptAdminForm) return;
 
@@ -159,7 +156,8 @@ export function initPerilousTrials() {
         }
     }
 
-    // ... Le reste du fichier reste identique
+    // ... (Le reste du code reste identique)
+
     const getCurrentlySelectedNames = () => {
         const names = [];
         for (let i = 0; i < 4; i++) {
@@ -414,6 +412,11 @@ export function initPerilousTrials() {
     if (ptIdInput) ptIdInput.value = initialPtId;
     loadPtLeaderboard(initialPtId);
     findNextAvailableRank(initialPtId);
+
+    // ✅ CORRECTION : Ajout de l'écouteur d'événement manquant
+    if (ptIdInput) {
+        ptIdInput.addEventListener('change', () => findNextAvailableRank(ptIdInput.value));
+    }
 
     ptAdminForm.querySelectorAll('select, input').forEach(input => {
         input.addEventListener('input', validatePtForm);
