@@ -226,29 +226,28 @@ export function initPerilousTrials() {
 
         const newPlayerFields = document.getElementById(`pt-new-player-fields-${activePlayerIndex}`);
         const classInput = newPlayerFields.querySelector('select[name*="[class]"]');
-        const guildInput = newPlayerFields.querySelector('select[name*="[guild]"]');
+        const guildInput = newPlayerFields.querySelector('input[name*="[guild]"]'); // C'est maintenant un input
         const cpInput = newPlayerFields.querySelector('input[name*="[cp]"]');
 
-        newPlayerFields.style.display = 'grid'; // Toujours afficher le conteneur
+        newPlayerFields.style.display = 'grid';
 
         if (isExistingPlayer) {
             classInput.style.display = 'none';
             guildInput.style.display = 'none';
             classInput.required = false;
             cpInput.placeholder = "Update CP (Optional)";
-            cpInput.required = false; // Le CP est optionnel pour un joueur existant
+            cpInput.required = false;
         } else {
             classInput.style.display = 'block';
             guildInput.style.display = 'block';
             classInput.required = true;
             cpInput.placeholder = "CP (e.g., 1.2M)";
-            cpInput.required = true; // Le CP est requis pour un nouveau joueur
+            cpInput.required = true;
         }
 
         closeModal();
         validatePtForm();
     };
-
 
     ptAdminForm.querySelectorAll('.pt-open-modal-btn').forEach(btn => {
         btn.addEventListener('click', () => openModal(parseInt(btn.dataset.playerIndex, 10)));
@@ -305,7 +304,9 @@ export function initPerilousTrials() {
             } else if (items.length > 0) {
                 selectPlayer(items[0].dataset.playerName);
             } else if (filterInput.value.trim() !== '') {
-                createPlayerBtn.click();
+                // CORRECTION : On appelle directement selectPlayer au lieu de simuler un clic
+                const newName = filterInput.value.trim();
+                if (newName) selectPlayer(newName);
             }
         }
     });
@@ -334,7 +335,6 @@ export function initPerilousTrials() {
                     }
                 }
             } else {
-                // Si un joueur est manquant, le formulaire n'est pas valide
                 isFormValid = false;
             }
         }
@@ -344,7 +344,7 @@ export function initPerilousTrials() {
             submitBtn.disabled = true;
             submitBtn.style.backgroundColor = 'var(--accent-color)';
             submitBtn.textContent = 'Duplicate Player';
-            return; // Exit early for this specific error
+            return;
         } else {
             submitBtn.style.backgroundColor = '';
             submitBtn.textContent = 'Submit Team';

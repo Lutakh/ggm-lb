@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../services/db');
 const { parseCombatPower } = require('../utils/helpers');
 
-// NOUVELLE ROUTE : Obtenir le classement global des PT
+// Obtenir le classement global des PT
 router.get('/pt-leaderboard/global', async (req, res) => {
     const sql = `
         SELECT
@@ -16,7 +16,6 @@ router.get('/pt-leaderboard/global', async (req, res) => {
         const leaderboardEntries = await db.query(sql);
         const playerPoints = {};
 
-        // Calcul des points
         leaderboardEntries.rows.forEach(entry => {
             const points = 51 - entry.rank;
             for (let i = 1; i <= 4; i++) {
@@ -35,7 +34,6 @@ router.get('/pt-leaderboard/global', async (req, res) => {
             return res.json([]);
         }
 
-        // Récupération des détails des joueurs
         const playersInfoSql = `
             SELECT id, name, class, combat_power
             FROM players
@@ -55,7 +53,7 @@ router.get('/pt-leaderboard/global', async (req, res) => {
     }
 });
 
-// NOUVELLE ROUTE : Obtenir le prochain rang libre pour un PT
+// Obtenir le prochain rang libre pour un PT
 router.get('/pt-leaderboard/:ptId/next-rank', async (req, res) => {
     const { ptId } = req.params;
     if (!ptId || ptId === 'global') {
@@ -76,7 +74,7 @@ router.get('/pt-leaderboard/:ptId/next-rank', async (req, res) => {
     }
 });
 
-// Route pour obtenir le classement d'un PT (inchangée)
+// Obtenir le classement d'un PT
 router.get('/pt-leaderboard/:ptId', async (req, res) => {
     const { ptId } = req.params;
     const sql = `
@@ -103,34 +101,28 @@ router.get('/pt-leaderboard/:ptId', async (req, res) => {
     }
 });
 
-// Route pour vérifier si un rang est déjà pris (inchangée)
+// Vérifier si un rang est déjà pris
 router.get('/pt-leaderboard/:ptId/rank/:rank', async (req, res) => {
     const { ptId, rank } = req.params;
     try {
         const result = await db.query('SELECT player1_name, player2_name, player3_name, player4_name FROM pt_leaderboard WHERE pt_id = $1 AND rank = $2', [ptId, rank]);
-        if (result.rows.length > 0) {
-            res.json(result.rows[0]);
-        } else {
-            res.json(null);
-        }
+        res.json(result.rows.length > 0 ? result.rows[0] : null);
     } catch (err) {
         res.status(500).json(null);
     }
 });
 
-// Route de soumission du classement (MODIFIÉE)
+// Soumission du classement
 router.post('/pt-leaderboard', async (req, res) => {
     if (req.body.admin_password !== process.env.ADMIN_PASSWORD) {
         return res.status(403).redirect('/?notification=' + encodeURIComponent('Incorrect admin password.'));
     }
 
     const { pt_id, rank, players: teamData } = req.body;
-
     const client = await db.getClient();
 
     try {
         await client.query('BEGIN');
-
         const playerIds = [null, null, null, null];
         const finalPlayerNames = [null, null, null, null];
 
@@ -141,20 +133,17 @@ router.post('/pt-leaderboard', async (req, res) => {
             if (name && name.trim() !== '') {
                 const trimmedName = name.trim();
                 const newPlayerCp = parseCombatPower(playerData.cp) || 0;
-
                 let playerRes = await client.query('SELECT id FROM players WHERE name ILIKE $1', [trimmedName]);
                 let playerId = playerRes.rows[0]?.id;
 
                 if (playerId) {
-                    // Si le joueur existe et qu'un CP est fourni, on le met à jour
                     if (newPlayerCp > 0) {
                         await client.query('UPDATE players SET combat_power = $1 WHERE id = $2', [newPlayerCp, playerId]);
                     }
                 } else {
-                    // Si le joueur n'existe pas, on le crée
                     const newPlayerClass = playerData.class || 'Unknown';
+                    // CORRECTION : On s'assure de créer la guilde si elle est nouvelle
                     const newPlayerGuild = (playerData.guild && playerData.guild.trim() !== '') ? playerData.guild.trim() : null;
-
                     if (newPlayerGuild) {
                         await client.query('INSERT INTO guilds (name) VALUES ($1) ON CONFLICT (name) DO NOTHING', [newPlayerGuild]);
                     }
@@ -172,7 +161,6 @@ router.post('/pt-leaderboard', async (req, res) => {
                     'INSERT INTO player_pt_tags (player_id, pt_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
                     [playerId, pt_id]
                 );
-
                 playerIds[i] = playerId;
                 finalPlayerNames[i] = trimmedName;
             }
@@ -190,33 +178,26 @@ router.post('/pt-leaderboard', async (req, res) => {
 
         await client.query('COMMIT');
 
-        // --- DÉBUT DE LA LOGIQUE DE CRÉATION AUTOMATIQUE ---
+        // Logique de création automatique des PT
         try {
             const maxPtResult = await db.query("SELECT id FROM perilous_trials ORDER BY id DESC LIMIT 1");
-            const maxPtId = maxPtResult.rows[0]?.id;
-
-            if (maxPtId) {
+            if (maxPtResult.rows.length > 0) {
+                const maxPtId = maxPtResult.rows[0].id;
                 const updatedPtId = parseInt(pt_id, 10);
                 const triggerPtId = maxPtId - 3;
 
-                // On vérifie aussi qu'il y a au moins une équipe dans ce PT pour être sûr
                 if (updatedPtId === triggerPtId) {
-                    const teamCountResult = await db.query('SELECT COUNT(*) FROM pt_leaderboard WHERE pt_id = $1', [triggerPtId]);
-                    if (teamCountResult.rows[0].count > 0) {
-                        const newPtNumber = maxPtId + 1;
-                        const newPtName = `PT${newPtNumber}`;
-                        await db.query("INSERT INTO perilous_trials (name) VALUES ($1) ON CONFLICT (name) DO NOTHING", [newPtName]);
-                        console.log(`✅ Automatically created Perilous Trial: ${newPtName}`);
-                    }
+                    const newPtNumber = maxPtId + 1;
+                    const newPtName = `PT${newPtNumber}`;
+                    await db.query("INSERT INTO perilous_trials (name) VALUES ($1) ON CONFLICT (name) DO NOTHING", [newPtName]);
+                    console.log(`✅ Automatically created Perilous Trial: ${newPtName}`);
                 }
             }
         } catch (autoCreateError) {
             console.error("❌ Error during automatic PT creation:", autoCreateError);
         }
-        // --- FIN DE LA LOGIQUE DE CRÉATION AUTOMATIQUE ---
 
         res.redirect(`/?notification=${encodeURIComponent(`Leaderboard updated!`)}&section=perilous-trials-section&pt_id=${pt_id}`);
-
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('Error updating PT leaderboard:', err);
