@@ -93,6 +93,22 @@ router.get('/pt-leaderboard/:ptId', async (req, res) => {
     }
 });
 
+// Vérifier si un rang est déjà pris
+router.get('/pt-leaderboard/:ptId/rank/:rank', async (req, res) => {
+    const { ptId, rank } = req.params;
+    try {
+        const result = await db.query('SELECT player1_name, player2_name, player3_name, player4_name FROM pt_leaderboard WHERE pt_id = $1 AND rank = $2', [ptId, rank]);
+        if (result.rows.length > 0) {
+            res.json(result.rows[0]);
+        } else {
+            res.json(null);
+        }
+    } catch (err) {
+        console.error(`Error checking rank for PT ${ptId}:`, err);
+        res.status(500).json(null);
+    }
+});
+
 // Soumission du classement
 router.post('/pt-leaderboard', async (req, res) => {
     if (req.body.admin_password !== process.env.ADMIN_PASSWORD) {
@@ -162,8 +178,7 @@ router.post('/pt-leaderboard', async (req, res) => {
         try {
             const highestPtWithTeamResult = await db.query(`
                 SELECT pt.id FROM perilous_trials pt
-                JOIN pt_leaderboard lb ON pt.id = lb.pt_id
-                GROUP BY pt.id
+                WHERE EXISTS (SELECT 1 FROM pt_leaderboard lb WHERE lb.pt_id = pt.id)
                 ORDER BY pt.id DESC LIMIT 1
             `);
             const highestPtWithTeam = highestPtWithTeamResult.rows[0]?.id || 0;
