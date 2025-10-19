@@ -5,30 +5,60 @@ const { parseCombatPower } = require('../utils/helpers');
 
 // Obtenir le classement global des PT (version corrigée avec calcul SQL)
 router.get('/pt-leaderboard/global', async (req, res) => {
-    const sql = `
-        WITH player_points AS (
-            SELECT player_id, SUM(points) as total_points
-            FROM (
-                     SELECT player1_id AS player_id, 51 - rank AS points FROM pt_leaderboard WHERE player1_id IS NOT NULL AND rank <= 50
-                     UNION ALL
-                     SELECT player2_id AS player_id, 51 - rank AS points FROM pt_leaderboard WHERE player2_id IS NOT NULL AND rank <= 50
-                     UNION ALL
-                     SELECT player3_id AS player_id, 51 - rank AS points FROM pt_leaderboard WHERE player3_id IS NOT NULL AND rank <= 50
-                     UNION ALL
-                     SELECT player4_id AS player_id, 51 - rank AS points FROM pt_leaderboard WHERE player4_id IS NOT NULL AND rank <= 50
-                 ) as scores
-            GROUP BY player_id
-        )
-        SELECT
-            p.id,
-            p.name,
-            p.class,
-            p.combat_power,
-            pp.total_points as points
-        FROM players p
-                 JOIN player_points pp ON p.id = pp.player_id
-        ORDER BY pp.total_points DESC, p.combat_power DESC;
-    `;
+    const { mode } = req.query; // 'all' or 'best'
+
+    let sql;
+    if (mode === 'best') {
+        // Mode 'Best Rank/PT' : Seul le meilleur score par PT est conservé pour chaque joueur
+        sql = `
+            WITH player_scores AS (
+                SELECT player_id, pt_id, MAX(51 - rank) as points
+                FROM (
+                    SELECT pt_id, rank, player1_id AS player_id FROM pt_leaderboard WHERE player1_id IS NOT NULL AND rank <= 50
+                    UNION ALL
+                    SELECT pt_id, rank, player2_id AS player_id FROM pt_leaderboard WHERE player2_id IS NOT NULL AND rank <= 50
+                    UNION ALL
+                    SELECT pt_id, rank, player3_id AS player_id FROM pt_leaderboard WHERE player3_id IS NOT NULL AND rank <= 50
+                    UNION ALL
+                    SELECT pt_id, rank, player4_id AS player_id FROM pt_leaderboard WHERE player4_id IS NOT NULL AND rank <= 50
+                ) as scores
+                GROUP BY player_id, pt_id
+            ),
+            total_points AS (
+                SELECT player_id, SUM(points) as total_points
+                FROM player_scores
+                GROUP BY player_id
+            )
+            SELECT
+                p.id, p.name, p.class, p.combat_power, tp.total_points as points
+            FROM players p
+            JOIN total_points tp ON p.id = tp.player_id
+            ORDER BY tp.total_points DESC, p.combat_power DESC;
+        `;
+    } else {
+        // Mode 'All Ranks' (par défaut) : Tous les scores sont additionnés
+        sql = `
+            WITH player_points AS (
+                SELECT player_id, SUM(points) as total_points
+                FROM (
+                         SELECT player1_id AS player_id, 51 - rank AS points FROM pt_leaderboard WHERE player1_id IS NOT NULL AND rank <= 50
+                         UNION ALL
+                         SELECT player2_id AS player_id, 51 - rank AS points FROM pt_leaderboard WHERE player2_id IS NOT NULL AND rank <= 50
+                         UNION ALL
+                         SELECT player3_id AS player_id, 51 - rank AS points FROM pt_leaderboard WHERE player3_id IS NOT NULL AND rank <= 50
+                         UNION ALL
+                         SELECT player4_id AS player_id, 51 - rank AS points FROM pt_leaderboard WHERE player4_id IS NOT NULL AND rank <= 50
+                     ) as scores
+                GROUP BY player_id
+            )
+            SELECT
+                p.id, p.name, p.class, p.combat_power, pp.total_points as points
+            FROM players p
+                     JOIN player_points pp ON p.id = pp.player_id
+            ORDER BY pp.total_points DESC, p.combat_power DESC;
+        `;
+    }
+
     try {
         const result = await db.query(sql);
         res.json(result.rows);
@@ -37,6 +67,7 @@ router.get('/pt-leaderboard/global', async (req, res) => {
         res.status(500).json([]);
     }
 });
+
 
 // Obtenir le prochain rang libre pour un PT
 router.get('/pt-leaderboard/:ptId/next-rank', async (req, res) => {
