@@ -87,10 +87,10 @@ router.get('/pt-leaderboard/:ptId', async (req, res) => {
             lb.player3_name, p3.class as player3_class,
             lb.player4_name, p4.class as player4_class
         FROM pt_leaderboard lb
-        LEFT JOIN players p1 ON lb.player1_id = p1.id
-        LEFT JOIN players p2 ON lb.player2_id = p2.id
-        LEFT JOIN players p3 ON lb.player3_id = p3.id
-        LEFT JOIN players p4 ON lb.player4_id = p4.id
+                 LEFT JOIN players p1 ON lb.player1_id = p1.id
+                 LEFT JOIN players p2 ON lb.player2_id = p2.id
+                 LEFT JOIN players p3 ON lb.player3_id = p3.id
+                 LEFT JOIN players p4 ON lb.player4_id = p4.id
         WHERE lb.pt_id = $1
         ORDER BY lb.rank;
     `;
@@ -153,7 +153,11 @@ router.post('/pt-leaderboard', async (req, res) => {
                 } else {
                     // Si le joueur n'existe pas, on le crée
                     const newPlayerClass = playerData.class || 'Unknown';
-                    const newPlayerGuild = playerData.guild || null;
+                    const newPlayerGuild = (playerData.guild && playerData.guild.trim() !== '') ? playerData.guild.trim() : null;
+
+                    if (newPlayerGuild) {
+                        await client.query('INSERT INTO guilds (name) VALUES ($1) ON CONFLICT (name) DO NOTHING', [newPlayerGuild]);
+                    }
 
                     const newPlayerRes = await client.query(
                         `INSERT INTO players (name, class, combat_power, guild, team, notes)
@@ -178,9 +182,9 @@ router.post('/pt-leaderboard', async (req, res) => {
             `INSERT INTO pt_leaderboard (pt_id, rank, player1_id, player2_id, player3_id, player4_id, player1_name, player2_name, player3_name, player4_name)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
              ON CONFLICT (pt_id, rank)
-             DO UPDATE SET
-                player1_id = EXCLUDED.player1_id, player2_id = EXCLUDED.player2_id, player3_id = EXCLUDED.player3_id, player4_id = EXCLUDED.player4_id,
-                player1_name = EXCLUDED.player1_name, player2_name = EXCLUDED.player2_name, player3_name = EXCLUDED.player3_name, player4_name = EXCLUDED.player4_name`,
+                 DO UPDATE SET
+                               player1_id = EXCLUDED.player1_id, player2_id = EXCLUDED.player2_id, player3_id = EXCLUDED.player3_id, player4_id = EXCLUDED.player4_id,
+                               player1_name = EXCLUDED.player1_name, player2_name = EXCLUDED.player2_name, player3_name = EXCLUDED.player3_name, player4_name = EXCLUDED.player4_name`,
             [pt_id, rank, ...playerIds, ...finalPlayerNames]
         );
 
