@@ -29,8 +29,12 @@ router.get('/', async (req, res) => {
             db.query('SELECT key, value FROM server_settings;'),
             db.query('SELECT id, label, weeks_after_start, is_active FROM class_change_timers ORDER BY id;')
         ]);
-
         const serverSettings = settingsResult.rows.reduce((acc, row) => ({ ...acc, [row.key]: row.value }), {});
+
+        // Add a fallback for server_open_date
+        if (!serverSettings.server_open_date) {
+            serverSettings.server_open_date = new Date().toISOString();
+        }
         const players = playersResult.rows.map(p => ({ ...p, play_slots: p.play_slots || [], pt_tags: p.pt_tags || [] }));
         const guilds = guildsResult.rows.map(g => g.name);
         const perilousTrials = trialsResult.rows;
