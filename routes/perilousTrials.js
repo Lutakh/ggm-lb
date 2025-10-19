@@ -21,10 +21,7 @@ router.get('/pt-leaderboard/global', async (req, res) => {
             for (let i = 1; i <= 4; i++) {
                 const playerId = entry[`player${i}_id`];
                 if (playerId) {
-                    if (!playerPoints[playerId]) {
-                        playerPoints[playerId] = 0;
-                    }
-                    playerPoints[playerId] += points;
+                    playerPoints[playerId] = (playerPoints[playerId] || 0) + points;
                 }
             }
         });
@@ -59,13 +56,8 @@ router.get('/pt-leaderboard/:ptId/next-rank', async (req, res) => {
     if (!ptId || ptId === 'global') {
         return res.json({ nextRank: 1 });
     }
-    const sql = `
-        SELECT MAX(rank) as max_rank
-        FROM pt_leaderboard
-        WHERE pt_id = $1;
-    `;
     try {
-        const result = await db.query(sql, [ptId]);
+        const result = await db.query('SELECT MAX(rank) as max_rank FROM pt_leaderboard WHERE pt_id = $1', [ptId]);
         const nextRank = (result.rows[0]?.max_rank || 0) + 1;
         res.json({ nextRank });
     } catch (err) {
@@ -101,17 +93,6 @@ router.get('/pt-leaderboard/:ptId', async (req, res) => {
     }
 });
 
-// Vérifier si un rang est déjà pris
-router.get('/pt-leaderboard/:ptId/rank/:rank', async (req, res) => {
-    const { ptId, rank } = req.params;
-    try {
-        const result = await db.query('SELECT player1_name, player2_name, player3_name, player4_name FROM pt_leaderboard WHERE pt_id = $1 AND rank = $2', [ptId, rank]);
-        res.json(result.rows.length > 0 ? result.rows[0] : null);
-    } catch (err) {
-        res.status(500).json(null);
-    }
-});
-
 // Soumission du classement
 router.post('/pt-leaderboard', async (req, res) => {
     if (req.body.admin_password !== process.env.ADMIN_PASSWORD) {
@@ -123,6 +104,7 @@ router.post('/pt-leaderboard', async (req, res) => {
 
     try {
         await client.query('BEGIN');
+
         const playerIds = [null, null, null, null];
         const finalPlayerNames = [null, null, null, null];
 
@@ -142,12 +124,10 @@ router.post('/pt-leaderboard', async (req, res) => {
                     }
                 } else {
                     const newPlayerClass = playerData.class || 'Unknown';
-                    // CORRECTION : On s'assure de créer la guilde si elle est nouvelle
                     const newPlayerGuild = (playerData.guild && playerData.guild.trim() !== '') ? playerData.guild.trim() : null;
                     if (newPlayerGuild) {
                         await client.query('INSERT INTO guilds (name) VALUES ($1) ON CONFLICT (name) DO NOTHING', [newPlayerGuild]);
                     }
-
                     const newPlayerRes = await client.query(
                         `INSERT INTO players (name, class, combat_power, guild, team, notes)
                          VALUES ($1, $2, $3, $4, 'No Team', 'Created from PT leaderboard')
@@ -170,25 +150,32 @@ router.post('/pt-leaderboard', async (req, res) => {
             `INSERT INTO pt_leaderboard (pt_id, rank, player1_id, player2_id, player3_id, player4_id, player1_name, player2_name, player3_name, player4_name)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
              ON CONFLICT (pt_id, rank)
-                 DO UPDATE SET
-                               player1_id = EXCLUDED.player1_id, player2_id = EXCLUDED.player2_id, player3_id = EXCLUDED.player3_id, player4_id = EXCLUDED.player4_id,
-                               player1_name = EXCLUDED.player1_name, player2_name = EXCLUDED.player2_name, player3_name = EXCLUDED.player3_name, player4_name = EXCLUDED.player4_name`,
+             DO UPDATE SET
+                player1_id = EXCLUDED.player1_id, player2_id = EXCLUDED.player2_id, player3_id = EXCLUDED.player3_id, player4_id = EXCLUDED.player4_id,
+                player1_name = EXCLUDED.player1_name, player2_name = EXCLUDED.player2_name, player3_name = EXCLUDED.player3_name, player4_name = EXCLUDED.player4_name`,
             [pt_id, rank, ...playerIds, ...finalPlayerNames]
         );
 
         await client.query('COMMIT');
 
-        // Logique de création automatique des PT
+        // --- NOUVELLE LOGIQUE DE CRÉATION AUTOMATIQUE DES PT ---
         try {
-            const maxPtResult = await db.query("SELECT id FROM perilous_trials ORDER BY id DESC LIMIT 1");
-            if (maxPtResult.rows.length > 0) {
-                const maxPtId = maxPtResult.rows[0].id;
-                const updatedPtId = parseInt(pt_id, 10);
-                const triggerPtId = maxPtId - 3;
+            const highestPtWithTeamResult = await db.query(`
+                SELECT pt.id FROM perilous_trials pt
+                JOIN pt_leaderboard lb ON pt.id = lb.pt_id
+                GROUP BY pt.id
+                ORDER BY pt.id DESC LIMIT 1
+            `);
+            const highestPtWithTeam = highestPtWithTeamResult.rows[0]?.id || 0;
 
-                if (updatedPtId === triggerPtId) {
-                    const newPtNumber = maxPtId + 1;
-                    const newPtName = `PT${newPtNumber}`;
+            const maxExistingPtResult = await db.query("SELECT id FROM perilous_trials ORDER BY id DESC LIMIT 1");
+            const maxExistingPt = maxExistingPtResult.rows[0]?.id || 0;
+
+            const targetMaxPt = highestPtWithTeam > 0 ? highestPtWithTeam + 3 : 8;
+
+            if (maxExistingPt < targetMaxPt) {
+                for (let i = maxExistingPt + 1; i <= targetMaxPt; i++) {
+                    const newPtName = `PT${i}`;
                     await db.query("INSERT INTO perilous_trials (name) VALUES ($1) ON CONFLICT (name) DO NOTHING", [newPtName]);
                     console.log(`✅ Automatically created Perilous Trial: ${newPtName}`);
                 }
@@ -196,6 +183,7 @@ router.post('/pt-leaderboard', async (req, res) => {
         } catch (autoCreateError) {
             console.error("❌ Error during automatic PT creation:", autoCreateError);
         }
+        // --- FIN DE LA NOUVELLE LOGIQUE ---
 
         res.redirect(`/?notification=${encodeURIComponent(`Leaderboard updated!`)}&section=perilous-trials-section&pt_id=${pt_id}`);
     } catch (err) {

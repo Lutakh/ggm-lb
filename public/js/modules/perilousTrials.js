@@ -41,14 +41,17 @@ export function initPerilousTrials() {
             ptClassFilterPanel.classList.toggle('show');
         });
     }
-    window.addEventListener('click', () => {
-        if (ptClassFilterPanel) ptClassFilterPanel.classList.remove('show');
+    window.addEventListener('click', (e) => {
+        if (ptClassFilterPanel && !ptClassFilterPanel.contains(e.target) && !ptClassFilterBtn.contains(e.target)) {
+            ptClassFilterPanel.classList.remove('show');
+        }
     });
 
     function applyGlobalPtFilters() {
         const selectedClasses = Array.from(ptClassFilters).filter(c => c.checked).map(c => c.dataset.class);
         const filteredData = fullGlobalLeaderboard.filter(player => selectedClasses.length === 0 || selectedClasses.includes(player.class));
 
+        if (!ptGlobalTableBody) return;
         ptGlobalTableBody.innerHTML = '';
         if (filteredData.length === 0) {
             ptGlobalTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No players match filters.</td></tr>';
@@ -57,7 +60,8 @@ export function initPerilousTrials() {
 
         filteredData.forEach((player, index) => {
             const row = document.createElement('tr');
-            row.classList.add('podium', `rank-${index + 1}`);
+            row.classList.add('podium');
+            if (index < 3) row.classList.add(`rank-${index + 1}`);
             row.innerHTML = `
                 <td class="rank-col">${index + 1}</td>
                 <td>${player.name}</td>
@@ -100,7 +104,8 @@ export function initPerilousTrials() {
                 }
                 teamHtml += '</div>';
                 const row = document.createElement('tr');
-                row.classList.add('podium', `rank-${entry.rank}`);
+                row.classList.add('podium');
+                if(entry.rank <= 3) row.classList.add(`rank-${entry.rank}`);
                 row.innerHTML = `<td class="rank-col">${entry.rank}</td><td>${teamHtml}</td>`;
                 ptTableBody.appendChild(row);
             });
@@ -131,6 +136,8 @@ export function initPerilousTrials() {
     const playersDataElement = document.getElementById('pt-players-data-source');
     const allPlayers = playersDataElement ? JSON.parse(playersDataElement.textContent) : [];
     const guildDatalist = document.getElementById('guild-datalist-pt');
+    let availableGuilds = guildDatalist ? Array.from(guildDatalist.options).map(opt => opt.value) : [];
+
 
     let activePlayerIndex = null;
     let activeSuggestionIndex = -1;
@@ -138,16 +145,17 @@ export function initPerilousTrials() {
     async function findNextAvailableRank(ptId) {
         if (!ptId) {
             ptRankInput.value = '';
+            validatePtForm();
             return;
         }
         try {
             const response = await fetch(`/pt-leaderboard/${ptId}/next-rank`);
             const data = await response.json();
             ptRankInput.value = data.nextRank || 1;
+            validatePtForm();
         } catch (error) {
             console.error('Failed to fetch next rank:', error);
             ptRankInput.value = 1;
-        } finally {
             validatePtForm();
         }
     }
@@ -196,18 +204,20 @@ export function initPerilousTrials() {
         document.getElementById(`pt-player-name-hidden-${activePlayerIndex}`).value = name;
         const newPlayerFields = document.getElementById(`pt-new-player-fields-${activePlayerIndex}`);
         const classInput = newPlayerFields.querySelector('select[name*="[class]"]');
-        const guildInput = newPlayerFields.querySelector('input[name*="[guild]"]');
+        const guildContainer = newPlayerFields.querySelector('.custom-guild-select');
         const cpInput = newPlayerFields.querySelector('input[name*="[cp]"]');
+
         newPlayerFields.style.display = 'grid';
+
         if (isExistingPlayer) {
             classInput.style.display = 'none';
-            guildInput.style.display = 'none';
+            guildContainer.style.display = 'none';
             classInput.required = false;
             cpInput.placeholder = "Update CP (Optional)";
             cpInput.required = false;
         } else {
             classInput.style.display = 'block';
-            guildInput.style.display = 'block';
+            guildContainer.style.display = 'block';
             classInput.required = true;
             cpInput.placeholder = "CP (e.g., 1.2M)";
             cpInput.required = true;
@@ -222,14 +232,17 @@ export function initPerilousTrials() {
 
     closeModalBtn.addEventListener('click', closeModal);
     backdrop.addEventListener('click', closeModal);
+
     filterInput.addEventListener('input', () => {
         populatePlayerList(filterInput.value);
         activeSuggestionIndex = -1;
     });
+
     playerListContainer.addEventListener('click', (e) => {
         const selectedItem = e.target.closest('.suggestion-item');
         if (selectedItem) selectPlayer(selectedItem.dataset.playerName);
     });
+
     createPlayerBtn.addEventListener('click', () => {
         const newName = filterInput.value.trim();
         if (newName) selectPlayer(newName);
@@ -242,7 +255,10 @@ export function initPerilousTrials() {
             if (items.length > 0) {
                 if (e.key === 'ArrowDown') activeSuggestionIndex = (activeSuggestionIndex + 1) % items.length;
                 else activeSuggestionIndex = (activeSuggestionIndex - 1 + items.length) % items.length;
-                items.forEach((item, index) => item.classList.toggle('active', index === activeSuggestionIndex));
+                items.forEach((item, index) => {
+                    item.classList.toggle('active', index === activeSuggestionIndex);
+                    if(index === activeSuggestionIndex) item.scrollIntoView({ block: 'nearest' });
+                });
             }
         } else if (e.key === 'Enter') {
             e.preventDefault();
@@ -257,16 +273,65 @@ export function initPerilousTrials() {
         }
     });
 
-    // CORRECTION : Logique pour mettre à jour dynamiquement la datalist des guildes
-    function updateGuildDatalist(guildName) {
-        if (!guildName || !guildDatalist) return;
-        const existingOptions = Array.from(guildDatalist.options).map(opt => opt.value.toLowerCase());
-        if (!existingOptions.includes(guildName.toLowerCase())) {
-            const newOption = document.createElement('option');
-            newOption.value = guildName;
-            guildDatalist.appendChild(newOption);
-        }
-    }
+    document.querySelectorAll('.custom-guild-select').forEach(container => {
+        const input = container.querySelector('.guild-select-input');
+        const panel = container.querySelector('.guild-select-panel');
+
+        const populateGuildOptions = (filter = '') => {
+            panel.innerHTML = '';
+            const lowerFilter = filter.toLowerCase();
+
+            availableGuilds
+                .filter(g => g.toLowerCase().includes(lowerFilter))
+                .forEach(guild => {
+                    const option = document.createElement('div');
+                    option.className = 'guild-option';
+                    option.textContent = guild;
+                    option.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                        input.value = guild;
+                        container.classList.remove('open');
+                        validatePtForm();
+                    });
+                    panel.appendChild(option);
+                });
+
+            if (filter && !availableGuilds.some(g => g.toLowerCase() === lowerFilter)) {
+                const createOption = document.createElement('div');
+                createOption.className = 'guild-option create-new';
+                createOption.textContent = `Create "${filter}"`;
+                createOption.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    const newGuildName = filter.trim();
+                    input.value = newGuildName;
+                    if (!availableGuilds.some(g => g.toLowerCase() === newGuildName.toLowerCase())) {
+                        availableGuilds.push(newGuildName);
+                    }
+                    container.classList.remove('open');
+                    validatePtForm();
+                });
+                panel.appendChild(createOption);
+            }
+        };
+
+        input.addEventListener('focus', () => {
+            populateGuildOptions(input.value);
+            container.classList.add('open');
+        });
+
+        input.addEventListener('blur', () => {
+            // Petit délai pour permettre au clic sur une option de se déclencher
+            setTimeout(() => container.classList.remove('open'), 150);
+        });
+
+        input.addEventListener('input', () => {
+            if (!container.classList.contains('open')) {
+                container.classList.add('open');
+            }
+            populateGuildOptions(input.value);
+            validatePtForm();
+        });
+    });
 
     const validatePtForm = () => {
         const ptId = ptIdInput.value;
@@ -294,9 +359,11 @@ export function initPerilousTrials() {
         if (playerCount > 0 && playerCount !== names.size) {
             submitBtn.disabled = true;
             submitBtn.textContent = 'Duplicate Players';
+            submitBtn.style.backgroundColor = 'var(--accent-color)';
             return;
         } else {
             submitBtn.textContent = 'Submit Team';
+            submitBtn.style.backgroundColor = '';
         }
 
         if (!ptId || !rank || playerCount !== 4) {
@@ -308,18 +375,10 @@ export function initPerilousTrials() {
 
     ptIdInput.addEventListener('change', () => findNextAvailableRank(ptIdInput.value));
     ptRankInput.addEventListener('input', validatePtForm);
-    for (let i = 0; i < 4; i++) {
-        const fieldsContainer = document.getElementById(`pt-new-player-fields-${i}`);
-        fieldsContainer.querySelectorAll('select, input').forEach(input => {
-            const eventType = input.tagName === 'SELECT' ? 'change' : 'input';
-            input.addEventListener(eventType, validatePtForm);
-
-            // CORRECTION : Attacher l'événement pour la mise à jour de la guilde
-            if (input.getAttribute('name')?.includes('[guild]')) {
-                input.addEventListener('change', () => updateGuildDatalist(input.value.trim()));
-            }
-        });
-    }
+    ptAdminForm.querySelectorAll('select, input').forEach(input => {
+        const eventType = ['SELECT', 'INPUT'].includes(input.tagName) ? (input.type === 'text' ? 'input' : 'change') : 'change';
+        input.addEventListener(eventType, validatePtForm);
+    });
 
     validatePtForm();
 }
