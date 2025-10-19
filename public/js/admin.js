@@ -9,8 +9,10 @@ document.addEventListener('DOMContentLoaded', function() {
         sessionStorage.removeItem('adminPassword');
         document.body.classList.remove('admin-mode');
         alert('Admin mode deactivated.');
-        adminModal.classList.remove('active');
-        adminBackdrop.classList.remove('active');
+        const adminModal = document.getElementById('admin-modal');
+        const adminBackdrop = document.getElementById('admin-modal-backdrop');
+        if (adminModal) adminModal.classList.remove('active');
+        if (adminBackdrop) adminBackdrop.classList.remove('active');
     }
 
     const adminModal = document.getElementById('admin-modal');
@@ -18,63 +20,79 @@ document.addEventListener('DOMContentLoaded', function() {
     const adminSettingsBtn = document.getElementById('admin-settings-btn');
     const deactivateAdminBtn = document.getElementById('deactivate-admin-btn');
 
-    adminSettingsBtn.addEventListener('click', () => {
-        if (document.body.classList.contains('admin-mode')) {
-            adminModal.classList.add('active');
-            adminBackdrop.classList.add('active');
-        } else {
-            const password = prompt("Enter Admin Password:");
-            if (password) {
-                fetch('/verify-admin', {
+    if (adminSettingsBtn) {
+        adminSettingsBtn.addEventListener('click', () => {
+            if (document.body.classList.contains('admin-mode')) {
+                if (adminModal) adminModal.classList.add('active');
+                if (adminBackdrop) adminBackdrop.classList.add('active');
+            } else {
+                const password = prompt("Enter Admin Password:");
+                if (password) {
+                    fetch('/verify-admin', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ password })
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                activateAdminMode(password);
+                            } else {
+                                alert('Incorrect Password');
+                            }
+                        })
+                        .catch(err => console.error('Error verifying admin password:', err));
+                }
+            }
+        });
+    }
+
+    if (adminBackdrop) {
+        adminBackdrop.addEventListener('click', () => {
+            if (adminModal) adminModal.classList.remove('active');
+            adminBackdrop.classList.remove('active');
+        });
+    }
+
+    if (deactivateAdminBtn) {
+        deactivateAdminBtn.addEventListener('click', deactivateAdminMode);
+    }
+
+    const serverSettingsForm = document.getElementById('server-settings-form');
+    if (serverSettingsForm) {
+        serverSettingsForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = {
+                server_name: formData.get('server_name'),
+                server_open_date: formData.get('server_open_date'),
+                admin_password: sessionStorage.getItem('adminPassword'),
+            };
+
+            try {
+                const response = await fetch('/update-server-settings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password })
-                })
-                    .then(res => res.json()).then(data => {
-                    if (data.success) {
-                        activateAdminMode(password);
-                    }
-                    else { alert('Incorrect Password'); }
+                    body: JSON.stringify(data)
                 });
+                const result = await response.json();
+                if (result.success) {
+                    window.location.href = '/?notification=' + encodeURIComponent(result.message);
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (err) {
+                alert('An error occurred while saving settings.');
+                console.error(err);
             }
-        }
-    });
-
-    adminBackdrop.addEventListener('click', () => {
-        adminModal.classList.remove('active');
-        adminBackdrop.classList.remove('active');
-    });
-
-    deactivateAdminBtn.addEventListener('click', deactivateAdminMode);
-
-    document.getElementById('server-settings-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const data = {
-            server_name: formData.get('server_name'),
-            server_open_date: formData.get('server_open_date'),
-            admin_password: sessionStorage.getItem('adminPassword'),
-            cc_timers: []
-        };
-
-        const response = await fetch('/update-server-settings', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
         });
-
-        const result = await response.json();
-        if (result.success) {
-            window.location.href = '/?notification=' + encodeURIComponent(result.message);
-        } else {
-            alert('Error: ' + result.message);
-        }
-    });
+    }
 
     const ptAdminForm = document.getElementById('pt-admin-form');
     if (ptAdminForm) {
         ptAdminForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+            e.preventDefault(); // On intercepte la soumission
+
             const ptId = ptAdminForm.querySelector('#pt-id-input').value;
             const rank = ptAdminForm.querySelector('#pt-team-rank').value;
 
@@ -83,17 +101,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            const response = await fetch(`/pt-leaderboard/${ptId}/rank/${rank}`);
-            const existingTeam = await response.json();
+            try {
+                const response = await fetch(`/pt-leaderboard/${ptId}/rank/${rank}`);
+                if (!response.ok) {
+                    throw new Error(`Server responded with ${response.status}`);
+                }
+                const existingTeam = await response.json();
 
-            let proceed = true;
-            if (existingTeam) {
-                const teamNames = [existingTeam.player1_name, existingTeam.player2_name, existingTeam.player3_name, existingTeam.player4_name].filter(Boolean).join(', ');
-                proceed = confirm(`Rank ${rank} is already taken by the team: ${teamNames}.\nDo you want to overwrite it?`);
-            }
+                let proceed = true;
+                if (existingTeam) {
+                    const teamNames = [existingTeam.player1_name, existingTeam.player2_name, existingTeam.player3_name, existingTeam.player4_name].filter(Boolean).join(', ');
+                    proceed = confirm(`Rank ${rank} is already taken by the team: ${teamNames}.\nDo you want to overwrite it?`);
+                }
 
-            if (proceed) {
-                ptAdminForm.submit();
+                if (proceed) {
+                    // Cette méthode soumet le formulaire sans redéclencher cet écouteur d'événement.
+                    ptAdminForm.submit();
+                }
+            } catch (err) {
+                console.error("Error checking rank:", err);
+                if (confirm("Could not verify if rank is already taken. Submit anyway?")) {
+                    ptAdminForm.submit();
+                }
             }
         });
     }
@@ -114,7 +143,26 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 
-function deletePlayer(id) { const password = sessionStorage.getItem('adminPassword'); if (password) { document.getElementById(`delete-password-${id}`).value = password; document.getElementById(`delete-form-${id}`).submit(); } }
-function updateTeam(id) { const password = sessionStorage.getItem('adminPassword'); if (!password) return;
-    const newTeam = prompt("Enter the new team name (e.g., Team A, No Team):"); if (newTeam === null) return;
-    const form = document.createElement('form'); form.method = 'POST'; form.action = `/update-team/${id}`; form.innerHTML = `<input type="hidden" name="admin_password" value="${password}"><input type="hidden" name="team" value="${newTeam}">`; document.body.appendChild(form); form.submit(); }
+// Fonctions globales pour les rendre accessibles depuis les attributs onclick
+window.deletePlayer = function(id) {
+    const password = sessionStorage.getItem('adminPassword');
+    if (password && confirm("Are you sure you want to delete this player? This action cannot be undone.")) {
+        const form = document.getElementById(`delete-form-${id}`);
+        document.getElementById(`delete-password-${id}`).value = password;
+        form.submit();
+    }
+}
+
+window.updateTeam = function(id) {
+    const password = sessionStorage.getItem('adminPassword');
+    if (!password) return;
+    const newTeam = prompt("Enter the new team name (e.g., Team A, or 'No Team' to remove from team):");
+    if (newTeam === null) return;
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/update-team/${id}`;
+    form.innerHTML = `<input type="hidden" name="admin_password" value="${password}"><input type="hidden" name="team" value="${newTeam}">`;
+    document.body.appendChild(form);
+    form.submit();
+}

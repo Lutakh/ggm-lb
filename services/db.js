@@ -39,7 +39,7 @@ const initializeDb = async () => {
         await client.query(`CREATE TABLE IF NOT EXISTS server_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);`);
         await client.query(`CREATE TABLE IF NOT EXISTS class_change_timers (id SERIAL PRIMARY KEY, label TEXT NOT NULL, weeks_after_start INTEGER NOT NULL, is_active BOOLEAN DEFAULT true);`);
 
-        // Trigger pour mettre à jour 'updated_at' sur la table 'players'
+        // Trigger pour 'updated_at' sur la table 'players'
         await client.query(`
             CREATE OR REPLACE FUNCTION update_updated_at_column()
             RETURNS TRIGGER AS $$
@@ -57,9 +57,9 @@ const initializeDb = async () => {
             EXECUTE FUNCTION update_updated_at_column();
         `);
 
-        // --- Logique de peuplement initial (remplace les migrations) ---
+        // --- Logique de peuplement initial ---
 
-        // 1. Peupler les Perilous Trials de 1 à 8 si la table est vide
+        // 1. Peupler les Perilous Trials (PT1 à PT8) si la table est vide
         const ptCount = await client.query('SELECT COUNT(*) FROM perilous_trials');
         if (ptCount.rows[0].count === '0') {
             console.log('⏳ Populating "perilous_trials" table for the first time...');
@@ -69,7 +69,24 @@ const initializeDb = async () => {
             console.log('✅ Populated "perilous_trials" with PT1 through PT8.');
         }
 
-        // 2. Insérer les paramètres serveur par défaut s'ils n'existent pas
+        // 2. Peupler les Class Change Timers si la table est vide
+        const ccCount = await client.query('SELECT COUNT(*) FROM class_change_timers');
+        if (ccCount.rows[0].count === '0') {
+            console.log('⏳ Populating "class_change_timers" table for the first time...');
+            const defaultTimers = [
+                { label: 'Class Change 1', weeks: 1 }, { label: 'Class Change 2', weeks: 4 },
+                { label: 'Class Change 3', weeks: 13 }, { label: 'Class Change 4', weeks: 22 },
+                { label: 'Class Change 5', weeks: 31 }, { label: 'Class Change 6', weeks: 42 },
+                { label: 'Class Change 7', weeks: 53 }, { label: 'Class Change 8', weeks: 64 },
+                { label: 'Class Change 9', weeks: 75 }, { label: 'Class Change 10', weeks: 86 },
+            ];
+            for (const timer of defaultTimers) {
+                await client.query('INSERT INTO class_change_timers (label, weeks_after_start) VALUES ($1, $2)', [timer.label, timer.weeks]);
+            }
+            console.log('✅ Populated "class_change_timers" with default values.');
+        }
+
+        // 3. Insérer les paramètres serveur par défaut s'ils n'existent pas
         await client.query(`INSERT INTO server_settings (key, value) VALUES ('server_name', 'SXX') ON CONFLICT (key) DO NOTHING;`);
         await client.query(`INSERT INTO server_settings (key, value) VALUES ('server_open_date', '${new Date().toISOString()}') ON CONFLICT (key) DO NOTHING;`);
 
@@ -78,13 +95,12 @@ const initializeDb = async () => {
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('❌ Error initializing database schema:', err);
-        throw err; // Propage l'erreur pour arrêter le démarrage du serveur si la DB échoue
+        throw err;
     } finally {
         client.release();
     }
 };
 
-// Lancer l'initialisation au démarrage de l'application
 initializeDb().catch(err => {
     console.error("Could not initialize the database. Exiting.", err);
     process.exit(1);
