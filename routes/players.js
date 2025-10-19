@@ -44,7 +44,7 @@ router.post('/add-player', async (req, res) => {
             const finalGuild = guild === undefined ? existingPlayer.guild : guild;
             const finalNotes = notes !== undefined ? notes : existingPlayer.notes;
 
-            await client.query(`UPDATE players SET name = $1, class = $2, combat_power = $3, team = $4, guild = $5, notes = $6 WHERE id = $7`,
+            await client.query(`UPDATE players SET name = $1, class = $2, combat_power = $3, team = $4, guild = $5, notes = $6, updated_at = NOW() WHERE id = $7`,
                 [name, finalClass, finalCp, finalTeam, finalGuild, finalNotes, playerId]);
 
             await client.query(`DELETE FROM play_slots WHERE player_id = $1`, [playerId]);
@@ -83,7 +83,7 @@ router.post('/delete-player/:id', async (req, res) => {
 router.post('/update-team/:id', async (req, res) => {
     if (req.body.admin_password !== process.env.ADMIN_PASSWORD) { return res.redirect('/?notification=' + encodeURIComponent('Incorrect admin password.')); }
     try {
-        await db.query('UPDATE players SET team = $1 WHERE id = $2', [req.body.team, req.params.id]);
+        await db.query('UPDATE players SET team = $1, updated_at = NOW() WHERE id = $2', [req.body.team, req.params.id]);
         res.redirect('/?notification=' + encodeURIComponent('Team updated.'));
     } catch (err) { console.error("Error updating team:", err); res.redirect('/?notification=Error updating team.'); }
 });
@@ -91,7 +91,7 @@ router.post('/update-team/:id', async (req, res) => {
 router.post('/rename-team', async (req, res) => {
     if (req.body.admin_password !== process.env.ADMIN_PASSWORD) { return res.redirect('/?notification=' + encodeURIComponent('Incorrect admin password.')); }
     try {
-        await db.query('UPDATE players SET team = $1 WHERE team = $2', [req.body.new_team_name, req.body.old_team_name]);
+        await db.query('UPDATE players SET team = $1, updated_at = NOW() WHERE team = $2', [req.body.new_team_name, req.body.old_team_name]);
         res.redirect(`/?notification=` + encodeURIComponent(`Team '${req.body.old_team_name}' renamed to '${req.body.new_team_name}'.`));
     } catch (err) { console.error("Error renaming team:", err); res.redirect('/?notification=Error renaming team.'); }
 });
