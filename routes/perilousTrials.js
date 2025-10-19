@@ -124,7 +124,7 @@ router.post('/pt-leaderboard', async (req, res) => {
 
                 if (playerId) {
                     if (newPlayerCp > 0) {
-                        await client.query('UPDATE players SET combat_power = $1 WHERE id = $2', [newPlayerCp, playerId]);
+                        await client.query('UPDATE players SET combat_power = $1, updated_at = NOW() WHERE id = $2', [newPlayerCp, playerId]);
                     }
                 } else {
                     const newPlayerClass = playerData.class || 'Unknown';
