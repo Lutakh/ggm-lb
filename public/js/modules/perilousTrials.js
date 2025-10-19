@@ -9,6 +9,8 @@ export function initPerilousTrials() {
     const helpBackdrop = document.getElementById('pt-help-modal-backdrop');
     const helpCloseBtn = document.getElementById('pt-help-close-btn');
     const ptSelect = document.getElementById('pt-select');
+    const ptGlobalModeSelector = document.getElementById('pt-global-mode-selector');
+    const ptGlobalMode = document.getElementById('pt-global-mode');
     const ptTable = document.getElementById('pt-leaderboard-table');
     const ptTableBody = ptTable?.querySelector('tbody');
     const ptGlobalTable = document.getElementById('pt-global-leaderboard-table');
@@ -71,11 +73,17 @@ export function initPerilousTrials() {
     async function loadPtLeaderboard(ptId) {
         if (!ptId || !ptTableBody || !ptGlobalTable) return;
         const isGlobal = ptId === 'global';
+
         ptTable.style.display = isGlobal ? 'none' : 'table';
         ptGlobalTable.style.display = isGlobal ? 'table' : 'none';
+        if (ptGlobalModeSelector) {
+            ptGlobalModeSelector.style.display = isGlobal ? 'flex' : 'none';
+        }
+
 
         if (isGlobal) {
-            const response = await fetch(`/pt-leaderboard/global`);
+            const mode = ptGlobalMode ? ptGlobalMode.value : 'all';
+            const response = await fetch(`/pt-leaderboard/global?mode=${mode}`);
             fullGlobalLeaderboard = await response.json();
             applyGlobalPtFilters();
         } else {
@@ -113,6 +121,14 @@ export function initPerilousTrials() {
                 const ptIdInput = ptAdminForm.querySelector('#pt-id-input');
                 if (ptIdInput) ptIdInput.value = newPtId;
                 findNextAvailableRank(newPtId);
+            }
+        });
+    }
+
+    if (ptGlobalMode) {
+        ptGlobalMode.addEventListener('change', () => {
+            if (ptSelect.value === 'global') {
+                loadPtLeaderboard('global');
             }
         });
     }
