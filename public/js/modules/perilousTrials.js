@@ -1,9 +1,8 @@
 import { formatCP } from './utils.js';
 
 export function initPerilousTrials() {
-    let fullGlobalLeaderboard = []; // Stocke les données complètes du classement global
+    let fullGlobalLeaderboard = [];
 
-    // --- Logique de la modale d'aide ---
     const helpBtn = document.getElementById('pt-help-btn');
     const helpModal = document.getElementById('pt-help-modal');
     const helpBackdrop = document.getElementById('pt-help-modal-backdrop');
@@ -24,7 +23,6 @@ export function initPerilousTrials() {
     if (helpCloseBtn) helpCloseBtn.addEventListener('click', closeHelpModal);
     if (helpBackdrop) helpBackdrop.addEventListener('click', closeHelpModal);
 
-    // --- Logique d'affichage et de filtrage du classement ---
     const ptSelect = document.getElementById('pt-select');
     const ptTable = document.getElementById('pt-leaderboard-table');
     const ptTableBody = ptTable?.querySelector('tbody');
@@ -33,42 +31,33 @@ export function initPerilousTrials() {
     const ptIdInputAdmin = document.getElementById('pt-id-input');
     const urlParams = new URLSearchParams(window.location.search);
     const ptIdFromUrl = urlParams.get('pt_id');
-
-    // NOUVEAUX SÉLECTEURS POUR LE FILTRE DANS L'EN-TÊTE
     const ptClassFilterBtn = document.getElementById('pt-class-filter-btn');
     const ptClassFilterPanel = document.getElementById('pt-class-filter-panel');
     const ptClassFilters = document.querySelectorAll('#pt-class-filter-panel input');
 
-    // Logique pour ouvrir/fermer le panneau de filtre
     if (ptClassFilterBtn) {
         ptClassFilterBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             ptClassFilterPanel.classList.toggle('show');
         });
     }
-    window.addEventListener('click', (e) => {
-        if (ptClassFilterPanel && !ptClassFilterPanel.contains(e.target) && !ptClassFilterBtn.contains(e.target)) {
-            ptClassFilterPanel.classList.remove('show');
-        }
+    window.addEventListener('click', () => {
+        if (ptClassFilterPanel) ptClassFilterPanel.classList.remove('show');
     });
 
     function applyGlobalPtFilters() {
         const selectedClasses = Array.from(ptClassFilters).filter(c => c.checked).map(c => c.dataset.class);
-
-        const filteredData = fullGlobalLeaderboard.filter(player => {
-            return selectedClasses.length === 0 || selectedClasses.includes(player.class);
-        });
+        const filteredData = fullGlobalLeaderboard.filter(player => selectedClasses.length === 0 || selectedClasses.includes(player.class));
 
         ptGlobalTableBody.innerHTML = '';
         if (filteredData.length === 0) {
-            ptGlobalTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No players match the current filters.</td></tr>';
+            ptGlobalTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No players match filters.</td></tr>';
             return;
         }
 
         filteredData.forEach((player, index) => {
             const row = document.createElement('tr');
-            row.classList.add('podium');
-            if (index < 3) row.classList.add(`rank-${index + 1}`);
+            row.classList.add('podium', `rank-${index + 1}`);
             row.innerHTML = `
                 <td class="rank-col">${index + 1}</td>
                 <td>${player.name}</td>
@@ -78,15 +67,11 @@ export function initPerilousTrials() {
             `;
             ptGlobalTableBody.appendChild(row);
         });
-
-        if (ptClassFilterBtn) {
-            ptClassFilterBtn.classList.toggle('active', selectedClasses.length > 0);
-        }
+        if (ptClassFilterBtn) ptClassFilterBtn.classList.toggle('active', selectedClasses.length > 0);
     }
 
     async function loadPtLeaderboard(ptId) {
         if (!ptId || !ptTableBody || !ptGlobalTable) return;
-
         const isGlobal = ptId === 'global';
         ptTable.style.display = isGlobal ? 'none' : 'table';
         ptGlobalTable.style.display = isGlobal ? 'table' : 'none';
@@ -101,7 +86,7 @@ export function initPerilousTrials() {
             const leaderboard = await response.json();
             ptTableBody.innerHTML = '';
             if (leaderboard.length === 0) {
-                ptTableBody.innerHTML = '<tr><td colspan="2" style="text-align: center;">No data for this trial yet.</td></tr>';
+                ptTableBody.innerHTML = '<tr><td colspan="2" style="text-align: center;">No data yet.</td></tr>';
                 return;
             }
             leaderboard.forEach(entry => {
@@ -110,16 +95,12 @@ export function initPerilousTrials() {
                     const name = entry[`player${i}_name`];
                     const pClass = entry[`player${i}_class`];
                     if (name) {
-                        teamHtml += `<div class="pt-leaderboard-player">
-                                        <span class="class-tag class-${(pClass || 'unknown').toLowerCase()}"></span>
-                                        <span>${name}</span>
-                                     </div>`;
+                        teamHtml += `<div class="pt-leaderboard-player"><span class="class-tag class-${(pClass || 'unknown').toLowerCase()}"></span><span>${name}</span></div>`;
                     }
                 }
                 teamHtml += '</div>';
                 const row = document.createElement('tr');
-                row.classList.add('podium');
-                if(entry.rank <= 3) row.classList.add(`rank-${entry.rank}`);
+                row.classList.add('podium', `rank-${entry.rank}`);
                 row.innerHTML = `<td class="rank-col">${entry.rank}</td><td>${teamHtml}</td>`;
                 ptTableBody.appendChild(row);
             });
@@ -135,7 +116,6 @@ export function initPerilousTrials() {
 
     ptClassFilters.forEach(input => input.addEventListener('change', applyGlobalPtFilters));
 
-    // --- Logique du formulaire PT (MODIFIÉE) ---
     const ptAdminForm = document.getElementById('pt-admin-form');
     if (!ptAdminForm) return;
 
@@ -148,9 +128,9 @@ export function initPerilousTrials() {
     const submitBtn = ptAdminForm.querySelector('button[type="submit"]');
     const ptIdInput = document.getElementById('pt-id-input');
     const ptRankInput = document.getElementById('pt-team-rank');
-
     const playersDataElement = document.getElementById('pt-players-data-source');
     const allPlayers = playersDataElement ? JSON.parse(playersDataElement.textContent) : [];
+    const guildDatalist = document.getElementById('guild-datalist-pt');
 
     let activePlayerIndex = null;
     let activeSuggestionIndex = -1;
@@ -158,37 +138,30 @@ export function initPerilousTrials() {
     async function findNextAvailableRank(ptId) {
         if (!ptId) {
             ptRankInput.value = '';
-            validatePtForm();
             return;
         }
         try {
             const response = await fetch(`/pt-leaderboard/${ptId}/next-rank`);
             const data = await response.json();
             ptRankInput.value = data.nextRank || 1;
-            validatePtForm();
         } catch (error) {
             console.error('Failed to fetch next rank:', error);
-            ptRankInput.value = 1; // Fallback
+            ptRankInput.value = 1;
+        } finally {
             validatePtForm();
         }
     }
 
-    const getCurrentlySelectedNames = () => {
-        const names = [];
-        for (let i = 0; i < 4; i++) {
-            if (i !== activePlayerIndex) {
-                const name = ptAdminForm.querySelector(`#pt-player-name-hidden-${i}`).value;
-                if (name) names.push(name.toLowerCase());
-            }
-        }
-        return names;
-    };
-
     const populatePlayerList = (filter = '') => {
         playerListContainer.innerHTML = '';
         const query = filter.toLowerCase();
-        const selectedNames = getCurrentlySelectedNames();
-
+        const selectedNames = [];
+        for (let i = 0; i < 4; i++) {
+            if (i !== activePlayerIndex) {
+                const name = ptAdminForm.querySelector(`#pt-player-name-hidden-${i}`).value;
+                if (name) selectedNames.push(name.toLowerCase());
+            }
+        }
         allPlayers
             .filter(p => p.name.toLowerCase().includes(query) && !selectedNames.includes(p.name.toLowerCase()))
             .forEach(player => {
@@ -218,19 +191,14 @@ export function initPerilousTrials() {
 
     const selectPlayer = (name) => {
         if (activePlayerIndex === null) return;
-
         const isExistingPlayer = allPlayers.some(p => p.name.toLowerCase() === name.toLowerCase());
-
         document.getElementById(`pt-player-display-${activePlayerIndex}`).textContent = name;
         document.getElementById(`pt-player-name-hidden-${activePlayerIndex}`).value = name;
-
         const newPlayerFields = document.getElementById(`pt-new-player-fields-${activePlayerIndex}`);
         const classInput = newPlayerFields.querySelector('select[name*="[class]"]');
-        const guildInput = newPlayerFields.querySelector('input[name*="[guild]"]'); // C'est maintenant un input
+        const guildInput = newPlayerFields.querySelector('input[name*="[guild]"]');
         const cpInput = newPlayerFields.querySelector('input[name*="[cp]"]');
-
         newPlayerFields.style.display = 'grid';
-
         if (isExistingPlayer) {
             classInput.style.display = 'none';
             guildInput.style.display = 'none';
@@ -244,7 +212,6 @@ export function initPerilousTrials() {
             cpInput.placeholder = "CP (e.g., 1.2M)";
             cpInput.required = true;
         }
-
         closeModal();
         validatePtForm();
     };
@@ -255,46 +222,27 @@ export function initPerilousTrials() {
 
     closeModalBtn.addEventListener('click', closeModal);
     backdrop.addEventListener('click', closeModal);
-
     filterInput.addEventListener('input', () => {
         populatePlayerList(filterInput.value);
         activeSuggestionIndex = -1;
     });
-
     playerListContainer.addEventListener('click', (e) => {
         const selectedItem = e.target.closest('.suggestion-item');
         if (selectedItem) selectPlayer(selectedItem.dataset.playerName);
     });
-
     createPlayerBtn.addEventListener('click', () => {
         const newName = filterInput.value.trim();
         if (newName) selectPlayer(newName);
     });
 
-    const updateActiveSuggestion = (items) => {
-        items.forEach((item, index) => {
-            if (index === activeSuggestionIndex) {
-                item.classList.add('active');
-                item.scrollIntoView({ block: 'nearest' });
-            } else {
-                item.classList.remove('active');
-            }
-        });
-    };
-
     filterInput.addEventListener('keydown', (e) => {
         const items = playerListContainer.querySelectorAll('.suggestion-item');
-        if (e.key === 'ArrowDown') {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
             e.preventDefault();
             if (items.length > 0) {
-                activeSuggestionIndex = (activeSuggestionIndex + 1) % items.length;
-                updateActiveSuggestion(items);
-            }
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            if (items.length > 0) {
-                activeSuggestionIndex = (activeSuggestionIndex - 1 + items.length) % items.length;
-                updateActiveSuggestion(items);
+                if (e.key === 'ArrowDown') activeSuggestionIndex = (activeSuggestionIndex + 1) % items.length;
+                else activeSuggestionIndex = (activeSuggestionIndex - 1 + items.length) % items.length;
+                items.forEach((item, index) => item.classList.toggle('active', index === activeSuggestionIndex));
             }
         } else if (e.key === 'Enter') {
             e.preventDefault();
@@ -304,49 +252,50 @@ export function initPerilousTrials() {
             } else if (items.length > 0) {
                 selectPlayer(items[0].dataset.playerName);
             } else if (filterInput.value.trim() !== '') {
-                // CORRECTION : On appelle directement selectPlayer au lieu de simuler un clic
-                const newName = filterInput.value.trim();
-                if (newName) selectPlayer(newName);
+                selectPlayer(filterInput.value.trim());
             }
         }
     });
+
+    // CORRECTION : Logique pour mettre à jour dynamiquement la datalist des guildes
+    function updateGuildDatalist(guildName) {
+        if (!guildName || !guildDatalist) return;
+        const existingOptions = Array.from(guildDatalist.options).map(opt => opt.value.toLowerCase());
+        if (!existingOptions.includes(guildName.toLowerCase())) {
+            const newOption = document.createElement('option');
+            newOption.value = guildName;
+            guildDatalist.appendChild(newOption);
+        }
+    }
 
     const validatePtForm = () => {
         const ptId = ptIdInput.value;
         const rank = ptRankInput.value;
         let isFormValid = true;
         let playerCount = 0;
+        const names = new Set();
 
-        const names = [];
         for (let i = 0; i < 4; i++) {
-            const nameInput = ptAdminForm.querySelector(`#pt-player-name-hidden-${i}`);
-            const name = nameInput.value.trim();
-
+            const name = ptAdminForm.querySelector(`#pt-player-name-hidden-${i}`).value.trim();
             if (name) {
                 playerCount++;
-                names.push(name.toLowerCase());
-
+                names.add(name.toLowerCase());
                 const isExistingPlayer = allPlayers.some(p => p.name.toLowerCase() === name.toLowerCase());
                 if (!isExistingPlayer) {
                     const classInput = ptAdminForm.querySelector(`select[name="players[${i}][class]"]`);
                     const cpInput = ptAdminForm.querySelector(`input[name="players[${i}][cp]"]`);
-                    if (!classInput.value || !cpInput.value) {
+                    if (!classInput.value || !cpInput.value.trim()) {
                         isFormValid = false;
                     }
                 }
-            } else {
-                isFormValid = false;
             }
         }
 
-        const uniqueNames = new Set(names);
-        if (names.length > 0 && names.length > uniqueNames.size) {
+        if (playerCount > 0 && playerCount !== names.size) {
             submitBtn.disabled = true;
-            submitBtn.style.backgroundColor = 'var(--accent-color)';
-            submitBtn.textContent = 'Duplicate Player';
+            submitBtn.textContent = 'Duplicate Players';
             return;
         } else {
-            submitBtn.style.backgroundColor = '';
             submitBtn.textContent = 'Submit Team';
         }
 
@@ -357,16 +306,20 @@ export function initPerilousTrials() {
         submitBtn.disabled = !isFormValid;
     };
 
-    // Add event listeners to all relevant inputs
     ptIdInput.addEventListener('change', () => findNextAvailableRank(ptIdInput.value));
     ptRankInput.addEventListener('input', validatePtForm);
     for (let i = 0; i < 4; i++) {
         const fieldsContainer = document.getElementById(`pt-new-player-fields-${i}`);
         fieldsContainer.querySelectorAll('select, input').forEach(input => {
-            input.addEventListener('input', validatePtForm);
-            input.addEventListener('change', validatePtForm);
+            const eventType = input.tagName === 'SELECT' ? 'change' : 'input';
+            input.addEventListener(eventType, validatePtForm);
+
+            // CORRECTION : Attacher l'événement pour la mise à jour de la guilde
+            if (input.getAttribute('name')?.includes('[guild]')) {
+                input.addEventListener('change', () => updateGuildDatalist(input.value.trim()));
+            }
         });
     }
 
-    validatePtForm(); // Initial validation check on page load
+    validatePtForm();
 }
