@@ -118,7 +118,7 @@ router.get('/pt-leaderboard/:ptId/rank/:rank', async (req, res) => {
     }
 });
 
-// Route de soumission du classement (inchangée)
+// Route de soumission du classement (MODIFIÉE)
 router.post('/pt-leaderboard', async (req, res) => {
     if (req.body.admin_password !== process.env.ADMIN_PASSWORD) {
         return res.status(403).redirect('/?notification=' + encodeURIComponent('Incorrect admin password.'));
@@ -189,6 +189,31 @@ router.post('/pt-leaderboard', async (req, res) => {
         );
 
         await client.query('COMMIT');
+
+        // --- DÉBUT DE LA LOGIQUE DE CRÉATION AUTOMATIQUE ---
+        try {
+            const maxPtResult = await db.query("SELECT id FROM perilous_trials ORDER BY id DESC LIMIT 1");
+            const maxPtId = maxPtResult.rows[0]?.id;
+
+            if (maxPtId) {
+                const updatedPtId = parseInt(pt_id, 10);
+                const triggerPtId = maxPtId - 3;
+
+                // On vérifie aussi qu'il y a au moins une équipe dans ce PT pour être sûr
+                if (updatedPtId === triggerPtId) {
+                    const teamCountResult = await db.query('SELECT COUNT(*) FROM pt_leaderboard WHERE pt_id = $1', [triggerPtId]);
+                    if (teamCountResult.rows[0].count > 0) {
+                        const newPtNumber = maxPtId + 1;
+                        const newPtName = `PT${newPtNumber}`;
+                        await db.query("INSERT INTO perilous_trials (name) VALUES ($1) ON CONFLICT (name) DO NOTHING", [newPtName]);
+                        console.log(`✅ Automatically created Perilous Trial: ${newPtName}`);
+                    }
+                }
+            }
+        } catch (autoCreateError) {
+            console.error("❌ Error during automatic PT creation:", autoCreateError);
+        }
+        // --- FIN DE LA LOGIQUE DE CRÉATION AUTOMATIQUE ---
 
         res.redirect(`/?notification=${encodeURIComponent(`Leaderboard updated!`)}&section=perilous-trials-section&pt_id=${pt_id}`);
 
