@@ -19,7 +19,7 @@ router.get('/pt-leaderboard/global', async (req, res) => {
         leaderboardEntries.rows.forEach(entry => {
             const points = 51 - entry.rank;
             for (let i = 1; i <= 4; i++) {
-                const playerId = entry[\`player\${i}_id\`];
+                const playerId = entry[`player${i}_id`];
                 if (playerId) {
                     playerPoints[playerId] = (playerPoints[playerId] || 0) + points;
                 }
@@ -32,10 +32,10 @@ router.get('/pt-leaderboard/global', async (req, res) => {
         }
 
         const playersInfoSql = `
-                SELECT id, name, class, combat_power
-                FROM players
-                WHERE id = ANY($1::int[]);
-                `;
+            SELECT id, name, class, combat_power
+            FROM players
+            WHERE id = ANY($1::int[]);
+        `;
         const playersInfo = await db.query(playersInfoSql, [playerIds]);
 
         const globalLeaderboard = playersInfo.rows.map(player => ({
@@ -45,7 +45,7 @@ router.get('/pt-leaderboard/global', async (req, res) => {
 
         res.json(globalLeaderboard);
     } catch (err) {
-        console.error(\`Error fetching global PT leaderboard:\`, err);
+        console.error(`Error fetching global PT leaderboard:`, err);
         res.status(500).json([]);
     }
 });
@@ -61,7 +61,7 @@ router.get('/pt-leaderboard/:ptId/next-rank', async (req, res) => {
         const nextRank = (result.rows[0]?.max_rank || 0) + 1;
         res.json({ nextRank });
     } catch (err) {
-        console.error(\`Error fetching next rank for PT ID \${ptId}:\`, err);
+        console.error(`Error fetching next rank for PT ID ${ptId}:`, err);
         res.status(500).json({ nextRank: 1 });
     }
 });
@@ -70,25 +70,25 @@ router.get('/pt-leaderboard/:ptId/next-rank', async (req, res) => {
 router.get('/pt-leaderboard/:ptId', async (req, res) => {
     const { ptId } = req.params;
     const sql = `
-                SELECT
-                lb.rank,
-                    lb.player1_name, p1.class as player1_class,
-                    lb.player2_name, p2.class as player2_class,
-                    lb.player3_name, p3.class as player3_class,
-                    lb.player4_name, p4.class as player4_class
-                FROM pt_leaderboard lb
-                LEFT JOIN players p1 ON lb.player1_id = p1.id
-                LEFT JOIN players p2 ON lb.player2_id = p2.id
-                LEFT JOIN players p3 ON lb.player3_id = p3.id
-                LEFT JOIN players p4 ON lb.player4_id = p4.id
-                WHERE lb.pt_id = $1
-                ORDER BY lb.rank;
-                `;
+        SELECT
+            lb.rank,
+            lb.player1_name, p1.class as player1_class,
+            lb.player2_name, p2.class as player2_class,
+            lb.player3_name, p3.class as player3_class,
+            lb.player4_name, p4.class as player4_class
+        FROM pt_leaderboard lb
+                 LEFT JOIN players p1 ON lb.player1_id = p1.id
+                 LEFT JOIN players p2 ON lb.player2_id = p2.id
+                 LEFT JOIN players p3 ON lb.player3_id = p3.id
+                 LEFT JOIN players p4 ON lb.player4_id = p4.id
+        WHERE lb.pt_id = $1
+        ORDER BY lb.rank;
+    `;
     try {
         const result = await db.query(sql, [ptId]);
         res.json(result.rows);
     } catch (err) {
-        console.error(\`Error fetching leaderboard for PT ID \${ptId}:\`, err);
+        console.error(`Error fetching leaderboard for PT ID ${ptId}:`, err);
         res.status(500).json([]);
     }
 });
@@ -104,7 +104,7 @@ router.get('/pt-leaderboard/:ptId/rank/:rank', async (req, res) => {
             res.json(null);
         }
     } catch (err) {
-        console.error(\`Error checking rank for PT \${ptId}:\`, err);
+        console.error(`Error checking rank for PT ${ptId}:`, err);
         res.status(500).json(null);
     }
 });
@@ -145,9 +145,9 @@ router.post('/pt-leaderboard', async (req, res) => {
                         await client.query('INSERT INTO guilds (name) VALUES ($1) ON CONFLICT (name) DO NOTHING', [newPlayerGuild]);
                     }
                     const newPlayerRes = await client.query(
-                        \`INSERT INTO players (name, class, combat_power, guild, team, notes)
+                        `INSERT INTO players (name, class, combat_power, guild, team, notes)
                          VALUES ($1, $2, $3, $4, 'No Team', 'Created from PT leaderboard')
-                         RETURNING id\`,
+                         RETURNING id`,
                         [trimmedName, newPlayerClass, newPlayerCp, newPlayerGuild]
                     );
                     playerId = newPlayerRes.rows[0].id;
@@ -163,12 +163,12 @@ router.post('/pt-leaderboard', async (req, res) => {
         }
 
         await client.query(
-            \`INSERT INTO pt_leaderboard (pt_id, rank, player1_id, player2_id, player3_id, player4_id, player1_name, player2_name, player3_name, player4_name)
+            `INSERT INTO pt_leaderboard (pt_id, rank, player1_id, player2_id, player3_id, player4_id, player1_name, player2_name, player3_name, player4_name)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
              ON CONFLICT (pt_id, rank)
                  DO UPDATE SET
                                player1_id = EXCLUDED.player1_id, player2_id = EXCLUDED.player2_id, player3_id = EXCLUDED.player3_id, player4_id = EXCLUDED.player4_id,
-                               player1_name = EXCLUDED.player1_name, player2_name = EXCLUDED.player2_name, player3_name = EXCLUDED.player3_name, player4_name = EXCLUDED.player4_name\`,
+                               player1_name = EXCLUDED.player1_name, player2_name = EXCLUDED.player2_name, player3_name = EXCLUDED.player3_name, player4_name = EXCLUDED.player4_name`,
             [pt_id, rank, ...playerIds, ...finalPlayerNames]
         );
 
@@ -176,11 +176,11 @@ router.post('/pt-leaderboard', async (req, res) => {
 
         // --- NOUVELLE LOGIQUE DE CRÉATION AUTOMATIQUE DES PT ---
         try {
-            const highestPtWithTeamResult = await db.query(\`
+            const highestPtWithTeamResult = await db.query(`
                 SELECT pt.id FROM perilous_trials pt
                 WHERE EXISTS (SELECT 1 FROM pt_leaderboard lb WHERE lb.pt_id = pt.id)
                 ORDER BY pt.id DESC LIMIT 1
-            \`);
+            `);
             const highestPtWithTeam = highestPtWithTeamResult.rows[0]?.id || 0;
 
             const maxExistingPtResult = await db.query("SELECT id FROM perilous_trials ORDER BY id DESC LIMIT 1");
@@ -190,9 +190,9 @@ router.post('/pt-leaderboard', async (req, res) => {
 
             if (maxExistingPt < targetMaxPt) {
                 for (let i = maxExistingPt + 1; i <= targetMaxPt; i++) {
-                    const newPtName = \`PT\${i}\`;
+                    const newPtName = `PT${i}`;
                     await db.query("INSERT INTO perilous_trials (name) VALUES ($1) ON CONFLICT (name) DO NOTHING", [newPtName]);
-                    console.log(\`✅ Automatically created Perilous Trial: \${newPtName}\`);
+                    console.log(`✅ Automatically created Perilous Trial: ${newPtName}`);
                 }
             }
         } catch (autoCreateError) {
@@ -200,7 +200,7 @@ router.post('/pt-leaderboard', async (req, res) => {
         }
         // --- FIN DE LA NOUVELLE LOGIQUE ---
 
-        res.redirect(\`/?notification=\${encodeURIComponent(\`Leaderboard updated!\`)}&section=perilous-trials-section&pt_id=\${pt_id}\`);
+        res.redirect(`/?notification=${encodeURIComponent(`Leaderboard updated!`)}&section=perilous-trials-section&pt_id=${pt_id}`);
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('Error updating PT leaderboard:', err);
