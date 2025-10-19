@@ -14,25 +14,25 @@ router.get('/pt-leaderboard/global', async (req, res) => {
             WITH player_scores AS (
                 SELECT player_id, pt_id, MAX(51 - rank) as points
                 FROM (
-                    SELECT pt_id, rank, player1_id AS player_id FROM pt_leaderboard WHERE player1_id IS NOT NULL AND rank <= 50
-                    UNION ALL
-                    SELECT pt_id, rank, player2_id AS player_id FROM pt_leaderboard WHERE player2_id IS NOT NULL AND rank <= 50
-                    UNION ALL
-                    SELECT pt_id, rank, player3_id AS player_id FROM pt_leaderboard WHERE player3_id IS NOT NULL AND rank <= 50
-                    UNION ALL
-                    SELECT pt_id, rank, player4_id AS player_id FROM pt_leaderboard WHERE player4_id IS NOT NULL AND rank <= 50
-                ) as scores
+                         SELECT pt_id, rank, player1_id AS player_id FROM pt_leaderboard WHERE player1_id IS NOT NULL AND rank <= 50
+                         UNION ALL
+                         SELECT pt_id, rank, player2_id AS player_id FROM pt_leaderboard WHERE player2_id IS NOT NULL AND rank <= 50
+                         UNION ALL
+                         SELECT pt_id, rank, player3_id AS player_id FROM pt_leaderboard WHERE player3_id IS NOT NULL AND rank <= 50
+                         UNION ALL
+                         SELECT pt_id, rank, player4_id AS player_id FROM pt_leaderboard WHERE player4_id IS NOT NULL AND rank <= 50
+                     ) as scores
                 GROUP BY player_id, pt_id
             ),
-            total_points AS (
-                SELECT player_id, SUM(points) as total_points
-                FROM player_scores
-                GROUP BY player_id
-            )
+                 total_points AS (
+                     SELECT player_id, SUM(points) as total_points
+                     FROM player_scores
+                     GROUP BY player_id
+                 )
             SELECT
                 p.id, p.name, p.class, p.combat_power, tp.total_points as points
             FROM players p
-            JOIN total_points tp ON p.id = tp.player_id
+                     JOIN total_points tp ON p.id = tp.player_id
             ORDER BY tp.total_points DESC, p.combat_power DESC;
         `;
     } else {
@@ -164,8 +164,8 @@ router.post('/pt-leaderboard', async (req, res) => {
                         await client.query('INSERT INTO guilds (name) VALUES ($1) ON CONFLICT (name) DO NOTHING', [newPlayerGuild]);
                     }
                     const newPlayerRes = await client.query(
-                        `INSERT INTO players (name, class, combat_power, guild, team, notes)
-                         VALUES ($1, $2, $3, $4, 'No Team', 'Created from PT leaderboard')
+                        `INSERT INTO players (name, class, combat_power, guild, team, notes, updated_at)
+                         VALUES ($1, $2, $3, $4, 'No Team', 'Created from PT leaderboard', NOW())
                          RETURNING id`,
                         [trimmedName, newPlayerClass, newPlayerCp, newPlayerGuild]
                     );
