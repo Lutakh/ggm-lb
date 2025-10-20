@@ -70,12 +70,10 @@ router.get('/', async (req, res) => {
         const rankedGuilds = Object.entries(guildsData).map(([name, data]) => ({ name, total_cp: data.total_cp, member_count: data.members.length, class_distribution: data.class_distribution })).sort((a, b) => b.total_cp - a.total_cp);
 
         // --- LOGIQUE DES TIMERS ---
-        // [MODIFICATION 1: LIGNES SUPPRIMÉES (serverOffsetHours, serverTime, serverDay)]
         const now = new Date();
-        const currentUTCDay = now.getUTCDay(); // 0=Dim, 1=Lun, 2=Mar, 3=Mer... [MODIFICATION 2: LIGNE AJOUTÉE]
+        const currentUTCDay = now.getUTCDay(); // 0=Dim, 1=Lun, 2=Mar, 3=Mer...
 
 
-        // [MODIFICATION 3: FONCTION getNextReset REMPLACÉE]
         // Fonction pour calculer la prochaine date de reset (Daily, Weekly, Event)
         // TOUT est basé sur 09:00 UTC
         const getNextReset = (targetDay) => { // targetDay: 0=Dim, 1=Lun, 3=Mer
@@ -102,45 +100,19 @@ router.get('/', async (req, res) => {
         const allClassChangeTimers = calculateClassChangeTimers(serverSettings.server_open_date, ccTimersResult.rows);
         const activeClassChangeTimer = allClassChangeTimers.find(t => t.milliseconds > 0);
 
-        // Calcul des informations serveur et Paper Plane
+
+        // --- [CORRECTION 2] Calcul des informations serveur et Paper Plane ---
         const serverStartDate = new Date(serverSettings.server_open_date);
         // Temps écoulé en millisecondes depuis le début du serveur
         const timeSinceStart = now.getTime() - serverStartDate.getTime();
         // Nombre de jours COMPLETS écoulés
         const serverAgeInDays = Math.floor(timeSinceStart / (1000 * 60 * 60 * 24));
 
+        // Le numéro du Paper Plane est basé sur le nombre de semaines COMPLÈTES écoulées + 1
+        // (Semaine 1 = Jours 0-6 = Plane 1 | Semaine 2 = Jours 7-13 = Plane 2, etc.)
+        const paperPlaneNumber = Math.floor(serverAgeInDays / 7) + 1;
 
-        // [MODIFICATION 4: BLOC DE CALCUL paperPlaneNumber REMPLACÉ]
-        // CORRECTION: La logique du Paper Plane doit se baser sur le nombre de resets du Mercredi (jour 3) à 09:00 UTC
-
-        // 1. Trouver la date du premier reset (le premier Mercredi à 9h UTC post-lancement)
-        const firstReset = new Date(serverStartDate.getTime());
-        firstReset.setUTCHours(9, 0, 0, 0);
-        const startDay = serverStartDate.getUTCDay(); // 0=Dim, 3=Mer
-        // Calcule les jours jusqu'au premier Mercredi
-        const daysUntilFirstWed = (3 - startDay + 7) % 7;
-        firstReset.setUTCDate(firstReset.getUTCDate() + daysUntilFirstWed);
-
-        // Si le premier reset (Mercredi 9h) est avant même le démarrage du serveur (ex: start Mercredi 10h)
-        if (firstReset < serverStartDate) {
-            firstReset.setUTCDate(firstReset.getUTCDate() + 7);
-        }
-
-        // 2. Calculer le numéro du plane actuel
-        const msSinceFirstReset = now.getTime() - firstReset.getTime();
-        let paperPlaneNumber;
-
-        if (msSinceFirstReset < 0) {
-            // On est avant le tout premier reset
-            paperPlaneNumber = 1;
-        } else {
-            // Calculer combien de semaines complètes se sont écoulées *depuis le premier reset*
-            const weeksPassed = Math.floor(msSinceFirstReset / (1000 * 60 * 60 * 24 * 7));
-            // Le Plane #1 est avant le firstReset. Le Plane #2 commence *après* le firstReset (weeksPassed = 0).
-            paperPlaneNumber = weeksPassed + 2;
-        }
-
-        // 3. Obtenir le timer du prochain reset (via la fonction corrigée)
+        // Obtenir le timer du prochain reset (via la fonction corrigée)
         const nextPaperPlaneReset = getNextReset(3); // Mercredi = 3
 
 
