@@ -88,11 +88,16 @@ router.get('/', async (req, res) => {
             return reset;
         };
 
-        const classChangeTimer = calculateClassChangeTimers(serverSettings.server_open_date, ccTimersResult.rows);
+        const allClassChangeTimers = calculateClassChangeTimers(serverSettings.server_open_date, ccTimersResult.rows);
+        const activeClassChangeTimer = allClassChangeTimers.find(t => t.milliseconds > 0);
+
 
         const serverStartDate = new Date(serverSettings.server_open_date);
         const serverAgeInDays = Math.floor((now - serverStartDate) / (1000 * 60 * 60 * 24));
-        const paperPlaneNumber = Math.floor(serverAgeInDays / 7) + 1;
+
+        const nextPaperPlaneReset = getNextReset(3);
+        const timeSinceServerStartToNextPaperPlane = nextPaperPlaneReset - serverStartDate;
+        const paperPlaneNumber = Math.ceil(timeSinceServerStartToNextPaperPlane / (1000 * 60 * 60 * 24 * 7));
 
 
         res.render('index', {
@@ -102,8 +107,9 @@ router.get('/', async (req, res) => {
             timers: {
                 daily: getNextReset() - serverTime,
                 weekly: getNextReset(1) - serverTime,
-                event: getNextReset(3) - serverTime,
-                classChange: classChangeTimer,
+                event: nextPaperPlaneReset - serverTime,
+                classChange: activeClassChangeTimer,
+                allClassChanges: allClassChangeTimers,
                 serverDay: serverAgeInDays,
                 paperPlaneNumber: paperPlaneNumber
             },
