@@ -443,7 +443,7 @@ body:not(.section-active) #top-nav {
     flex-direction: column;
     align-items: center;
     gap: 4px;
-    position: relative;
+    position: relative; /* Nécessaire pour le positionnement absolu du tooltip */
 }
 .timer-label {
     font-size: 0.8em;
@@ -977,28 +977,30 @@ body.admin-mode .admin-actions {
     color: var(--primary-color);
 }
 
-/* --- TOOLTIP POUR CLASS CHANGE --- */
-.cc-tooltip {
-    display: none;
+/* --- TOOLTIP POUR LES TIMERS (Class Change & Paper Plane) --- */
+.timer-tooltip {
+    display: none; /* Caché par défaut */
     position: absolute;
-    bottom: 100%;
+    top: 100%; /* CORRECTION: Positionné en dessous */
     left: 50%;
     transform: translateX(-50%);
-    margin-bottom: 10px;
+    margin-top: 10px; /* Espace entre le timer et le tooltip */
     background-color: var(--surface-color);
     padding: 15px;
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    z-index: 100;
-    width: 280px;
+    z-index: 100; /* Assure qu'il est au-dessus des autres éléments */
+    width: 280px; /* Largeur fixe pour la lisibilité */
     border: 1px solid var(--border-color);
+    pointer-events: none; /* Pour éviter que le tooltip ne bloque le hover */
 }
 
-.timer-entry:hover .cc-tooltip {
+/* Afficher le tooltip quand on survole l'élément parent (.timer-entry) */
+.timer-entry:hover .timer-tooltip {
     display: block;
 }
 
-.cc-tooltip-title {
+.tooltip-title { /* Style générique pour les titres de tooltip */
     font-weight: bold;
     color: var(--primary-color);
     margin-bottom: 10px;
@@ -1007,7 +1009,7 @@ body.admin-mode .admin-actions {
     font-size: 1.1em;
 }
 
-.cc-tooltip-list {
+.tooltip-list { /* Style générique pour les listes de tooltip */
     list-style: none;
     padding: 0;
     margin: 0;
@@ -1016,20 +1018,23 @@ body.admin-mode .admin-actions {
     gap: 8px;
 }
 
-.cc-tooltip-item {
+.tooltip-item { /* Style générique pour les items dans les listes de tooltip */
     display: flex;
     justify-content: space-between;
     align-items: center;
     font-size: 0.9em;
 }
 
-.cc-tooltip-item .timer-label {
+.tooltip-item .timer-label {
     opacity: 1;
     font-weight: normal;
+    text-transform: none;
 }
 
-.cc-tooltip-item .timer-value {
+.tooltip-item .timer-value {
     font-size: 0.9em;
     padding: 2px 6px;
     background-color: var(--primary-color);
+    color: white;
+    border-radius: 4px;
 }

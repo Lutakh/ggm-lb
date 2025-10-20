@@ -73,16 +73,20 @@ router.get('/', async (req, res) => {
         const serverOffsetHours = -4;
         const now = new Date();
         const serverTime = new Date(now.valueOf() + (serverOffsetHours * 60 * 60 * 1000));
-        const serverDay = serverTime.getUTCDay();
+        const serverDay = serverTime.getUTCDay(); // Dimanche = 0, Lundi = 1, ..., Samedi = 6
 
         const getNextReset = (targetDay) => {
             const reset = new Date(serverTime);
-            reset.setUTCHours(5, 0, 0, 0);
+            // On met l'heure du reset (5h du matin serveur, donc 9h UTC)
+            reset.setUTCHours(9, 0, 0, 0);
             if (targetDay !== undefined) {
+                // Calcule le nombre de jours jusqu'au prochain targetDay (ex: Lundi=1)
                 const daysUntilTarget = (targetDay - serverDay + 7) % 7;
                 reset.setUTCDate(reset.getUTCDate() + daysUntilTarget);
             }
+            // Si le reset calculé est déjà passé pour aujourd'hui (ou cette semaine pour les resets hebdo)
             if (reset < serverTime) {
+                // Ajoute 1 jour (pour daily) ou 7 jours (pour weekly)
                 reset.setUTCDate(reset.getUTCDate() + (targetDay === undefined ? 1 : 7));
             }
             return reset;
@@ -95,9 +99,20 @@ router.get('/', async (req, res) => {
         const serverStartDate = new Date(serverSettings.server_open_date);
         const serverAgeInDays = Math.floor((now - serverStartDate) / (1000 * 60 * 60 * 24));
 
-        // CORRECTION: Utilise l'âge actuel du serveur (floor) pour déterminer le numéro du Paper Plane
+        // Calcul du numéro du Paper Plane actuel
         const paperPlaneNumber = Math.floor(serverAgeInDays / 7) + 1;
-        const nextPaperPlaneReset = getNextReset(3);
+        const nextPaperPlaneReset = getNextReset(3); // Mercredi = 3
+
+        // Calcul des prochains resets pour le tooltip Paper Plane
+        const futurePaperPlaneResets = [];
+        let currentResetDate = new Date(nextPaperPlaneReset.getTime());
+        for (let i = 1; i <= 4; i++) { // Calcule les 4 prochains
+            currentResetDate.setUTCDate(currentResetDate.getUTCDate() + 7);
+            futurePaperPlaneResets.push({
+                number: paperPlaneNumber + i,
+                milliseconds: currentResetDate - now
+            });
+        }
 
 
         res.render('index', {
@@ -106,12 +121,13 @@ router.get('/', async (req, res) => {
             notification: req.query.notification || null,
             timers: {
                 daily: getNextReset() - serverTime,
-                weekly: getNextReset(1) - serverTime,
+                weekly: getNextReset(1) - serverTime, // Lundi = 1
                 event: nextPaperPlaneReset - serverTime,
                 classChange: activeClassChangeTimer,
                 allClassChanges: allClassChangeTimers,
                 serverDay: serverAgeInDays,
-                paperPlaneNumber: paperPlaneNumber
+                paperPlaneNumber: paperPlaneNumber,
+                futurePaperPlanes: futurePaperPlaneResets // Ajout des timers futurs
             },
         });
     } catch (err) {

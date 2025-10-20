@@ -25,17 +25,31 @@
            <li class="timer-entry">
                <span class="timer-label">Paper Plane #<%= timers.paperPlaneNumber %></span>
                <span class="timer-value" data-milliseconds="<%= timers.event %>" data-type="event"></span>
+               <% if (timers.futurePaperPlanes && timers.futurePaperPlanes.length > 0) { %>
+               <div class="timer-tooltip pp-tooltip">
+                   <div class="tooltip-title">Upcoming Paper Planes</div>
+                   <ul class="tooltip-list">
+                       <% timers.futurePaperPlanes.forEach(pp => { %>
+                           <li class="tooltip-item">
+                               <span class="timer-label">Paper Plane #<%= pp.number %></span>
+                               <span class="timer-value" data-milliseconds="<%= pp.milliseconds %>" data-type="event"></span>
+                           </li>
+                       <% }); %>
+                   </ul>
+               </div>
+               <% } %>
            </li>
            <% if (timers.classChange) { %>
            <li class="timer-entry">
                <span class="timer-label"><%= timers.classChange.label %></span>
                <span class="timer-value" data-milliseconds="<%= timers.classChange.milliseconds %>" data-type="classChange"></span>
-               <div class="cc-tooltip">
-                   <div class="cc-tooltip-title">Upcoming Class Changes</div>
-                   <ul class="cc-tooltip-list">
+               <% if (timers.allClassChanges && timers.allClassChanges.length > 1) { %>
+               <div class="timer-tooltip cc-tooltip">
+                   <div class="tooltip-title">Upcoming Class Changes</div>
+                   <ul class="tooltip-list">
                        <% timers.allClassChanges.forEach(cc => { %>
                            <% if (cc.milliseconds > 0) { %>
-                           <li class="cc-tooltip-item">
+                           <li class="tooltip-item">
                                <span class="timer-label"><%= cc.label %></span>
                                <span class="timer-value" data-milliseconds="<%= cc.milliseconds %>" data-type="classChange"></span>
                            </li>
@@ -43,6 +57,7 @@
                        <% }); %>
                    </ul>
                </div>
+               <% } %>
            </li>
            <% } %>
        </ul>
