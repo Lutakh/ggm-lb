@@ -81,7 +81,7 @@ router.get('/', async (req, res) => {
         const getNextReset = (targetDay) => {
             const reset = new Date(serverTime);
             // CORRECTION: Mettre l'heure du reset serveur (5h du matin) en UTC => 9h UTC
-            reset.setUTCHours(9, 0, 0, 0);
+            reset.setUTCHours(9, 0, 0, 0); // *** Correction ici ***
 
             if (targetDay !== undefined) { // Pour Weekly et Event
                 const daysUntilTarget = (targetDay - serverDay + 7) % 7;
@@ -95,16 +95,19 @@ router.get('/', async (req, res) => {
             return reset;
         };
 
-        // Calcul des timers Class Change (utilise sa propre logique UTC dans utils/timers.js)
+        // Calcul des timers Class Change (utilise sa propre logique UTC dans utils/timers.js - 13h UTC)
         const allClassChangeTimers = calculateClassChangeTimers(serverSettings.server_open_date, ccTimersResult.rows);
         const activeClassChangeTimer = allClassChangeTimers.find(t => t.milliseconds > 0);
 
         // Calcul des informations serveur et Paper Plane
         const serverStartDate = new Date(serverSettings.server_open_date);
-        const serverAgeInDays = Math.floor((now - serverStartDate) / (1000 * 60 * 60 * 24));
+        // Temps écoulé en millisecondes depuis le début du serveur
+        const timeSinceStart = now.getTime() - serverStartDate.getTime();
+        // Nombre de jours COMPLETS écoulés
+        const serverAgeInDays = Math.floor(timeSinceStart / (1000 * 60 * 60 * 24));
 
         // CORRECTION: Le numéro du Paper Plane est basé sur le nombre de semaines COMPLÈTES écoulées + 1
-        const paperPlaneNumber = Math.floor(serverAgeInDays / 7) + 1;
+        const paperPlaneNumber = Math.floor(serverAgeInDays / 7) + 1; // *** Correction ici ***
         const nextPaperPlaneReset = getNextReset(3); // Mercredi = 3
 
         // Calcul des prochains resets pour le tooltip Paper Plane
@@ -112,29 +115,41 @@ router.get('/', async (req, res) => {
         let currentResetDate = new Date(nextPaperPlaneReset.getTime());
         // Calcule les 4 prochains resets HEBDOMADAIRES après celui affiché
         for (let i = 1; i <= 4; i++) {
-            // Crée une nouvelle date basée sur le reset précédent pour éviter la mutation
+            // Crée une nouvelle date basée sur le reset PRÉCÉDENT pour éviter la mutation
             let nextDate = new Date(currentResetDate.getTime());
-            nextDate.setUTCDate(nextDate.getUTCDate() + (7 * i)); // Ajoute i*7 jours
+            nextDate.setUTCDate(nextDate.getUTCDate() + (7 * (i-1))); // Ajoute (i-1)*7 jours au *prochain* reset
             futurePaperPlaneResets.push({
                 number: paperPlaneNumber + i,
                 // Le temps restant est calculé par rapport à l'heure ACTUELLE (now)
                 milliseconds: nextDate - now
             });
         }
+        // Correction pour s'assurer que le premier élément du tooltip est bien le suivant
+        let tooltipStartDate = new Date(nextPaperPlaneReset.getTime());
+        const tooltipPaperPlanes = [];
+        for (let i = 0; i < 4; i++) { // Calcule les 4 prochains resets en incluant le suivant immédiat
+            let nextDate = new Date(tooltipStartDate.getTime());
+            nextDate.setUTCDate(nextDate.getUTCDate() + (7 * i));
+            tooltipPaperPlanes.push({
+                number: paperPlaneNumber + i + 1, // On calcule le numéro du *prochain* avion
+                milliseconds: nextDate - now
+            });
+        }
+
 
         res.render('index', {
             players, rankedTeams, rankedGuilds, allTeamNames, guilds, perilousTrials, serverSettings,
             classChangeTimers: ccTimersResult.rows,
             notification: req.query.notification || null,
             timers: {
-                daily: getNextReset() - serverTime, // Temps restant jusqu'au prochain reset journalier
-                weekly: getNextReset(1) - serverTime, // Temps restant jusqu'au prochain Lundi (1)
-                event: nextPaperPlaneReset - serverTime, // Temps restant jusqu'au prochain Mercredi (3)
+                daily: getNextReset() - now, // Utilise 'now' pour calculer le temps restant
+                weekly: getNextReset(1) - now, // Lundi = 1
+                event: nextPaperPlaneReset - now, // Mercredi = 3
                 classChange: activeClassChangeTimer,
                 allClassChanges: allClassChangeTimers,
                 serverDay: serverAgeInDays,
                 paperPlaneNumber: paperPlaneNumber,
-                futurePaperPlanes: futurePaperPlaneResets
+                futurePaperPlanes: tooltipPaperPlanes // Utilisation de la nouvelle variable
             },
         });
     } catch (err) {
