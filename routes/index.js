@@ -95,9 +95,9 @@ router.get('/', async (req, res) => {
         const serverStartDate = new Date(serverSettings.server_open_date);
         const serverAgeInDays = Math.floor((now - serverStartDate) / (1000 * 60 * 60 * 24));
 
+        // CORRECTION: Utilise l'âge actuel du serveur (floor) pour déterminer le numéro du Paper Plane
+        const paperPlaneNumber = Math.floor(serverAgeInDays / 7) + 1;
         const nextPaperPlaneReset = getNextReset(3);
-        const timeSinceServerStartToNextPaperPlane = nextPaperPlaneReset - serverStartDate;
-        const paperPlaneNumber = Math.ceil(timeSinceServerStartToNextPaperPlane / (1000 * 60 * 60 * 24 * 7));
 
 
         res.render('index', {

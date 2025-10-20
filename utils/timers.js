@@ -2,15 +2,13 @@ function calculateClassChangeTimers(serverOpenDateStr, classChangeTimers) {
     // Utiliser UTC pour éviter les problèmes de fuseau horaire
     const serverOpenDate = new Date(serverOpenDateStr + 'T00:00:00Z');
     const now = new Date();
-    const twoHoursInMs = 2 * 60 * 60 * 1000;
 
     const calculateTargetDate = (startDate, weeks) => {
         const target = new Date(startDate.getTime());
         target.setUTCDate(target.getUTCDate() + weeks * 7);
-        // Le reset est à 5h du matin heure du serveur, ce qui correspond à 15h UTC
-        target.setUTCHours(15, 0, 0, 0);
-        // Soustraire les 2 heures supplémentaires
-        return new Date(target.getTime() - twoHoursInMs);
+        // CORRECTION: L'heure cible réelle est 13h UTC
+        target.setUTCHours(13, 0, 0, 0);
+        return target; // Suppression de la soustraction manuelle
     };
 
     return classChangeTimers
