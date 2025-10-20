@@ -70,30 +70,33 @@ router.get('/', async (req, res) => {
         const rankedGuilds = Object.entries(guildsData).map(([name, data]) => ({ name, total_cp: data.total_cp, member_count: data.members.length, class_distribution: data.class_distribution })).sort((a, b) => b.total_cp - a.total_cp);
 
         // --- LOGIQUE DES TIMERS ---
-        const serverOffsetHours = -4; // Décalage UTC-4 pour l'heure serveur
+        // [MODIFICATION 1: LIGNES SUPPRIMÉES (serverOffsetHours, serverTime, serverDay)]
         const now = new Date();
-        // Calculer l'heure serveur actuelle
-        const serverTime = new Date(now.valueOf() + (serverOffsetHours * 60 * 60 * 1000));
-        const serverDay = serverTime.getUTCDay(); // Dimanche = 0, Lundi = 1, ..., Samedi = 6
+        const currentUTCDay = now.getUTCDay(); // 0=Dim, 1=Lun, 2=Mar, 3=Mer... [MODIFICATION 2: LIGNE AJOUTÉE]
 
+
+        // [MODIFICATION 3: FONCTION getNextReset REMPLACÉE]
         // Fonction pour calculer la prochaine date de reset (Daily, Weekly, Event)
-        // Utilise l'heure du serveur pour la logique de comparaison, mais fixe l'heure UTC du reset
-        const getNextReset = (targetDay) => {
-            const reset = new Date(serverTime);
-            // CORRECTION: Mettre l'heure du reset serveur (5h du matin) en UTC => 9h UTC
-            reset.setUTCHours(9, 0, 0, 0); // *** Correction ici ***
+        // TOUT est basé sur 09:00 UTC
+        const getNextReset = (targetDay) => { // targetDay: 0=Dim, 1=Lun, 3=Mer
+            const reset = new Date(now.getTime());
+            reset.setUTCHours(9, 0, 0, 0); // Heure du reset: 09:00 UTC
 
-            if (targetDay !== undefined) { // Pour Weekly et Event
-                const daysUntilTarget = (targetDay - serverDay + 7) % 7;
+            if (targetDay !== undefined) {
+                // Calcule le nombre de jours jusqu'au prochain targetDay
+                const daysUntilTarget = (targetDay - currentUTCDay + 7) % 7;
                 reset.setUTCDate(reset.getUTCDate() + daysUntilTarget);
             }
-            // Si le reset calculé (ex: aujourd'hui 9h UTC) est DÉJÀ PASSÉ par rapport à l'heure serveur ACTUELLE
-            if (reset < serverTime) {
-                // Avance au prochain jour (pour daily) ou à la semaine suivante (pour weekly/event)
+
+            // Si le reset calculé (aujourd'hui 9h UTC, ou ce Mercredi 9h UTC)
+            // est DÉJÀ PASSÉ par rapport à l'heure ACTUELLE
+            if (reset < now) {
+                // Avance au prochain reset
                 reset.setUTCDate(reset.getUTCDate() + (targetDay === undefined ? 1 : 7));
             }
             return reset;
         };
+
 
         // Calcul des timers Class Change (utilise sa propre logique UTC dans utils/timers.js - 13h UTC)
         const allClassChangeTimers = calculateClassChangeTimers(serverSettings.server_open_date, ccTimersResult.rows);
@@ -106,9 +109,40 @@ router.get('/', async (req, res) => {
         // Nombre de jours COMPLETS écoulés
         const serverAgeInDays = Math.floor(timeSinceStart / (1000 * 60 * 60 * 24));
 
-        // CORRECTION: Le numéro du Paper Plane est basé sur le nombre de semaines COMPLÈTES écoulées + 1
-        const paperPlaneNumber = Math.floor(serverAgeInDays / 7) + 1; // *** Correction ici ***
+
+        // [MODIFICATION 4: BLOC DE CALCUL paperPlaneNumber REMPLACÉ]
+        // CORRECTION: La logique du Paper Plane doit se baser sur le nombre de resets du Mercredi (jour 3) à 09:00 UTC
+
+        // 1. Trouver la date du premier reset (le premier Mercredi à 9h UTC post-lancement)
+        const firstReset = new Date(serverStartDate.getTime());
+        firstReset.setUTCHours(9, 0, 0, 0);
+        const startDay = serverStartDate.getUTCDay(); // 0=Dim, 3=Mer
+        // Calcule les jours jusqu'au premier Mercredi
+        const daysUntilFirstWed = (3 - startDay + 7) % 7;
+        firstReset.setUTCDate(firstReset.getUTCDate() + daysUntilFirstWed);
+
+        // Si le premier reset (Mercredi 9h) est avant même le démarrage du serveur (ex: start Mercredi 10h)
+        if (firstReset < serverStartDate) {
+            firstReset.setUTCDate(firstReset.getUTCDate() + 7);
+        }
+
+        // 2. Calculer le numéro du plane actuel
+        const msSinceFirstReset = now.getTime() - firstReset.getTime();
+        let paperPlaneNumber;
+
+        if (msSinceFirstReset < 0) {
+            // On est avant le tout premier reset
+            paperPlaneNumber = 1;
+        } else {
+            // Calculer combien de semaines complètes se sont écoulées *depuis le premier reset*
+            const weeksPassed = Math.floor(msSinceFirstReset / (1000 * 60 * 60 * 24 * 7));
+            // Le Plane #1 est avant le firstReset. Le Plane #2 commence *après* le firstReset (weeksPassed = 0).
+            paperPlaneNumber = weeksPassed + 2;
+        }
+
+        // 3. Obtenir le timer du prochain reset (via la fonction corrigée)
         const nextPaperPlaneReset = getNextReset(3); // Mercredi = 3
+
 
         // Calcul des prochains resets pour le tooltip Paper Plane
         const futurePaperPlaneResets = [];
