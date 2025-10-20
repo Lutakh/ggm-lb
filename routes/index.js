@@ -100,6 +100,9 @@ router.get('/', async (req, res) => {
         const allClassChangeTimers = calculateClassChangeTimers(serverSettings.server_open_date, ccTimersResult.rows);
         const activeClassChangeTimer = allClassChangeTimers.find(t => t.milliseconds > 0);
 
+        // --- [MODIFICATION] Définition des Paper Planes importants
+        const importantPaperPlanes = [2, 5, 9, 12, 14, 18, 21, 23, 24, 25, 28, 33];
+
         // Calcul des informations serveur et Paper Plane
         const serverStartDate = new Date(serverSettings.server_open_date);
         // Temps écoulé en millisecondes depuis le début du serveur
@@ -107,13 +110,7 @@ router.get('/', async (req, res) => {
         // Nombre de jours COMPLETS écoulés
         const serverAgeInDays = Math.floor(timeSinceStart / (1000 * 60 * 60 * 24));
 
-
-        // [MODIFICATION FINALE]
-        // Le numéro du Paper Plane est le nombre de semaines complètes écoulées, avec un minimum de 1.
-        // Jours 0-6  => floor(age/7) = 0 => max(1, 0) => 1
-        // Jours 7-13 => floor(age/7) = 1 => max(1, 1) => 1
-        // Jours 14-20=> floor(age/7) = 2 => max(1, 2) => 2  -> C'est le Plane #2 qui a commencé.
-        // Pour que le #3 soit affiché, il faut que 3 semaines complètes se soient écoulées (age >= 21)
+        // Le numéro du Paper Plane est le nombre de semaines complètes écoulées.
         const paperPlaneNumber = Math.floor(serverAgeInDays / 7);
 
         // Obtenir le timer du prochain reset (via la fonction corrigée)
@@ -121,28 +118,17 @@ router.get('/', async (req, res) => {
 
 
         // Calcul des prochains resets pour le tooltip Paper Plane
-        const futurePaperPlaneResets = [];
-        let currentResetDate = new Date(nextPaperPlaneReset.getTime());
-        // Calcule les 4 prochains resets HEBDOMADAIRES après celui affiché
-        for (let i = 1; i <= 4; i++) {
-            // Crée une nouvelle date basée sur le reset PRÉCÉDENT pour éviter la mutation
-            let nextDate = new Date(currentResetDate.getTime());
-            nextDate.setUTCDate(nextDate.getUTCDate() + (7 * (i-1))); // Ajoute (i-1)*7 jours au *prochain* reset
-            futurePaperPlaneResets.push({
-                number: paperPlaneNumber + i,
-                // Le temps restant est calculé par rapport à l'heure ACTUELLE (now)
-                milliseconds: nextDate - now
-            });
-        }
-        // Correction pour s'assurer que le premier élément du tooltip est bien le suivant
-        let tooltipStartDate = new Date(nextPaperPlaneReset.getTime());
         const tooltipPaperPlanes = [];
-        for (let i = 0; i < 4; i++) { // Calcule les 4 prochains resets en incluant le suivant immédiat
+        let tooltipStartDate = new Date(nextPaperPlaneReset.getTime());
+        for (let i = 0; i < 4; i++) {
             let nextDate = new Date(tooltipStartDate.getTime());
             nextDate.setUTCDate(nextDate.getUTCDate() + (7 * i));
+            const nextPlaneNumber = paperPlaneNumber + i + 1;
             tooltipPaperPlanes.push({
-                number: paperPlaneNumber + i + 1, // On calcule le numéro du *prochain* avion
-                milliseconds: nextDate - now
+                number: nextPlaneNumber,
+                milliseconds: nextDate - now,
+                // [MODIFICATION] Ajout de la vérification pour le tooltip
+                isImportant: importantPaperPlanes.includes(nextPlaneNumber)
             });
         }
 
@@ -152,14 +138,16 @@ router.get('/', async (req, res) => {
             classChangeTimers: ccTimersResult.rows,
             notification: req.query.notification || null,
             timers: {
-                daily: getNextReset() - now, // Utilise 'now' pour calculer le temps restant
-                weekly: getNextReset(1) - now, // Lundi = 1
-                event: nextPaperPlaneReset - now, // Mercredi = 3
+                daily: getNextReset() - now,
+                weekly: getNextReset(1) - now,
+                event: nextPaperPlaneReset - now,
                 classChange: activeClassChangeTimer,
                 allClassChanges: allClassChangeTimers,
                 serverDay: serverAgeInDays,
                 paperPlaneNumber: paperPlaneNumber,
-                futurePaperPlanes: tooltipPaperPlanes // Utilisation de la nouvelle variable
+                // [MODIFICATION] Ajout de la vérification pour le compteur principal
+                isPaperPlaneImportant: importantPaperPlanes.includes(paperPlaneNumber),
+                futurePaperPlanes: tooltipPaperPlanes
             },
         });
     } catch (err) {

@@ -1038,3 +1038,12 @@ body.admin-mode .admin-actions {
     color: white;
     border-radius: 4px;
 }
+
+/* --- [MODIFICATION] STYLE POUR LES ÉVÉNEMENTS IMPORTANTS --- */
+.timer-label.important-event {
+    color: var(--gold);
+    font-weight: 800; /* Plus gras */
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.4);
+    /* Optionnel: pour un effet plus "brillant" */
+    -webkit-text-stroke: 0.5px rgba(0,0,0,0.1);
+}
