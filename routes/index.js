@@ -100,17 +100,21 @@ router.get('/', async (req, res) => {
         const allClassChangeTimers = calculateClassChangeTimers(serverSettings.server_open_date, ccTimersResult.rows);
         const activeClassChangeTimer = allClassChangeTimers.find(t => t.milliseconds > 0);
 
-
-        // --- [CORRECTION 2] Calcul des informations serveur et Paper Plane ---
+        // Calcul des informations serveur et Paper Plane
         const serverStartDate = new Date(serverSettings.server_open_date);
         // Temps écoulé en millisecondes depuis le début du serveur
         const timeSinceStart = now.getTime() - serverStartDate.getTime();
         // Nombre de jours COMPLETS écoulés
         const serverAgeInDays = Math.floor(timeSinceStart / (1000 * 60 * 60 * 24));
 
-        // Le numéro du Paper Plane est basé sur le nombre de semaines COMPLÈTES écoulées + 1
-        // (Semaine 1 = Jours 0-6 = Plane 1 | Semaine 2 = Jours 7-13 = Plane 2, etc.)
-        const paperPlaneNumber = Math.floor(serverAgeInDays / 7) + 1;
+
+        // [MODIFICATION FINALE]
+        // Le numéro du Paper Plane est le nombre de semaines complètes écoulées, avec un minimum de 1.
+        // Jours 0-6  => floor(age/7) = 0 => max(1, 0) => 1
+        // Jours 7-13 => floor(age/7) = 1 => max(1, 1) => 1
+        // Jours 14-20=> floor(age/7) = 2 => max(1, 2) => 2  -> C'est le Plane #2 qui a commencé.
+        // Pour que le #3 soit affiché, il faut que 3 semaines complètes se soient écoulées (age >= 21)
+        const paperPlaneNumber = Math.floor(serverAgeInDays / 7);
 
         // Obtenir le timer du prochain reset (via la fonction corrigée)
         const nextPaperPlaneReset = getNextReset(3); // Mercredi = 3
