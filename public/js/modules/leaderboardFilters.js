@@ -4,21 +4,35 @@ export function initLeaderboardFilters() {
     // --- GESTION DES MENUS DÉROULANTS PERSONNALISÉS ---
     document.querySelectorAll('.dropdown-btn').forEach(button => {
         button.addEventListener('click', (e) => {
-            const panel = button.nextElementSibling;
-            // Ferme tous les autres panneaux avant d'ouvrir celui-ci
+            // Logique améliorée pour trouver le panneau de filtre associé
+            let panel;
+            const parentContainer = button.closest('.dropdown-filter, .class-header-cell');
+            if (parentContainer) {
+                panel = parentContainer.querySelector('.dropdown-panel');
+            }
+
+            if (!panel) {
+                console.error('Dropdown panel not found for button', button);
+                return;
+            }
+
+            // Ferme tous les autres panneaux avant de gérer celui-ci
+            const isCurrentlyOpen = panel.classList.contains('show');
             document.querySelectorAll('.dropdown-panel').forEach(p => {
-                if (p !== panel) {
-                    p.classList.remove('show');
-                }
+                p.classList.remove('show');
             });
-            panel.classList.toggle('show');
+
+            if (!isCurrentlyOpen) {
+                panel.classList.add('show');
+            }
+
             e.stopPropagation(); // Empêche la fermeture immédiate par le listener global
         });
     });
 
     // Ferme les menus si on clique n'importe où ailleurs sur la page
     window.addEventListener('click', (e) => {
-        if (!e.target.matches('.dropdown-btn')) {
+        if (!e.target.closest('.dropdown-btn')) {
             document.querySelectorAll('.dropdown-panel.show').forEach(panel => {
                 panel.classList.remove('show');
             });
@@ -26,6 +40,7 @@ export function initLeaderboardFilters() {
     });
 
     // --- LOGIQUE D'APPLICATION DES FILTRES ---
+    // ✅ CORRECTION : Le sélecteur ne cible plus le filtre des PT
     const classFilters = document.querySelectorAll('#class-filter-panel input');
     const teamFilters = document.querySelectorAll('#team-filter-panel input');
     const guildFilters = document.querySelectorAll('#guild-filter-panel input');
