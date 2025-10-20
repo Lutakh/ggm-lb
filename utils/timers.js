@@ -6,9 +6,9 @@ function calculateClassChangeTimers(serverOpenDateStr, classChangeTimers) {
     const calculateTargetDate = (startDate, weeks) => {
         const target = new Date(startDate.getTime());
         target.setUTCDate(target.getUTCDate() + weeks * 7);
-        // CORRECTION: L'heure cible réelle est 13h UTC
+        // L'heure cible réelle est 13h UTC pour les Class Changes
         target.setUTCHours(13, 0, 0, 0);
-        return target; // Suppression de la soustraction manuelle
+        return target;
     };
 
     return classChangeTimers
@@ -18,7 +18,7 @@ function calculateClassChangeTimers(serverOpenDateStr, classChangeTimers) {
             const timerDate = calculateTargetDate(serverOpenDate, timer.weeks_after_start);
             return {
                 label: timer.label,
-                milliseconds: timerDate - now
+                milliseconds: timerDate - now // Calcul du temps restant par rapport à maintenant
             };
         });
 }

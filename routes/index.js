@@ -70,64 +70,71 @@ router.get('/', async (req, res) => {
         const rankedGuilds = Object.entries(guildsData).map(([name, data]) => ({ name, total_cp: data.total_cp, member_count: data.members.length, class_distribution: data.class_distribution })).sort((a, b) => b.total_cp - a.total_cp);
 
         // --- LOGIQUE DES TIMERS ---
-        const serverOffsetHours = -4;
+        const serverOffsetHours = -4; // Décalage UTC-4 pour l'heure serveur
         const now = new Date();
+        // Calculer l'heure serveur actuelle
         const serverTime = new Date(now.valueOf() + (serverOffsetHours * 60 * 60 * 1000));
         const serverDay = serverTime.getUTCDay(); // Dimanche = 0, Lundi = 1, ..., Samedi = 6
 
+        // Fonction pour calculer la prochaine date de reset (Daily, Weekly, Event)
+        // Utilise l'heure du serveur pour la logique de comparaison, mais fixe l'heure UTC du reset
         const getNextReset = (targetDay) => {
             const reset = new Date(serverTime);
-            // On met l'heure du reset (5h du matin serveur, donc 9h UTC)
+            // CORRECTION: Mettre l'heure du reset serveur (5h du matin) en UTC => 9h UTC
             reset.setUTCHours(9, 0, 0, 0);
-            if (targetDay !== undefined) {
-                // Calcule le nombre de jours jusqu'au prochain targetDay (ex: Lundi=1)
+
+            if (targetDay !== undefined) { // Pour Weekly et Event
                 const daysUntilTarget = (targetDay - serverDay + 7) % 7;
                 reset.setUTCDate(reset.getUTCDate() + daysUntilTarget);
             }
-            // Si le reset calculé est déjà passé pour aujourd'hui (ou cette semaine pour les resets hebdo)
+            // Si le reset calculé (ex: aujourd'hui 9h UTC) est DÉJÀ PASSÉ par rapport à l'heure serveur ACTUELLE
             if (reset < serverTime) {
-                // Ajoute 1 jour (pour daily) ou 7 jours (pour weekly)
+                // Avance au prochain jour (pour daily) ou à la semaine suivante (pour weekly/event)
                 reset.setUTCDate(reset.getUTCDate() + (targetDay === undefined ? 1 : 7));
             }
             return reset;
         };
 
+        // Calcul des timers Class Change (utilise sa propre logique UTC dans utils/timers.js)
         const allClassChangeTimers = calculateClassChangeTimers(serverSettings.server_open_date, ccTimersResult.rows);
         const activeClassChangeTimer = allClassChangeTimers.find(t => t.milliseconds > 0);
 
-
+        // Calcul des informations serveur et Paper Plane
         const serverStartDate = new Date(serverSettings.server_open_date);
         const serverAgeInDays = Math.floor((now - serverStartDate) / (1000 * 60 * 60 * 24));
 
-        // Calcul du numéro du Paper Plane actuel
+        // CORRECTION: Le numéro du Paper Plane est basé sur le nombre de semaines COMPLÈTES écoulées + 1
         const paperPlaneNumber = Math.floor(serverAgeInDays / 7) + 1;
         const nextPaperPlaneReset = getNextReset(3); // Mercredi = 3
 
         // Calcul des prochains resets pour le tooltip Paper Plane
         const futurePaperPlaneResets = [];
         let currentResetDate = new Date(nextPaperPlaneReset.getTime());
-        for (let i = 1; i <= 4; i++) { // Calcule les 4 prochains
-            currentResetDate.setUTCDate(currentResetDate.getUTCDate() + 7);
+        // Calcule les 4 prochains resets HEBDOMADAIRES après celui affiché
+        for (let i = 1; i <= 4; i++) {
+            // Crée une nouvelle date basée sur le reset précédent pour éviter la mutation
+            let nextDate = new Date(currentResetDate.getTime());
+            nextDate.setUTCDate(nextDate.getUTCDate() + (7 * i)); // Ajoute i*7 jours
             futurePaperPlaneResets.push({
                 number: paperPlaneNumber + i,
-                milliseconds: currentResetDate - now
+                // Le temps restant est calculé par rapport à l'heure ACTUELLE (now)
+                milliseconds: nextDate - now
             });
         }
-
 
         res.render('index', {
             players, rankedTeams, rankedGuilds, allTeamNames, guilds, perilousTrials, serverSettings,
             classChangeTimers: ccTimersResult.rows,
             notification: req.query.notification || null,
             timers: {
-                daily: getNextReset() - serverTime,
-                weekly: getNextReset(1) - serverTime, // Lundi = 1
-                event: nextPaperPlaneReset - serverTime,
+                daily: getNextReset() - serverTime, // Temps restant jusqu'au prochain reset journalier
+                weekly: getNextReset(1) - serverTime, // Temps restant jusqu'au prochain Lundi (1)
+                event: nextPaperPlaneReset - serverTime, // Temps restant jusqu'au prochain Mercredi (3)
                 classChange: activeClassChangeTimer,
                 allClassChanges: allClassChangeTimers,
                 serverDay: serverAgeInDays,
                 paperPlaneNumber: paperPlaneNumber,
-                futurePaperPlanes: futurePaperPlaneResets // Ajout des timers futurs
+                futurePaperPlanes: futurePaperPlaneResets
             },
         });
     } catch (err) {
