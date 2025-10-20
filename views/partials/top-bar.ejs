@@ -23,19 +23,47 @@
                <span class="timer-value" data-milliseconds="<%= timers.weekly %>" data-type="weekly"></span>
            </li>
            <li class="timer-entry">
-               <span class="timer-label">Paper Plane</span>
-               <span class="timer-value" data-milliseconds="<%= timers.event %>" data-type="weekly"></span>
+               <span class="timer-label <%= timers.isPaperPlaneImportant ? 'important-event' : '' %>">Paper Plane #<%= timers.paperPlaneNumber %></span>
+               <span class="timer-value" data-milliseconds="<%= timers.event %>" data-type="event"></span>
+               <% if (timers.futurePaperPlanes && timers.futurePaperPlanes.length > 0) { %>
+               <div class="timer-tooltip pp-tooltip">
+                   <div class="tooltip-title">Upcoming Paper Planes</div>
+                   <ul class="tooltip-list">
+                       <% timers.futurePaperPlanes.forEach(pp => { %>
+                           <li class="tooltip-item">
+                               <span class="timer-label <%= pp.isImportant ? 'important-event' : '' %>">Paper Plane #<%= pp.number %></span>
+                               <span class="timer-value" data-milliseconds="<%= pp.milliseconds %>" data-type="event"></span>
+                           </li>
+                       <% }); %>
+                   </ul>
+               </div>
+               <% } %>
            </li>
            <% if (timers.classChange) { %>
            <li class="timer-entry">
                <span class="timer-label"><%= timers.classChange.label %></span>
-               <span class="timer-value" data-milliseconds="<%= timers.classChange.milliseconds %>" data-type="weekly"></span>
+               <span class="timer-value" data-milliseconds="<%= timers.classChange.milliseconds %>" data-type="classChange"></span>
+               <% if (timers.allClassChanges && timers.allClassChanges.length > 1) { %>
+               <div class="timer-tooltip cc-tooltip">
+                   <div class="tooltip-title">Upcoming Class Changes</div>
+                   <ul class="tooltip-list">
+                       <% timers.allClassChanges.forEach(cc => { %>
+                           <% if (cc.milliseconds > 0) { %>
+                           <li class="tooltip-item">
+                               <span class="timer-label"><%= cc.label %></span>
+                               <span class="timer-value" data-milliseconds="<%= cc.milliseconds %>" data-type="classChange"></span>
+                           </li>
+                           <% } %>
+                       <% }); %>
+                   </ul>
+               </div>
+               <% } %>
            </li>
            <% } %>
        </ul>
    </div>
    <a href="https://boarhat.gg/games/go-go-muffin/" target="_blank" class="top-bar-section guides-section">
-        <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><title>Book</title><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"></path></svg>
+        <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><title>Book</title><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"></path></svg>
        <span>Game Guides</span>
    </a>
 </div>

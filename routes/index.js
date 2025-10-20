@@ -70,28 +70,67 @@ router.get('/', async (req, res) => {
         const rankedGuilds = Object.entries(guildsData).map(([name, data]) => ({ name, total_cp: data.total_cp, member_count: data.members.length, class_distribution: data.class_distribution })).sort((a, b) => b.total_cp - a.total_cp);
 
         // --- LOGIQUE DES TIMERS ---
-        const serverOffsetHours = -4;
         const now = new Date();
-        const serverTime = new Date(now.valueOf() + (serverOffsetHours * 60 * 60 * 1000));
-        const serverDay = serverTime.getUTCDay();
+        const currentUTCDay = now.getUTCDay(); // 0=Dim, 1=Lun, 2=Mar, 3=Mer...
 
-        const getNextReset = (targetDay) => {
-            const reset = new Date(serverTime);
-            reset.setUTCHours(5, 0, 0, 0);
+
+        // Fonction pour calculer la prochaine date de reset (Daily, Weekly, Event)
+        // TOUT est basé sur 09:00 UTC
+        const getNextReset = (targetDay) => { // targetDay: 0=Dim, 1=Lun, 3=Mer
+            const reset = new Date(now.getTime());
+            reset.setUTCHours(9, 0, 0, 0); // Heure du reset: 09:00 UTC
+
             if (targetDay !== undefined) {
-                const daysUntilTarget = (targetDay - serverDay + 7) % 7;
+                // Calcule le nombre de jours jusqu'au prochain targetDay
+                const daysUntilTarget = (targetDay - currentUTCDay + 7) % 7;
                 reset.setUTCDate(reset.getUTCDate() + daysUntilTarget);
             }
-            if (reset < serverTime) {
+
+            // Si le reset calculé (aujourd'hui 9h UTC, ou ce Mercredi 9h UTC)
+            // est DÉJÀ PASSÉ par rapport à l'heure ACTUELLE
+            if (reset < now) {
+                // Avance au prochain reset
                 reset.setUTCDate(reset.getUTCDate() + (targetDay === undefined ? 1 : 7));
             }
             return reset;
         };
 
-        const classChangeTimer = calculateClassChangeTimers(serverSettings.server_open_date, ccTimersResult.rows);
 
+        // Calcul des timers Class Change (utilise sa propre logique UTC dans utils/timers.js - 13h UTC)
+        const allClassChangeTimers = calculateClassChangeTimers(serverSettings.server_open_date, ccTimersResult.rows);
+        const activeClassChangeTimer = allClassChangeTimers.find(t => t.milliseconds > 0);
+
+        // --- [MODIFICATION] Définition des Paper Planes importants
+        const importantPaperPlanes = [2, 5, 9, 12, 14, 18, 21, 23, 24, 25, 28, 33];
+
+        // Calcul des informations serveur et Paper Plane
         const serverStartDate = new Date(serverSettings.server_open_date);
-        const serverAgeInDays = Math.floor((now - serverStartDate) / (1000 * 60 * 60 * 24));
+        // Temps écoulé en millisecondes depuis le début du serveur
+        const timeSinceStart = now.getTime() - serverStartDate.getTime();
+        // Nombre de jours COMPLETS écoulés
+        const serverAgeInDays = Math.floor(timeSinceStart / (1000 * 60 * 60 * 24));
+
+        // Le numéro du Paper Plane est le nombre de semaines complètes écoulées.
+        const paperPlaneNumber = Math.floor(serverAgeInDays / 7);
+
+        // Obtenir le timer du prochain reset (via la fonction corrigée)
+        const nextPaperPlaneReset = getNextReset(3); // Mercredi = 3
+
+
+        // Calcul des prochains resets pour le tooltip Paper Plane
+        const tooltipPaperPlanes = [];
+        let tooltipStartDate = new Date(nextPaperPlaneReset.getTime());
+        for (let i = 0; i < 4; i++) {
+            let nextDate = new Date(tooltipStartDate.getTime());
+            nextDate.setUTCDate(nextDate.getUTCDate() + (7 * i));
+            const nextPlaneNumber = paperPlaneNumber + i + 1;
+            tooltipPaperPlanes.push({
+                number: nextPlaneNumber,
+                milliseconds: nextDate - now,
+                // [MODIFICATION] Ajout de la vérification pour le tooltip
+                isImportant: importantPaperPlanes.includes(nextPlaneNumber)
+            });
+        }
 
 
         res.render('index', {
@@ -99,11 +138,16 @@ router.get('/', async (req, res) => {
             classChangeTimers: ccTimersResult.rows,
             notification: req.query.notification || null,
             timers: {
-                daily: getNextReset() - serverTime,
-                weekly: getNextReset(1) - serverTime,
-                event: getNextReset(3) - serverTime,
-                classChange: classChangeTimer,
-                serverDay: serverAgeInDays
+                daily: getNextReset() - now,
+                weekly: getNextReset(1) - now,
+                event: nextPaperPlaneReset - now,
+                classChange: activeClassChangeTimer,
+                allClassChanges: allClassChangeTimers,
+                serverDay: serverAgeInDays,
+                paperPlaneNumber: paperPlaneNumber,
+                // [MODIFICATION] Ajout de la vérification pour le compteur principal
+                isPaperPlaneImportant: importantPaperPlanes.includes(paperPlaneNumber),
+                futurePaperPlanes: tooltipPaperPlanes
             },
         });
     } catch (err) {

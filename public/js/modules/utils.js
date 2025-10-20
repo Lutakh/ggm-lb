@@ -1,33 +1,33 @@
-export function formatCP(numStr) { 
+export function formatCP(numStr) {
     const num = parseInt(numStr, 10);
-    if (!num || isNaN(num)) return 'N/A'; 
+    if (!num || isNaN(num)) return 'N/A';
     if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-    if (num >= 1000) return (num / 1000).toFixed(0) + 'K'; 
+    if (num >= 1000) return (num / 1000).toFixed(0) + 'K';
     return num.toString();
 }
 
-export function parseCpFilter(text) { 
-    if (!text) return 0; 
-    text = text.trim().toUpperCase(); 
+export function parseCpFilter(text) {
+    if (!text) return 0;
+    text = text.trim().toUpperCase();
     let value = parseFloat(text.replace(/[^0-9.]/g, '')) || 0;
-    if (text.endsWith('M')) value *= 1000000; 
-    if (text.endsWith('K')) value *= 1000; 
+    if (text.endsWith('M')) value *= 1000000;
+    if (text.endsWith('K')) value *= 1000;
     return isNaN(value) ? 0 : value;
 }
 
-export function minutesToTimeValue(minutes) { 
-    if (minutes === null || isNaN(minutes)) return ''; 
+export function minutesToTimeValue(minutes) {
+    if (minutes === null || isNaN(minutes)) return '';
     const h = Math.floor(minutes / 60).toString().padStart(2, '0');
-    const m = (minutes % 60).toString().padStart(2, '0'); 
-    return `${h}:${m}`; 
+    const m = (minutes % 60).toString().padStart(2, '0');
+    return `${h}:${m}`;
 }
 
-export function minutesToFormattedTime(minutes) { 
-    if (isNaN(minutes)) return ''; 
-    const date = new Date(); 
-    date.setHours(0, 0, 0, 0); 
+export function minutesToFormattedTime(minutes) {
+    if (isNaN(minutes)) return '';
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
     date.setMinutes(minutes);
-    return new Intl.DateTimeFormat(navigator.language, { hour: 'numeric', minute: 'numeric' }).format(date); 
+    return new Intl.DateTimeFormat(navigator.language, { hour: 'numeric', minute: 'numeric' }).format(date);
 }
 
 export function updateTimers() {
@@ -44,6 +44,15 @@ export function updateTimers() {
         if (d > 0) text += `${d}d `;
         text += `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m ${String(sec).padStart(2, '0')}s`;
         el.textContent = text;
+
+        const type = el.dataset.type;
+        if (type === 'daily' && ms < 3600000) { // Moins d'1 heure
+            el.classList.add('urgent');
+        } else if (type !== 'daily' && ms < 86400000) { // Moins de 24 heures
+            el.classList.add('urgent');
+        } else {
+            el.classList.remove('urgent');
+        }
     });
 }
 
@@ -52,7 +61,7 @@ export function formatRelativeTime(isoString) {
     const date = new Date(isoString);
     const now = new Date();
     const seconds = Math.round((now - date) / 1000);
-    
+
     if (seconds < 60) return `${seconds}s ago`;
     const minutes = Math.round(seconds / 60);
     if (minutes < 60) return `${minutes}m ago`;
