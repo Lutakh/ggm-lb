@@ -40,7 +40,8 @@ export function initLeaderboardFilters() {
     });
 
     // --- LOGIQUE D'APPLICATION DES FILTRES ---
-    const classFilters = document.querySelectorAll('#class-filter-panel input, #pt-class-filter-panel input');
+    // ✅ CORRECTION : Le sélecteur ne cible plus le filtre des PT
+    const classFilters = document.querySelectorAll('#class-filter-panel input');
     const teamFilters = document.querySelectorAll('#team-filter-panel input');
     const guildFilters = document.querySelectorAll('#guild-filter-panel input');
     const cpMinFilter = document.getElementById('cp-min');
