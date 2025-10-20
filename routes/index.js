@@ -92,6 +92,7 @@ router.get('/', async (req, res) => {
 
         const serverStartDate = new Date(serverSettings.server_open_date);
         const serverAgeInDays = Math.floor((now - serverStartDate) / (1000 * 60 * 60 * 24));
+        const paperPlaneNumber = Math.floor(serverAgeInDays / 7) + 1;
 
 
         res.render('index', {
@@ -103,7 +104,8 @@ router.get('/', async (req, res) => {
                 weekly: getNextReset(1) - serverTime,
                 event: getNextReset(3) - serverTime,
                 classChange: classChangeTimer,
-                serverDay: serverAgeInDays
+                serverDay: serverAgeInDays,
+                paperPlaneNumber: paperPlaneNumber
             },
         });
     } catch (err) {

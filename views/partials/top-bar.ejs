@@ -23,19 +23,19 @@
                <span class="timer-value" data-milliseconds="<%= timers.weekly %>" data-type="weekly"></span>
            </li>
            <li class="timer-entry">
-               <span class="timer-label">Paper Plane</span>
-               <span class="timer-value" data-milliseconds="<%= timers.event %>" data-type="weekly"></span>
+               <span class="timer-label">Paper Plane <%= timers.paperPlaneNumber %></span>
+               <span class="timer-value" data-milliseconds="<%= timers.event %>" data-type="event"></span>
            </li>
            <% if (timers.classChange) { %>
            <li class="timer-entry">
                <span class="timer-label"><%= timers.classChange.label %></span>
-               <span class="timer-value" data-milliseconds="<%= timers.classChange.milliseconds %>" data-type="weekly"></span>
+               <span class="timer-value" data-milliseconds="<%= timers.classChange.milliseconds %>" data-type="classChange"></span>
            </li>
            <% } %>
        </ul>
    </div>
    <a href="https://boarhat.gg/games/go-go-muffin/" target="_blank" class="top-bar-section guides-section">
-        <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><title>Book</title><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"></path></svg>
+        <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><title>Book</title><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"></path></svg>
        <span>Game Guides</span>
    </a>
 </div>
