@@ -35,7 +35,7 @@
             <option value="">All PT Progress</option>
              <% perilousTrials.forEach(pt => { %>
                 <option value="<%= pt.name %>"><%= pt.name %></option>
-             <% }); %>
+            <% }); %>
         </select>
         <select id="pt-tag-mode">
             <option value="has">Has Tag</option>
@@ -76,11 +76,17 @@
     <tbody>
         <% players.forEach((player, index) => { %>
             <tr class="podium rank-<%= index + 1 %>"
+                data-rank="<%= index + 1 %>"
+                data-name="<%= player.name %>"
                 data-cp="<%= player.combat_power %>"
                 data-class="<%= player.class %>"
                 data-team="<%= player.team || 'No Team' %>"
                 data-guild="<%= player.guild || '' %>"
-                data-pt-tags="<%= JSON.stringify(player.pt_tags) %>">
+                data-pt-tags="<%= JSON.stringify(player.pt_tags) %>"
+                data-notes="<%= player.notes ? player.notes.replace(/"/g, '&quot;') : '-' %>"
+                data-updated="<%= player.updated_at %>"
+                data-play-slots="<%= JSON.stringify(player.play_slots || []) %>"
+            >
                 <td class="rank-col"><%= index + 1 %></td>
 
                 <td class="player-name-cell">

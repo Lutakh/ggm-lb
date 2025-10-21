@@ -1046,3 +1046,206 @@ body.admin-mode .admin-actions {
     color: var(--gold);
     font-weight: 800; /* Plus gras */
 }
+
+
+/* --- MODALE DÉTAIL JOUEUR (MOBILE) --- */
+#player-detail-modal-body {
+    padding: 10px 25px 25px 25px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+#player-detail-modal-header .class-tag {
+    font-size: 1.1em;
+    padding: 8px 14px;
+}
+
+.player-detail-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.player-detail-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+    gap: 15px;
+}
+.player-detail-list li:last-child {
+    border-bottom: none;
+}
+.player-detail-list li strong {
+    color: var(--primary-color);
+    white-space: nowrap;
+}
+.player-detail-list li span,
+.player-detail-list li div {
+    text-align: right;
+    font-weight: bold;
+}
+
+/* --- STYLES MOBILES --- */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    .card {
+        padding: 15px;
+    }
+
+    /* --- Header & Top Bar --- */
+    header h1 {
+        font-size: 1.5em;
+        gap: 10px;
+    }
+    .logo {
+        width: 35px;
+        height: 35px;
+    }
+    #admin-settings-btn {
+        width: 40px;
+        height: 40px;
+        top: 10px;
+        right: 10px;
+    }
+    #admin-settings-btn svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .top-bar {
+        flex-wrap: wrap;
+        padding: 10px;
+        gap: 15px;
+    }
+    .top-bar-section {
+        gap: 10px;
+    }
+    .top-bar-section svg {
+        width: 28px;
+        height: 28px;
+    }
+    .discord-section .discord-info span,
+    .guides-section span {
+        font-size: 0.9em;
+    }
+    .timers-list {
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        width: 100%;
+        order: 3; /* Met les timers en dernier */
+    }
+    .timer-entry {
+        flex-direction: row;
+        gap: 8px;
+        background-color: #f9f6f1;
+        padding: 5px 8px;
+        border-radius: 8px;
+        width: calc(50% - 10px); /* 2 par ligne */
+        box-sizing: border-box;
+    }
+    .timer-label {
+        font-size: 0.75em;
+        text-align: left;
+        flex-grow: 1;
+        opacity: 0.8;
+    }
+    .timer-value {
+        font-size: 0.8em;
+    }
+    .timers-section {
+        flex-basis: 100%;
+    }
+    .discord-section {
+        flex-grow: 1;
+    }
+    .guides-section {
+        flex-grow: 1;
+        justify-content: flex-end;
+    }
+    .timer-entry:hover .timer-tooltip {
+        display: none; /* Désactiver les tooltips au survol sur mobile */
+    }
+
+    /* --- Formulaire d'ajout (mobile) --- */
+    #player-form {
+        grid-template-columns: 1fr;
+    }
+    #player-image-container {
+        grid-row: auto;
+    }
+    .form-step-1, #form-details {
+        grid-column: 1 / -1;
+    }
+
+    /* --- Players Leaderboard Table (Mobile) --- */
+    .leaderboard-filters {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+    .filter-group {
+        flex-direction: column;
+        gap: 5px;
+        align-items: stretch;
+    }
+    #cp-min, #cp-max {
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .dropdown-btn {
+        width: 100%;
+    }
+
+    #leaderboard-table thead {
+        display: none; /* Cache les en-têtes */
+    }
+
+    #leaderboard-table tbody tr {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 10px 0;
+        cursor: pointer;
+    }
+
+    #leaderboard-table tbody tr:hover {
+        background-color: #f9f6f1;
+    }
+
+    #leaderboard-table td {
+        display: none; /* Cache toutes les cellules par défaut */
+        border: none;
+        padding: 5px;
+    }
+
+    /* Afficher Rank (col 1) */
+    #leaderboard-table td:nth-child(1) {
+        display: block;
+        width: 50px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+    /* Afficher Player (col 2) */
+    #leaderboard-table td:nth-child(2) {
+        display: block;
+        flex-grow: 1;
+        width: auto;
+    }
+    .player-name-cell .class-tag {
+        font-size: 1em;
+    }
+
+    /* Cache le reste des colonnes */
+    #leaderboard-table th:nth-child(3), #leaderboard-table td:nth-child(3),
+    #leaderboard-table th:nth-child(4), #leaderboard-table td:nth-child(4),
+    #leaderboard-table th:nth-child(5), #leaderboard-table td:nth-child(5),
+    #leaderboard-table th:nth-child(6), #leaderboard-table td:nth-child(6),
+    #leaderboard-table th:nth-child(7), #leaderboard-table td:nth-child(7),
+    #leaderboard-table th:nth-child(8), #leaderboard-table td:nth-child(8) {
+        display: none;
+    }
+}
