@@ -266,14 +266,13 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
     }
 
 
-    // --- GESTION DU FORMULAIRE D'ADMINISTRATION (si présent) ---
+// --- GESTION DU FORMULAIRE D'ADMINISTRATION (si présent) ---
     if (ptAdminForm) {
-        // CORRECTION : Utiliser les IDs de la modale générique (sans 'pt-')
+        // --- MODAL AND DOM ELEMENTS (Corrected IDs) ---
         const modal = document.getElementById('player-select-modal');
         const backdrop = document.getElementById('player-select-modal-backdrop');
         const filterInput = document.getElementById('player-filter-input');
         const playerListContainer = document.getElementById('player-select-list');
-        // CORRECTION : Le bouton de fermeture est une classe dans la modale
         const closeModalBtn = modal.querySelector('.player-select-close-btn');
         const createPlayerBtn = document.getElementById('create-new-player-btn');
 
@@ -281,49 +280,190 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
         const ptIdInput = document.getElementById('pt-id-input');
         const ptRankInput = document.getElementById('pt-team-rank');
 
-        // CORRECTION : La source des données joueurs est 'players-data'
+        // --- PLAYER DATA (Corrected ID) ---
         const playersDataElement = document.getElementById('players-data');
-        const allPlayers = playersDataElement ? JSON.parse(playersDataElement.textContent) : [];
+        const allPlayers = playersDataElement ? JSON.parse(playersDataElement.textContent || '[]') : [];
+
         const guildDatalist = document.getElementById('guild-datalist-pt');
         let availableGuilds = guildDatalist ? Array.from(guildDatalist.options).map(opt => opt.value) : [];
+
+        // --- STATE ---
         let activePlayerIndex = null;
         let activeSuggestionIndex = -1;
 
-        // *** CORRECTION ***
-        // Assigner la définition complète de la fonction à la variable déclarée plus haut
-        findNextAvailableRank = async (ptId) => {
-            if (!ptRankInput) return;
-            if (!ptId || ptId === 'global') {
-                ptRankInput.value = 1;
-                return;
-            }
-            try {
-                const response = await fetch(`/pt-leaderboard/${ptId}/next-rank`);
-                const data = await response.json();
-                if (data && data.nextRank) {
-                    ptRankInput.value = data.nextRank;
+        // Re-usable function to update suggestion highlighting
+        const updateActiveSuggestion = (items) => {
+            items.forEach((item, index) => {
+                if (index === activeSuggestionIndex) {
+                    item.classList.add('active');
+                    item.scrollIntoView({ block: 'nearest' });
+                } else {
+                    item.classList.remove('active');
                 }
-            } catch (err) {
-                console.error("Error fetching next rank:", err);
-                ptRankInput.value = 1; // Fallback
-            }
+            });
         };
 
-        const getCurrentlySelectedNames = () => { /* ... (code inchangé) ... */ };
-        const populatePlayerList = (filter = '') => { /* ... (code inchangé) ... */ };
-        const openModal = (playerIndex) => { /* ... (code inchangé) ... */ };
-        const closeModal = () => { /* ... (code inchangé) ... */ };
-        const selectPlayer = (name) => { /* ... (code inchangé) ... */ };
+        // --- FUNCTION DEFINITIONS (Copied & Adapted from playerForm.js) ---
 
-        ptAdminForm.querySelectorAll('.pt-open-modal-btn').forEach(btn => { /* ... (code inchangé) ... */ });
+        const getCurrentlySelectedNames = () => {
+            const selectedNames = [];
+            for (let i = 0; i < 4; i++) {
+                const input = document.getElementById(`pt-player-name-hidden-${i}`);
+                if (input && input.value) {
+                    selectedNames.push(input.value.toLowerCase());
+                }
+            }
+            return selectedNames;
+        };
+
+        const populatePlayerList = (filter = '') => {
+            playerListContainer.innerHTML = '';
+            const query = filter.toLowerCase();
+            const selectedNames = getCurrentlySelectedNames();
+
+            allPlayers
+                .filter(p =>
+                    p.name.toLowerCase().includes(query) &&
+                    !selectedNames.includes(p.name.toLowerCase())
+                )
+                .forEach(player => {
+                    const item = document.createElement('div');
+                    item.className = 'suggestion-item';
+                    item.dataset.playerName = player.name;
+                    item.innerHTML = `
+                        <span>${player.name}</span>
+                        <span class="class-tag class-${player.class.toLowerCase()}">${player.class}</span>
+                    `;
+                    playerListContainer.appendChild(item);
+                });
+        };
+
+        const openModal = (playerIndex) => {
+            activePlayerIndex = playerIndex; // Set which player (0-3) we are selecting for
+            filterInput.value = '';
+            populatePlayerList(); // Populate with filters (excluding already selected)
+            modal.style.display = 'flex';
+            backdrop.style.display = 'block';
+            filterInput.focus();
+            activeSuggestionIndex = -1;
+        };
+
+        const closeModal = () => {
+            modal.style.display = 'none';
+            backdrop.style.display = 'none';
+            activePlayerIndex = null; // Clear state
+        };
+
+        // Fonction pour valider le formulaire (doit être définie)
+        const validatePtForm = () => {
+            const ptId = ptIdInput.value;
+            const rank = ptRankInput.value;
+            let playersValid = 0;
+
+            for (let i = 0; i < 4; i++) {
+                const name = document.getElementById(`pt-player-name-hidden-${i}`).value;
+                if (name) {
+                    playersValid++;
+                }
+            }
+
+            submitBtn.disabled = !(ptId && rank > 0 && playersValid > 0);
+        };
+
+
+        const selectPlayer = (name) => {
+            if (activePlayerIndex === null) return; // Safety check
+
+            const player = allPlayers.find(p => p.name.toLowerCase() === name.toLowerCase());
+
+            const nameDisplay = document.getElementById(`pt-player-display-${activePlayerIndex}`);
+            const nameHidden = document.getElementById(`pt-player-name-hidden-${activePlayerIndex}`);
+            const newPlayerFields = document.getElementById(`pt-new-player-fields-${activePlayerIndex}`);
+
+            nameDisplay.textContent = name;
+            nameHidden.value = name;
+
+            if (player) {
+                // Player exists, hide new player fields
+                newPlayerFields.style.display = 'none';
+                // Clear inputs just in case
+                newPlayerFields.querySelector('select[name*="[class]"]').value = '';
+                newPlayerFields.querySelector('input[name*="[guild]"]').value = '';
+                newPlayerFields.querySelector('input[name*="[cp]"]').value = '';
+            } else {
+                // New player, show fields
+                newPlayerFields.style.display = 'grid';
+            }
+
+            closeModal();
+            validatePtForm(); // Valider le formulaire après la sélection
+        };
+
+        // --- EVENT LISTENERS (Filled in) ---
+
+        ptAdminForm.querySelectorAll('.pt-open-modal-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const playerIndex = e.currentTarget.dataset.playerIndex;
+                openModal(playerIndex);
+            });
+        });
+
         if(closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
         if(backdrop) backdrop.addEventListener('click', closeModal);
-        if(filterInput) filterInput.addEventListener('input', () => { /* ... */ });
-        if(playerListContainer) playerListContainer.addEventListener('click', (e) => { /* ... */ });
-        if(createPlayerBtn) createPlayerBtn.addEventListener('click', () => { /* ... */ });
-        if(filterInput) filterInput.addEventListener('keydown', (e) => { /* ... */ });
-        document.querySelectorAll('.custom-guild-select').forEach(container => { /* ... (code inchangé) ... */ });
-        const validatePtForm = () => { /* ... (code inchangé) ... */ };
+
+        if(filterInput) filterInput.addEventListener('input', () => {
+            populatePlayerList(filterInput.value);
+            activeSuggestionIndex = -1;
+        });
+
+        if(playerListContainer) playerListContainer.addEventListener('click', (e) => {
+            const selectedItem = e.target.closest('.suggestion-item');
+            if (selectedItem) {
+                selectPlayer(selectedItem.dataset.playerName);
+            }
+        });
+
+        if(createPlayerBtn) createPlayerBtn.addEventListener('click', () => {
+            const newName = filterInput.value.trim();
+            if (newName) {
+                selectPlayer(newName);
+            }
+        });
+
+        if(filterInput) filterInput.addEventListener('keydown', (e) => {
+            const items = playerListContainer.querySelectorAll('.suggestion-item');
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (items.length > 0) {
+                    activeSuggestionIndex = (activeSuggestionIndex + 1) % items.length;
+                    updateActiveSuggestion(items);
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (items.length > 0) {
+                    activeSuggestionIndex = (activeSuggestionIndex - 1 + items.length) % items.length;
+                    updateActiveSuggestion(items);
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                const activeItem = playerListContainer.querySelector('.suggestion-item.active');
+                if (activeItem) {
+                    selectPlayer(activeItem.dataset.playerName);
+                } else if (items.length > 0) {
+                    selectPlayer(items[0].dataset.playerName);
+                } else if (filterInput.value.trim() !== '') {
+                    createPlayerBtn.click();
+                }
+            }
+        });
+
+        // --- CONSERVER LE RESTE DE LA LOGIQUE ORIGINALE ---
+
+        // Logique pour le Custom Guild Select
+        document.querySelectorAll('.custom-guild-select').forEach(container => {
+            // ... (Cette logique était commentée dans votre fichier,
+            //      si elle existe, elle doit être conservée ici)
+        });
 
         if (ptIdInput) {
             ptIdInput.addEventListener('change', () => findNextAvailableRank(ptIdInput.value));
@@ -334,11 +474,8 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
             input.addEventListener('change', validatePtForm);
         });
 
-        // *** CORRECTION ***
-        // L'appel initial prématuré est supprimé d'ici.
-        // findNextAvailableRank(ptIdInput.value); // <--- SUPPRIMÉ
         validatePtForm(); // Valider l'état initial
-    } // Fin de if(ptAdminForm)
+    }
 
 
     // --- INITIALISATION FINALE ---
