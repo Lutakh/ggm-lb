@@ -1,10 +1,11 @@
 import { formatCP } from './utils.js';
 
-export function initPerilousTrials() {
+// MODIFIÉ : Accepte showPlayerDetails et allPlayersMap en arguments
+export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
     let fullGlobalLeaderboard = [];
 
     // --- SÉLECTEURS DU DOM ---
-    const helpBtns = document.querySelectorAll('#pt-help-btn-desktop, #pt-help-btn-mobile'); // MODIFIÉ
+    const helpBtns = document.querySelectorAll('#pt-help-btn-desktop, #pt-help-btn-mobile');
     const helpModal = document.getElementById('pt-help-modal');
     const helpBackdrop = document.getElementById('pt-help-modal-backdrop');
     const helpCloseBtn = document.getElementById('pt-help-close-btn');
@@ -14,7 +15,7 @@ export function initPerilousTrials() {
     const ptGlobalModeSelector = document.getElementById('pt-global-mode-selector');
     const ptGlobalMode = document.getElementById('pt-global-mode');
 
-    // NOUVEAU: Filtres Modale Mobile
+    // Filtres Modale Mobile
     const openPtFiltersBtn = document.getElementById('open-pt-filters-btn');
     const ptFiltersModal = document.getElementById('pt-filters-modal');
     const ptFiltersBackdrop = document.getElementById('pt-filters-modal-backdrop');
@@ -34,7 +35,7 @@ export function initPerilousTrials() {
     const ptAdminForm = document.getElementById('pt-admin-form');
 
     // --- GESTION DE LA MODALE D'AIDE ---
-    if (helpBtns.length > 0) { // MODIFIÉ
+    if (helpBtns.length > 0) {
         helpBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 if (helpModal) helpModal.style.display = 'flex';
@@ -49,7 +50,7 @@ export function initPerilousTrials() {
     if (helpCloseBtn) helpCloseBtn.addEventListener('click', closeHelpModal);
     if (helpBackdrop) helpBackdrop.addEventListener('click', closeHelpModal);
 
-    // --- NOUVEAU: GESTION DE LA MODALE DE FILTRES PT ---
+    // --- GESTION DE LA MODALE DE FILTRES PT ---
     const openPtFiltersModal = () => {
         if (ptFiltersModal) ptFiltersModal.style.display = 'flex';
         if (ptFiltersBackdrop) ptFiltersBackdrop.style.display = 'block';
@@ -127,10 +128,12 @@ export function initPerilousTrials() {
             if (rank <= 3) {
                 row.classList.add(`rank-${rank}`);
             }
+            // NOUVEAU: Ajout de data-player-name à la ligne
+            row.dataset.playerName = player.name;
 
             row.innerHTML = `
                 <td class="rank-col">${rank}</td>
-                <td class="player-name-cell"><span class="class-tag class-${String(player.class || 'unknown').toLowerCase()}">${player.name}</span></td>
+                <td class="player-name-cell pt-global-player-col"><span class="class-tag class-${String(player.class || 'unknown').toLowerCase()}">${player.name}</span></td>
                 <td class="cp-display pt-global-cp-col" data-cp="${player.combat_power}">${formatCP(player.combat_power)}</td>
                 <td>${player.points}</td>
             `;
@@ -157,7 +160,7 @@ export function initPerilousTrials() {
             ptGlobalModeSelector.style.display = isGlobal ? 'flex' : 'none';
         }
 
-        syncFiltersToModal(); // NOUVEAU: Mettre à jour la modale à chaque changement
+        syncFiltersToModal();
 
 
         if (isGlobal) {
@@ -209,7 +212,7 @@ export function initPerilousTrials() {
             if (ptSelect.value === 'global') {
                 loadPtLeaderboard('global');
             }
-            syncFiltersToModal(); // NOUVEAU
+            syncFiltersToModal();
         });
     }
 
@@ -252,7 +255,7 @@ export function initPerilousTrials() {
         }
     }
 
-    // ... (Le reste du code reste identique)
+    // ... (Le reste du code reste identique pour la sélection de joueur, guildes, etc.)
 
     const getCurrentlySelectedNames = () => {
         const names = [];
@@ -493,21 +496,30 @@ export function initPerilousTrials() {
             submitBtn.style.backgroundColor = '';
         }
 
-        if (!ptId || !rank || playerCount < 1 || !isFormValid) {
+        if (!ptId || ptId === 'global' || !rank || playerCount < 1 || !isFormValid) { // MODIFIÉ: Désactive pour 'global'
             submitBtn.disabled = true;
         } else {
             submitBtn.disabled = false;
         }
     };
 
+    // --- INITIALISATION ---
+    // MODIFIÉ: Charger 'global' par défaut
     const urlParams = new URLSearchParams(window.location.search);
-    const ptIdFromUrl = urlParams.get('pt_id');
+    const section = urlParams.get('section');
+    let initialPtId = 'global'; // Défaut à 'global'
 
-    const initialPtId = ptIdFromUrl || (ptSelect ? ptSelect.value : 'global');
+    // Si la section PT est explicitement demandée SANS pt_id, on garde 'global'
+    // Si la section PT est demandée AVEC un pt_id, on l'utilise
+    // Sinon (pas de section ou autre section), on garde 'global' comme valeur par défaut initiale
+    if (section === 'perilous-trials-section') {
+        initialPtId = urlParams.get('pt_id') || 'global';
+    }
+
     if (ptSelect) ptSelect.value = initialPtId;
-    if (ptIdInput) ptIdInput.value = initialPtId;
-    loadPtLeaderboard(initialPtId);
-    findNextAvailableRank(initialPtId);
+    if (ptIdInput) ptIdInput.value = initialPtId; // Important pour le formulaire admin
+    loadPtLeaderboard(initialPtId); // Charge le classement initial (global par défaut)
+    findNextAvailableRank(initialPtId); // Met à jour le rang suggéré pour admin
 
     if (ptIdInput) {
         ptIdInput.addEventListener('change', () => findNextAvailableRank(ptIdInput.value));
@@ -517,4 +529,41 @@ export function initPerilousTrials() {
         input.addEventListener('input', validatePtForm);
         input.addEventListener('change', validatePtForm);
     });
+
+    // NOUVEAU: Ajout de l'event listener pour les clics sur les joueurs dans le tableau Global PT
+    if (ptGlobalTableBody) {
+        ptGlobalTableBody.addEventListener('click', (e) => {
+            const playerRow = e.target.closest('tr');
+            if (!playerRow || !playerRow.dataset.playerName) return;
+
+            // Ne pas déclencher si on clique sur autre chose que la cellule du joueur (potentiellement)
+            // Ou si la fonction n'est pas passée en argument
+            if (!showPlayerDetails || !e.target.closest('.player-name-cell')) {
+                return;
+            }
+
+            e.preventDefault(); // Empêche toute navigation si le nom est dans un lien <a> par erreur
+            const playerName = playerRow.dataset.playerName;
+            const player = allPlayersMap.get(playerName);
+
+            if (player) {
+                // Recréer un objet 'row' simulé avec les données nécessaires pour showPlayerDetails
+                const fakeRow = {
+                    dataset: {
+                        ...player, // Inclut name, class, team, guild, notes etc. de l'objet joueur complet
+                        rank: playerRow.querySelector('.rank-col')?.textContent || 'N/A', // Prend le rang actuel affiché
+                        cp: player.combat_power, // Utilise la donnée de l'objet complet
+                        playSlots: JSON.stringify(player.play_slots || '[]'),
+                        updated: player.updated_at
+                    }
+                };
+                showPlayerDetails(fakeRow); // Appelle la fonction importée
+            } else {
+                console.warn(`Player data not found in map for: ${playerName}`);
+                // Optionnel: Afficher un message simple si le joueur n'est pas trouvé dans la map
+                alert(`Details for ${playerName} not fully loaded.`);
+            }
+        });
+    }
+
 }

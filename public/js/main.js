@@ -3,7 +3,7 @@
 import { initNavigation } from './modules/navigation.js';
 import { initPlayerForm } from './modules/playerForm.js';
 import { initLeaderboardFilters } from './modules/leaderboardFilters.js';
-import { initPerilousTrials } from './modules/perilousTrials.js';
+import { initPerilousTrials } from './modules/perilousTrials.js'; // Assurez-vous que l'import est correct
 import { updateTimers, formatCP, formatRelativeTime, formatRelativeTimeShort, minutesToFormattedTime } from './modules/utils.js';
 import { initDiscordWidget } from './modules/discordWidget.js';
 
@@ -19,6 +19,7 @@ function closeNotesModal() {
     if (notesBackdrop) notesBackdrop.style.display = 'none';
 }
 
+// Fonction globale pour afficher les notes
 window.showFullNote = function(playerName, note) {
     if (!note || note.trim() === '' || note.trim() === '-') {
         return;
@@ -35,7 +36,7 @@ const playerDetailBackdrop = document.getElementById('player-detail-modal-backdr
 const playerDetailTitle = document.getElementById('player-detail-modal-title');
 const playerDetailBody = document.getElementById('player-detail-modal-body');
 const playerDetailCloseBtn = document.getElementById('player-detail-modal-close-btn');
-const initialPlayerModalZIndex = playerDetailModal?.style.zIndex || 1001; // Stocker z-index initial
+const initialPlayerModalZIndex = playerDetailModal?.style.zIndex || 1001;
 const initialPlayerBackdropZIndex = playerDetailBackdrop?.style.zIndex || 1000;
 
 // Map pour stocker les rangs des joueurs
@@ -43,13 +44,13 @@ const playerRankMap = new Map();
 // Map pour stocker les données complètes des joueurs par leur nom
 const allPlayersMap = new Map();
 
+// MODIFIÉ : La fonction est maintenant définie ici pour être passée en argument
 function showPlayerDetails(playerRow, isFromTeamModal = false) {
     if (!playerDetailModal || !playerRow) return;
 
-    // Augmenter z-index si ouvert depuis la modale d'équipe
     if (isFromTeamModal) {
-        playerDetailModal.style.zIndex = '1011'; // Au dessus de la modale équipe (1010)
-        playerDetailBackdrop.style.zIndex = '1010'; // Au dessus du fond équipe (1009)
+        playerDetailModal.style.zIndex = '1011';
+        playerDetailBackdrop.style.zIndex = '1010';
     } else {
         playerDetailModal.style.zIndex = initialPlayerModalZIndex;
         playerDetailBackdrop.style.zIndex = initialPlayerBackdropZIndex;
@@ -57,27 +58,37 @@ function showPlayerDetails(playerRow, isFromTeamModal = false) {
 
 
     const data = playerRow.dataset;
-    const playSlots = JSON.parse(data.playSlots || '[]');
+    // NOUVEAU: Essayer de récupérer l'objet joueur complet si possible pour des données plus fiables
+    const fullPlayerData = allPlayersMap.get(data.name);
+    const playSlots = fullPlayerData?.play_slots ? fullPlayerData.play_slots : JSON.parse(data.playSlots || '[]');
+    const notes = fullPlayerData?.notes ? fullPlayerData.notes : data.notes;
+    const combatPower = fullPlayerData?.combat_power ? fullPlayerData.combat_power : data.cp;
+    const playerClass = fullPlayerData?.class ? fullPlayerData.class : data.class;
+    const guild = fullPlayerData?.guild ? fullPlayerData.guild : data.guild;
+    const team = fullPlayerData?.team ? fullPlayerData.team : data.team;
+    const updatedAt = fullPlayerData?.updated_at ? fullPlayerData.updated_at : data.updated;
+
 
     let playHoursHtml = '-';
-    if (playSlots.length > 0 && playSlots[0] !== null) { // Vérifie que playSlots n'est pas juste [null]
+    // Vérification plus robuste de playSlots
+    if (Array.isArray(playSlots) && playSlots.length > 0 && playSlots[0] && playSlots[0].start_minutes !== undefined) {
         playHoursHtml = playSlots.map(slot =>
             `<div>${minutesToFormattedTime(slot.start_minutes)} - ${minutesToFormattedTime(slot.end_minutes)}</div>`
         ).join('');
     }
 
-    playerDetailTitle.innerHTML = `<span class="class-tag class-${data.class.toLowerCase()}">${data.name}</span>`;
+    playerDetailTitle.innerHTML = `<span class="class-tag class-${String(playerClass || 'unknown').toLowerCase()}">${data.name}</span>`;
 
     playerDetailBody.innerHTML = `
         <ul class="player-detail-list">
             <li><strong>Rank:</strong> <span>${data.rank || 'N/A'}</span></li>
-            <li><strong>CP:</strong> <span>${formatCP(data.cp)}</span></li>
-            <li><strong>Class:</strong> <span><span class="class-tag class-${data.class.toLowerCase()}">${data.class}</span></span></li>
-            <li><strong>Guild:</strong> <span>${data.guild || '-'}</span></li>
-            <li><strong>Team:</strong> <span>${data.team || '-'}</span></li>
+            <li><strong>CP:</strong> <span>${formatCP(combatPower)}</span></li>
+            <li><strong>Class:</strong> <span><span class="class-tag class-${String(playerClass || 'unknown').toLowerCase()}">${playerClass || 'Unknown'}</span></span></li>
+            <li><strong>Guild:</strong> <span>${guild || '-'}</span></li>
+            <li><strong>Team:</strong> <span>${team || '-'}</span></li>
             <li><strong>Play Hours:</strong> ${playHoursHtml}</li>
-            <li><strong>Notes:</strong> <span>${data.notes || '-'}</span></li>
-            <li><strong>Updated:</strong> <span>${formatRelativeTimeShort(data.updated)}</span></li>
+            <li><strong>Notes:</strong> <span>${notes || '-'}</span></li>
+            <li><strong>Updated:</strong> <span>${formatRelativeTimeShort(updatedAt)}</span></li>
         </ul>
     `;
 
@@ -114,25 +125,21 @@ function showTeamDetails(teamRow) {
     const guildName = data.guildName;
     const teamName = data.teamName;
 
-    // Formatage du titre : "[GuildName] TeamName"
     teamDetailTitle.innerHTML = `<span class="guild-prefix">[${guildName}]</span> <span class="team-name">${teamName}</span>`;
 
     let membersHtml = '<div class="team-detail-list">';
     members.forEach((player, index) => {
-        // --- Ordre Nom (Tag) puis CP ---
         membersHtml += `
             <div class="team-detail-player" data-player-name="${player.name}">
-                <span class="class-tag class-${player.class.toLowerCase()}">${player.name}</span>
+                <span class="class-tag class-${String(player.class || 'unknown').toLowerCase()}">${player.name}</span>
                 <span class="team-detail-player-cp">${formatCP(player.combat_power)}</span>
             </div>
         `;
     });
     membersHtml += '</div>';
 
-    // Ajouter la légende à la fin
     teamDetailBody.innerHTML = membersHtml + shortClassLegendHtml;
 
-    // Attacher les écouteurs pour le clic nidé
     teamDetailBody.querySelectorAll('.team-detail-player').forEach(playerEl => {
         playerEl.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -148,7 +155,7 @@ function showTeamDetails(teamRow) {
                         updated: player.updated_at
                     }
                 };
-                showPlayerDetails(fakeRow, true); // Indiquer que l'appel vient de la modale équipe
+                showPlayerDetails(fakeRow, true);
             }
         });
     });
@@ -176,7 +183,6 @@ function showGuildDetails(guildRow) {
 
     guildDetailTitle.textContent = data.guildName;
 
-    // --- Layout Class Distrib + Légende ---
     const classDistribHtml = `
         <div class="guild-class-distrib centered">
             <span class="class-tag class-swordbearer" title="Swordbearer">${classDistrib.Swordbearer || 0}</span>
@@ -213,7 +219,7 @@ function closeGuildDetailModal() {
 // --- MODALE DE FILTRES (JOUEURS UNIQUEMENT) ---
 const filtersModal = document.getElementById('filters-modal');
 const filtersBackdrop = document.getElementById('filters-modal-backdrop');
-const openFiltersBtn = document.getElementById('open-filters-btn'); // Bouton filtre joueurs
+const openFiltersBtn = document.getElementById('open-filters-btn');
 const closeFiltersBtn = document.getElementById('filters-modal-close-btn');
 
 function openFiltersModal() {
@@ -230,16 +236,10 @@ document.addEventListener('DOMContentLoaded', function() {
     initNavigation();
     initPlayerForm();
     initLeaderboardFilters(); // Filtres JOUEURS uniquement via modale
-    initPerilousTrials();
-    initDiscordWidget('https://discord.com/api/guilds/1425816979641466912/widget.json');
 
-    setInterval(updateTimers, 1000);
-    updateTimers();
-
-    // Peupler les maps de joueurs pour les modales
+    // Peupler les maps AVANT d'initialiser PT
     const playersDataEl = document.getElementById('players-data');
     if (playersDataEl) {
-        // Correction: S'assurer que les données complètes sont parsées
         try {
             const playersData = JSON.parse(playersDataEl.textContent || '[]');
             playersData.forEach(p => allPlayersMap.set(p.name, p));
@@ -249,10 +249,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     document.querySelectorAll('#leaderboard-table tbody tr').forEach(row => {
         playerRankMap.set(row.dataset.name, row.dataset.rank);
-        // Stocker aussi les données complètes si elles ne sont pas déjà dans allPlayersMap (fallback)
         if (!allPlayersMap.has(row.dataset.name)) {
             try {
-                // Essayer de reconstituer un objet joueur à partir des data-*
                 const playerData = {
                     id: row.dataset.id || null, // Assumer qu'un data-id existe ou ajouter le
                     name: row.dataset.name,
@@ -272,6 +270,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // MODIFIÉ: Passer les arguments nécessaires à initPerilousTrials
+    initPerilousTrials(showPlayerDetails, allPlayersMap);
+
+    initDiscordWidget('https://discord.com/api/guilds/1425816979641466912/widget.json');
+
+    setInterval(updateTimers, 1000);
+    updateTimers();
 
     document.querySelectorAll('.cp-display').forEach(el => {
         el.textContent = formatCP(el.dataset.cp);
@@ -294,7 +299,6 @@ document.addEventListener('DOMContentLoaded', function() {
         playerTableBody.addEventListener('click', (e) => {
             const playerRow = e.target.closest('tr');
             if (!playerRow) return;
-            // Ne pas ouvrir la modale si on clique sur notes ou actions admin
             if (e.target.closest('.notes-col') || e.target.closest('.admin-actions')) {
                 return;
             }
@@ -352,16 +356,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const memberCount = parseInt(row.dataset.memberCountVal || 0, 10);
             const isVisible = (selectedGuild === 'All') ||
                 (selectedGuild === 'Incomplete' && memberCount < 4) ||
-                (row.dataset.guildName === selectedGuild); // Utiliser guildName ici
+                (row.dataset.guildName === selectedGuild);
 
-            row.style.display = isVisible ? '' : 'none'; // Appliquer display: '' ou 'none'
+            row.style.display = isVisible ? '' : 'none';
             if (row.nextElementSibling && row.nextElementSibling.classList.contains('team-members-row')) {
-                row.nextElementSibling.style.display = 'none'; // Toujours cacher les membres sur mobile
+                row.nextElementSibling.style.display = 'none';
             }
 
 
             if (isVisible) {
-                // Mettre à jour le rang seulement s'il est visible
                 const rankCell = row.querySelector('.rank-col');
                 if (rankCell) rankCell.textContent = visibleRank;
 
@@ -374,27 +377,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (teamMobileFilter) {
         teamMobileFilter.addEventListener('change', applyTeamMobileFilter);
-        // Appliquer une fois au chargement SEULEMENT si on est sur mobile
         if (window.innerWidth <= 768) {
             applyTeamMobileFilter();
         }
     }
 
-    // Réappliquer le filtre équipe si la fenêtre est redimensionnée en mobile
-    // ou réinitialiser si on passe en desktop
     window.addEventListener('resize', () => {
         if (window.innerWidth <= 768 && teamMobileFilter) {
-            applyTeamMobileFilter(); // Appliquer le filtre mobile
+            applyTeamMobileFilter();
         } else if (window.innerWidth > 768) {
-            // Réinitialiser l'affichage desktop
             allTeamRows.forEach(row => {
-                row.style.display = ''; // Afficher toutes les lignes
-                // Réappliquer les rangs initiaux si nécessaire (ou recalculer selon filtre desktop)
+                row.style.display = '';
                 const rankCell = row.querySelector('.rank-col');
                 // Note: idéalement, il faudrait relire le rang initial ou recalculer
-                // Pour l'instant, on laisse tel quel, le filtre desktop prendra le relais s'il existe
             });
-            // Cacher les détails des membres par défaut sur desktop
             document.querySelectorAll('#teams-leaderboard-table tbody tr.team-members-row').forEach(row => {
                 row.style.display = 'none';
             });
