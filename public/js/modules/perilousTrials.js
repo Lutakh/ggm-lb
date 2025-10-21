@@ -411,7 +411,7 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) { //
 
             // Le formulaire est valide si PT, Rank sont valides, au moins un joueur est sélectionné
             // ET les nouveaux joueurs ont leur classe et CP renseignés.
-            submitBtn.disabled = !(ptId && rank > 0 && playersSelectedCount > 0 && formIsValid);
+            submitBtn.disabled = !(ptId && rank > 0 && playersSelectedCount === 4 && formIsValid);
         };
 
         const selectPlayer = (name) => {
