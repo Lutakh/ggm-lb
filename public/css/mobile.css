@@ -86,4 +86,42 @@
     .guild-leaderboard-table td:nth-child(3) { display: block; width: 70px; /* Plus large pour centrer */ font-size: 0.9em; text-align: center; /* Centré */ font-weight: bold; color: var(--primary-color); flex-shrink: 0; padding: 5px 0; } /* CP */
     .guild-leaderboard-table td:nth-child(4) { display: none; } /* Members */
     .guild-leaderboard-table td:nth-child(5) { display: none; } /* Class Distrib */
+
+    /* --- NOUVEAU: Perilous Trials (Mobile) --- */
+
+    /* Cacher les filtres desktop PT */
+    #perilous-trials-section .desktop-pt-controls {
+        display: none;
+    }
+    /* Afficher les filtres mobiles PT */
+    #perilous-trials-section .mobile-pt-controls {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+    #perilous-trials-section .mobile-pt-controls .action-btn-main {
+        flex-grow: 1; /* Le bouton filtre prend plus de place */
+    }
+
+    /* Tableau Global PT (Mobile) */
+    #pt-global-leaderboard-table thead { display: none; }
+    #pt-global-leaderboard-table tbody tr { display: flex; align-items: center; width: 100%; padding: 10px 0; }
+    #pt-global-leaderboard-table tbody tr:hover { background-color: #f9f6f1; }
+    #pt-global-leaderboard-table td { display: none; border: none; padding: 5px; }
+
+    #pt-global-leaderboard-table td:nth-child(1) { display: block; width: 40px; text-align: center; flex-shrink: 0; } /* Rank */
+    #pt-global-leaderboard-table td:nth-child(2) { display: block; flex-grow: 1; width: auto; } /* Player */
+    #pt-global-leaderboard-table td:nth-child(4) { display: block; width: 80px; font-size: 1em; text-align: right; font-weight: bold; color: var(--primary-color); flex-shrink: 0; padding: 5px 0; } /* Points */
+
+    /* Cacher CP (col 3) */
+    #pt-global-leaderboard-table td:nth-child(3) { display: none; }
+
+    /* Tableau PT Individuel (Mobile) */
+    #pt-leaderboard-table thead { display: none; }
+    #pt-leaderboard-table tbody tr { display: flex; align-items: center; width: 100%; padding: 10px 0; }
+    #pt-leaderboard-table td { display: block; border: none; padding: 5px; }
+    #pt-leaderboard-table td:nth-child(1) { width: 40px; text-align: center; flex-shrink: 0; } /* Rank */
+    #pt-leaderboard-table td:nth-child(2) { flex-grow: 1; width: auto; } /* Team */
+    .pt-leaderboard-team { gap: 10px; }
+    .pt-leaderboard-player .class-tag { font-size: 0.9em; padding: 4px 8px; }
 }

@@ -4,25 +4,42 @@ export function initPerilousTrials() {
     let fullGlobalLeaderboard = [];
 
     // --- SÉLECTEURS DU DOM ---
-    const helpBtn = document.getElementById('pt-help-btn');
+    const helpBtns = document.querySelectorAll('#pt-help-btn-desktop, #pt-help-btn-mobile'); // MODIFIÉ
     const helpModal = document.getElementById('pt-help-modal');
     const helpBackdrop = document.getElementById('pt-help-modal-backdrop');
     const helpCloseBtn = document.getElementById('pt-help-close-btn');
+
+    // Filtres Desktop
     const ptSelect = document.getElementById('pt-select');
     const ptGlobalModeSelector = document.getElementById('pt-global-mode-selector');
     const ptGlobalMode = document.getElementById('pt-global-mode');
+
+    // NOUVEAU: Filtres Modale Mobile
+    const openPtFiltersBtn = document.getElementById('open-pt-filters-btn');
+    const ptFiltersModal = document.getElementById('pt-filters-modal');
+    const ptFiltersBackdrop = document.getElementById('pt-filters-modal-backdrop');
+    const ptFiltersCloseBtn = document.getElementById('pt-filters-modal-close-btn');
+    const ptFiltersModalSelect = document.getElementById('pt-filters-modal-select');
+    const ptFiltersModalMode = document.getElementById('pt-filters-modal-mode');
+    const ptFiltersModalModeSelector = document.getElementById('pt-filters-modal-mode-selector');
+
+    // Tableaux
     const ptTable = document.getElementById('pt-leaderboard-table');
     const ptTableBody = ptTable?.querySelector('tbody');
     const ptGlobalTable = document.getElementById('pt-global-leaderboard-table');
     const ptGlobalTableBody = ptGlobalTable?.querySelector('tbody');
     const ptClassFilters = document.querySelectorAll('#pt-class-filter-panel input');
+
+    // Admin
     const ptAdminForm = document.getElementById('pt-admin-form');
 
     // --- GESTION DE LA MODALE D'AIDE ---
-    if (helpBtn) {
-        helpBtn.addEventListener('click', () => {
-            if (helpModal) helpModal.style.display = 'flex';
-            if (helpBackdrop) helpBackdrop.style.display = 'block';
+    if (helpBtns.length > 0) { // MODIFIÉ
+        helpBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (helpModal) helpModal.style.display = 'flex';
+                if (helpBackdrop) helpBackdrop.style.display = 'block';
+            });
         });
     }
     const closeHelpModal = () => {
@@ -31,6 +48,59 @@ export function initPerilousTrials() {
     };
     if (helpCloseBtn) helpCloseBtn.addEventListener('click', closeHelpModal);
     if (helpBackdrop) helpBackdrop.addEventListener('click', closeHelpModal);
+
+    // --- NOUVEAU: GESTION DE LA MODALE DE FILTRES PT ---
+    const openPtFiltersModal = () => {
+        if (ptFiltersModal) ptFiltersModal.style.display = 'flex';
+        if (ptFiltersBackdrop) ptFiltersBackdrop.style.display = 'block';
+    };
+    const closePtFiltersModal = () => {
+        if (ptFiltersModal) ptFiltersModal.style.display = 'none';
+        if (ptFiltersBackdrop) ptFiltersBackdrop.style.display = 'none';
+    };
+
+    if (openPtFiltersBtn) openPtFiltersBtn.addEventListener('click', openPtFiltersModal);
+    if (ptFiltersCloseBtn) ptFiltersCloseBtn.addEventListener('click', closePtFiltersModal);
+    if (ptFiltersBackdrop) ptFiltersBackdrop.addEventListener('click', closePtFiltersModal);
+
+    // Synchronisation des filtres (Modale -> Desktop)
+    if (ptFiltersModalSelect) {
+        ptFiltersModalSelect.addEventListener('change', () => {
+            const newPtId = ptFiltersModalSelect.value;
+            if (ptSelect) ptSelect.value = newPtId; // Sync desktop
+            loadPtLeaderboard(newPtId);
+            if (ptAdminForm) {
+                const ptIdInput = ptAdminForm.querySelector('#pt-id-input');
+                if (ptIdInput) ptIdInput.value = newPtId;
+                findNextAvailableRank(newPtId);
+            }
+            closePtFiltersModal();
+        });
+    }
+
+    if (ptFiltersModalMode) {
+        ptFiltersModalMode.addEventListener('change', () => {
+            if (ptGlobalMode) ptGlobalMode.value = ptFiltersModalMode.value; // Sync desktop
+            if (ptSelect.value === 'global') {
+                loadPtLeaderboard('global');
+            }
+            closePtFiltersModal();
+        });
+    }
+
+    // Synchronisation des filtres (Desktop -> Modale)
+    const syncFiltersToModal = () => {
+        if (ptSelect && ptFiltersModalSelect) {
+            ptFiltersModalSelect.value = ptSelect.value;
+        }
+        if (ptGlobalMode && ptFiltersModalMode) {
+            ptFiltersModalMode.value = ptGlobalMode.value;
+        }
+        if (ptFiltersModalModeSelector) {
+            ptFiltersModalModeSelector.style.display = (ptSelect && ptSelect.value === 'global') ? 'block' : 'none';
+        }
+    };
+
 
     // --- GESTION DES CLASSEMENTS ET FILTRES ---
     function applyGlobalPtFilters() {
@@ -58,17 +128,15 @@ export function initPerilousTrials() {
                 row.classList.add(`rank-${rank}`);
             }
 
-            // MODIFICATION: Suppression de la cellule classe, ajout du style au nom
             row.innerHTML = `
                 <td class="rank-col">${rank}</td>
                 <td class="player-name-cell"><span class="class-tag class-${String(player.class || 'unknown').toLowerCase()}">${player.name}</span></td>
-                <td class="cp-display" data-cp="${player.combat_power}">${formatCP(player.combat_power)}</td>
+                <td class="cp-display pt-global-cp-col" data-cp="${player.combat_power}">${formatCP(player.combat_power)}</td>
                 <td>${player.points}</td>
             `;
             ptGlobalTableBody.appendChild(row);
         });
 
-        // MODIFICATION: Mettre à jour le bouton de filtre de classe
         const ptFilterBtn = document.getElementById('pt-class-filter-btn');
         if (ptFilterBtn) {
             const span = ptFilterBtn.querySelector('span');
@@ -88,6 +156,8 @@ export function initPerilousTrials() {
         if (ptGlobalModeSelector) {
             ptGlobalModeSelector.style.display = isGlobal ? 'flex' : 'none';
         }
+
+        syncFiltersToModal(); // NOUVEAU: Mettre à jour la modale à chaque changement
 
 
         if (isGlobal) {
@@ -109,7 +179,6 @@ export function initPerilousTrials() {
                     const name = entry[`player${i}_name`];
                     const pClass = entry[`player${i}_class`];
                     if (name) {
-                        // MODIFICATION: Le nom est enveloppé dans le class-tag
                         teamHtml += `<div class="pt-leaderboard-player"><span class="class-tag class-${(pClass || 'unknown').toLowerCase()}">${name}</span></div>`;
                     }
                 }
@@ -140,6 +209,7 @@ export function initPerilousTrials() {
             if (ptSelect.value === 'global') {
                 loadPtLeaderboard('global');
             }
+            syncFiltersToModal(); // NOUVEAU
         });
     }
 
@@ -439,7 +509,6 @@ export function initPerilousTrials() {
     loadPtLeaderboard(initialPtId);
     findNextAvailableRank(initialPtId);
 
-    // ✅ CORRECTION : Ajout de l'écouteur d'événement manquant
     if (ptIdInput) {
         ptIdInput.addEventListener('change', () => findNextAvailableRank(ptIdInput.value));
     }
