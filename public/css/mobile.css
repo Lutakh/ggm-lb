@@ -51,7 +51,7 @@
         display: block;
         width: 60px; /* Un peu plus de place pour CP */
         font-size: 0.9em;
-        text-align: right;
+        text-align: center;
         font-weight: bold;
         color: var(--primary-color);
         flex-shrink: 0;
