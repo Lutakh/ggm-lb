@@ -3,27 +3,27 @@
                <span class="timer-value server-day"><%= timers.serverDay %></span>
            </li>
            <li class="timer-entry">
-               <span class="timer-label">Daily Reset in</span>
+               <span class="timer-label">Daily</span>
                <span class="timer-value" data-milliseconds="<%= timers.daily
 %>" data-type="daily"></span>
            </li>
            <li class="timer-entry">
-               <span class="timer-label">Weekly Reset in</span>
+               <span class="timer-label">Weekly</span>
                <span class="timer-value" data-milliseconds="<%= timers.weekly %>" data-type="weekly"></span>
            </li>
            <li class="timer-entry">
                <span
-class="timer-label <%= timers.isPaperPlaneImportant ? 'important-event' : '' %>">Paper Plane #<%= timers.paperPlaneNumber %> End in</span>
+class="timer-label <%= timers.isPaperPlaneImportant ? 'important-event' : '' %>">Plane #<%= timers.paperPlaneNumber %> End</span>
                <span class="timer-value" data-milliseconds="<%= timers.event %>" data-type="event"></span>
                <% if (timers.futurePaperPlanes && timers.futurePaperPlanes.length > 0) { %>
                <div class="timer-tooltip pp-tooltip">
-                   <div class="tooltip-title">Upcoming Paper Planes in</div>
+                   <div class="tooltip-title">Upcoming Planes</div>
 
             <ul class="tooltip-list">
                        <% timers.futurePaperPlanes.forEach(pp => { %>
                            <li class="tooltip-item">
                                <span
-class="timer-label <%= pp.isImportant ? 'important-event' : '' %>">Paper Plane #<%= pp.number %></span>
+class="timer-label <%= pp.isImportant ? 'important-event' : '' %>">Plane #<%= pp.number %></span>
                                <span class="timer-value" data-milliseconds="<%= pp.milliseconds %>" data-type="event"></span>
                            </li>
                        <% }); %>
@@ -35,7 +35,7 @@ class="timer-label <%= pp.isImportant ? 'important-event' : '' %>">Paper Plane #
            <% if (timers.classChange) { %>
            <li class="timer-entry">
 
-   <span class="timer-label"><%= timers.classChange.label %> in</span>
+   <span class="timer-label"><%= timers.classChange.label %></span>
                <span class="timer-value" data-milliseconds="<%= timers.classChange.milliseconds %>" data-type="classChange"></span>
                <% if (timers.allClassChanges && timers.allClassChanges.length > 1) { %>
                <div class="timer-tooltip cc-tooltip">
@@ -46,7 +46,7 @@ class="timer-label <%= pp.isImportant ? 'important-event' : '' %>">Paper Plane #
                            <% if (cc.milliseconds > 0) { %>
                            <li class="tooltip-item">
 
-                           <span class="timer-label"><%= cc.label %> in</span>
+                           <span class="timer-label"><%= cc.label %></span>
                                <span class="timer-value" data-milliseconds="<%= cc.milliseconds %>" data-type="classChange"></span>
                            </li>
 
