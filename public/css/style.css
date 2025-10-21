@@ -205,6 +205,8 @@ tr.rank-3, .team-entry.rank-3, tr.rank-3 {
 .rank-3 .rank-col {
     color: var(--bronze);
 }
+
+/* MODIFICATION (Req 1) : Styles pour abréviations de légende */
 .leaderboard-legend {
     display: flex;
     justify-content: flex-end;
@@ -219,13 +221,16 @@ tr.rank-3, .team-entry.rank-3, tr.rank-3 {
     align-items: center;
     gap: 5px;
 }
-.legend-item .class-tag {
+.legend-item .class-tag { /* Style pour l'icône de couleur */
     width: 12px;
     height: 12px;
     min-width: 12px;
     padding: 0;
     border-radius: 50%;
 }
+.legend-full { display: inline; } /* Nom complet visible par défaut */
+.legend-abbr { display: none; } /* Abréviation cachée par défaut */
+
 .play-hours-container {
     display: flex;
     flex-wrap: wrap;
@@ -443,6 +448,12 @@ body.admin-mode .admin-team-select {
     gap: 4px;
     position: relative; /* Nécessaire pour le positionnement absolu du tooltip */
 }
+/* Style pour rendre les timers cliquables sur mobile (Req 3) */
+.timer-entry[data-timer-type="paper-plane"],
+.timer-entry[data-timer-type="class-change"] {
+    /* Styles de base pour desktop - rien ne change ici */
+}
+
 .timer-label {
     font-size: 0.8em;
     font-weight: bold;
@@ -572,7 +583,7 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
 .guild-option.create-new { font-style: italic; color: var(--primary-color); }
 
 .timer-tooltip { display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 10px; background-color: var(--surface-color); padding: 15px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; width: 280px; border: 1px solid var(--border-color); pointer-events: none; }
-.timer-entry:hover .timer-tooltip { display: block; }
+.timer-entry:hover .timer-tooltip { display: block; } /* Affiché uniquement sur desktop via media query */
 .tooltip-title { font-weight: bold; color: var(--primary-color); margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid var(--border-color); font-size: 1.1em; }
 .tooltip-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
 .tooltip-item { display: flex; justify-content: space-between; align-items: center; font-size: 0.9em; }
@@ -589,58 +600,39 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
 .player-detail-list li strong { color: var(--primary-color); white-space: nowrap; }
 .player-detail-list li span,
 .player-detail-list li div { text-align: right; font-weight: bold; }
+/* Style spécifique pour la classe dans la modale de détail (Req 1) */
+.player-detail-list li span .class-tag { font-size: 1em; /* Assure la même taille que le nom */ padding: 5px 10px; }
 
-/* --- NOUVELLE MODALE DE FILTRES (Req 1 & 2) --- */
+/* --- MODALE DE FILTRES --- */
 .filters-modal-body { padding: 10px 25px 25px 25px; max-height: 70vh; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
 .filter-group-modal h4 { color: var(--primary-color); margin: 0 0 10px 0; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
 .filters-modal-panel-grid { display: grid; gap: 10px; }
 .filters-modal-panel-grid.two-cols { grid-template-columns: 1fr 1fr; }
 .filters-modal-panel-grid label { display: flex; align-items: center; gap: 5px; font-size: 0.9em; }
 
-/* Styles pour les nouveaux boutons/dropdowns de filtre */
-.filter-modal-dropdown {
-    position: relative;
-    width: 100%;
-}
-.filter-modal-dropdown-btn {
-    width: 100%;
-    text-align: left;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-.filter-modal-dropdown-btn::after {
-    content: '▼';
-    font-size: 0.7em;
-    opacity: 0.6;
-}
-.filter-modal-dropdown-panel {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background-color: var(--surface-color);
-    border: 1px solid var(--border-color);
-    border-radius: 0 0 10px 10px;
-    max-height: 150px;
-    overflow-y: auto;
-    z-index: 1010; /* Au dessus du fond de la modale */
-    margin-top: -1px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-.filter-modal-dropdown.open .filter-modal-dropdown-panel {
-    display: block;
-}
-.filter-modal-dropdown-panel label {
-    padding: 8px 12px;
-}
-.filter-modal-dropdown-panel label:hover {
-    background-color: #f9f6f1;
-}
+.filter-modal-dropdown { position: relative; width: 100%; }
+.filter-modal-dropdown-btn { width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center; }
+.filter-modal-dropdown-btn::after { content: '▼'; font-size: 0.7em; opacity: 0.6; }
+.filter-modal-dropdown-panel { display: none; position: absolute; top: 100%; left: 0; right: 0; background-color: var(--surface-color); border: 1px solid var(--border-color); border-radius: 0 0 10px 10px; max-height: 150px; overflow-y: auto; z-index: 1010; margin-top: -1px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+.filter-modal-dropdown.open .filter-modal-dropdown-panel { display: block; }
+/* MODIFICATION (Req 2) : Une ligne par label dans le panneau */
+.filter-modal-dropdown-panel label { padding: 8px 12px; display: block; /* Force une ligne par label */ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.filter-modal-dropdown-panel label:hover { background-color: #f9f6f1; }
+.filter-modal-dropdown-panel label input { margin-right: 8px; }
 
-/* Cacher le filtre de classe mobile sur desktop */
+
 .filters-modal-class-filter { display: none; }
+
+/* --- MODALE TIMERS MOBILES (Req 3) --- */
+#timer-detail-modal-body .tooltip-list { /* Réutilise les styles du tooltip */
+    padding: 10px 0;
+}
+#timer-detail-modal-body .tooltip-item {
+    padding: 8px 0;
+}
+#timer-detail-modal-body .tooltip-title { /* Cache le titre du tooltip dans la modale */
+    display: none;
+}
 
 
 /* --- STYLES MOBILES --- */
@@ -654,24 +646,44 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
     #home-nav-btn { width: 40px; height: 40px; top: 10px; left: 10px; }
     #home-nav-btn svg { width: 20px; height: 20px; }
 
-    /* MODIFICATION (Req 3) : Cacher la top bar si une section est active */
-    body.section-active .top-bar {
-        display: none;
+    /* MODIFICATION (Req 1) : Afficher abréviation, cacher nom complet */
+    .legend-full { display: none; }
+    .legend-abbr { display: inline; }
+
+    body.section-active .top-bar { display: none; } /* Req 3 */
+
+    .top-bar { flex-wrap: wrap; padding: 10px; gap: 10px; /* Réduit l'écart */ }
+    .top-bar-section { gap: 10px; flex-basis: 100%; /* Force une ligne par section */ justify-content: center; } /* Centre les éléments */
+    .top-bar-section svg { width: 24px; height: 24px; } /* Taille réduite */
+    .discord-section .discord-info span, .guides-section span { font-size: 1em; } /* Taille standard */
+    .timers-list { flex-wrap: wrap; gap: 10px; justify-content: center; width: 100%; order: 3; }
+    .timer-entry { flex-direction: row; gap: 8px; background-color: #f9f6f1; padding: 8px 12px; border-radius: 8px; width: 100%; box-sizing: border-box; } /* Req 4 */
+
+    /* MODIFICATION (Req 3) : Rendre cliquable + indicateur */
+    .timer-entry[data-timer-type="paper-plane"],
+    .timer-entry[data-timer-type="class-change"] {
+        cursor: pointer;
+        position: relative; /* Pour positionner l'indicateur */
+    }
+    .timer-entry[data-timer-type="paper-plane"]::after,
+    .timer-entry[data-timer-type="class-change"]::after {
+        content: '...'; /* Indicateur simple */
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-weight: bold;
+        color: var(--primary-color);
+        opacity: 0.6;
     }
 
-    .top-bar { flex-wrap: wrap; padding: 10px; gap: 15px; }
-    .top-bar-section { gap: 10px; }
-    .top-bar-section svg { width: 28px; height: 28px; }
-    .discord-section .discord-info span, .guides-section span { font-size: 0.9em; }
-    .timers-list { flex-wrap: wrap; gap: 10px; justify-content: center; width: 100%; order: 3; }
-    /* MODIFICATION (Req 4) : Un élément par ligne */
-    .timer-entry { flex-direction: row; gap: 8px; background-color: #f9f6f1; padding: 8px 12px; border-radius: 8px; width: 100%; box-sizing: border-box; }
+
     .timer-label { font-size: 0.8em; text-align: left; flex-grow: 1; opacity: 0.8; }
     .timer-value { font-size: 0.85em; }
     .timers-section { flex-basis: 100%; }
-    .discord-section { flex-grow: 1; }
-    .guides-section { flex-grow: 1; justify-content: flex-end; }
-    .timer-entry:hover .timer-tooltip { display: none; }
+    .discord-section { justify-content: flex-start; } /* Aligner à gauche */
+    .guides-section { justify-content: flex-start; } /* Aligner à gauche */
+    .timer-entry:hover .timer-tooltip { display: none; } /* Désactiver tooltip desktop sur mobile */
 
     /* --- Formulaire d'ajout (mobile) --- */
     #player-form { grid-template-columns: 1fr; }
@@ -690,11 +702,10 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
     #leaderboard-table td:nth-child(2) { display: block; flex-grow: 1; width: auto; } /* Player */
     .player-name-cell .class-tag { font-size: 1em; }
 
-    /* MODIFICATION (Req 1 & 3) : Afficher CP (col 3), Cacher Updated (col 7) */
     #leaderboard-table th:nth-child(3),
-    #leaderboard-table td:nth-child(3) {
+    #leaderboard-table td:nth-child(3) { /* CP */
         display: block;
-        width: 60px; /* Un peu plus de place pour CP */
+        width: 60px;
         font-size: 0.9em;
         text-align: right;
         font-weight: bold;
