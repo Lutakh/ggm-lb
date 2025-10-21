@@ -15,19 +15,19 @@
                <span class="timer-value server-day"><%= timers.serverDay %></span>
            </li>
            <li class="timer-entry">
-               <span class="timer-label">Daily Reset</span>
+               <span class="timer-label">Daily Reset in</span>
                <span class="timer-value" data-milliseconds="<%= timers.daily %>" data-type="daily"></span>
            </li>
            <li class="timer-entry">
-               <span class="timer-label">Weekly Reset</span>
+               <span class="timer-label">Weekly Reset in</span>
                <span class="timer-value" data-milliseconds="<%= timers.weekly %>" data-type="weekly"></span>
            </li>
            <li class="timer-entry">
-               <span class="timer-label <%= timers.isPaperPlaneImportant ? 'important-event' : '' %>">Paper Plane #<%= timers.paperPlaneNumber %></span>
+               <span class="timer-label <%= timers.isPaperPlaneImportant ? 'important-event' : '' %>">Paper Plane #<%= timers.paperPlaneNumber %> end in</span>
                <span class="timer-value" data-milliseconds="<%= timers.event %>" data-type="event"></span>
                <% if (timers.futurePaperPlanes && timers.futurePaperPlanes.length > 0) { %>
                <div class="timer-tooltip pp-tooltip">
-                   <div class="tooltip-title">Upcoming Paper Planes</div>
+                   <div class="tooltip-title">Upcoming Paper Planes in</div>
                    <ul class="tooltip-list">
                        <% timers.futurePaperPlanes.forEach(pp => { %>
                            <li class="tooltip-item">
@@ -41,11 +41,11 @@
            </li>
            <% if (timers.classChange) { %>
            <li class="timer-entry">
-               <span class="timer-label"><%= timers.classChange.label %></span>
+               <span class="timer-label"><%= timers.classChange.label %> in</span>
                <span class="timer-value" data-milliseconds="<%= timers.classChange.milliseconds %>" data-type="classChange"></span>
                <% if (timers.allClassChanges && timers.allClassChanges.length > 1) { %>
                <div class="timer-tooltip cc-tooltip">
-                   <div class="tooltip-title">Upcoming Class Changes</div>
+                   <div class="tooltip-title">Upcoming Class Changes in</div>
                    <ul class="tooltip-list">
                        <% timers.allClassChanges.forEach(cc => { %>
                            <% if (cc.milliseconds > 0) { %>
