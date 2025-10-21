@@ -268,16 +268,21 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
 
     // --- GESTION DU FORMULAIRE D'ADMINISTRATION (si présent) ---
     if (ptAdminForm) {
-        const modal = document.getElementById('pt-player-select-modal');
-        const backdrop = document.getElementById('pt-player-select-modal-backdrop');
-        const filterInput = document.getElementById('pt-player-filter-input');
-        const playerListContainer = document.getElementById('pt-player-select-list');
-        const closeModalBtn = document.getElementById('pt-player-select-close-btn');
-        const createPlayerBtn = document.getElementById('pt-create-new-player-btn');
+        // CORRECTION : Utiliser les IDs de la modale générique (sans 'pt-')
+        const modal = document.getElementById('player-select-modal');
+        const backdrop = document.getElementById('player-select-modal-backdrop');
+        const filterInput = document.getElementById('player-filter-input');
+        const playerListContainer = document.getElementById('player-select-list');
+        // CORRECTION : Le bouton de fermeture est une classe dans la modale
+        const closeModalBtn = modal.querySelector('.player-select-close-btn');
+        const createPlayerBtn = document.getElementById('create-new-player-btn');
+
         const submitBtn = ptAdminForm.querySelector('button[type="submit"]');
         const ptIdInput = document.getElementById('pt-id-input');
         const ptRankInput = document.getElementById('pt-team-rank');
-        const playersDataElement = document.getElementById('pt-players-data-source');
+
+        // CORRECTION : La source des données joueurs est 'players-data'
+        const playersDataElement = document.getElementById('players-data');
         const allPlayers = playersDataElement ? JSON.parse(playersDataElement.textContent) : [];
         const guildDatalist = document.getElementById('guild-datalist-pt');
         let availableGuilds = guildDatalist ? Array.from(guildDatalist.options).map(opt => opt.value) : [];
