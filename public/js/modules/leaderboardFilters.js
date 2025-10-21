@@ -2,41 +2,39 @@ import { parseCpFilter } from './utils.js';
 
 export function initLeaderboardFilters() {
 
-    // --- SÉLECTEURS DES FILTRES (Req 1) ---
+    // --- SÉLECTEURS DES FILTRES ---
     // Filtres de la modale
-    const modalClassFilters = document.querySelectorAll('#filters-modal-class-panel input');
-    const teamFilters = document.querySelectorAll('#filters-modal-team-panel input');
-    const guildFilters = document.querySelectorAll('#filters-modal-guild-panel input');
+    const classModalCheckboxes = document.querySelectorAll('#filters-modal .filter-modal-dropdown[data-filter-type="class"] input[type="checkbox"]');
+    const teamModalCheckboxes = document.querySelectorAll('#filters-modal .filter-modal-dropdown[data-filter-type="team"] input[type="checkbox"]');
+    const guildModalCheckboxes = document.querySelectorAll('#filters-modal .filter-modal-dropdown[data-filter-type="guild"] input[type="checkbox"]');
     const cpMinFilter = document.getElementById('filters-modal-cp-min');
     const cpMaxFilter = document.getElementById('filters-modal-cp-max');
     const ptTagFilter = document.getElementById('filters-modal-pt-tag-filter');
     const ptTagMode = document.getElementById('filters-modal-pt-tag-mode');
 
     // Filtre de classe du 'th' (desktop)
-    const desktopClassFilters = document.querySelectorAll('#class-filter-panel input');
+    const desktopClassCheckboxes = document.querySelectorAll('#class-filter-panel input[type="checkbox"]');
 
-    // Bouton de filtre principal (desktop 'th')
-    const classFilterBtn = document.getElementById('class-filter-btn');
-    // Bouton d'ouverture de la modale (mobile)
-    const openFiltersBtn = document.getElementById('open-filters-btn');
+    // Boutons
+    const classFilterBtnDesktop = document.getElementById('class-filter-btn');
+    const openFiltersBtnMobile = document.getElementById('open-filters-btn');
 
     // Lignes du tableau
     const memberRows = document.querySelectorAll('#leaderboard-table tbody tr');
 
     function applyFilters() {
-        // Fusionne les filtres de classe (desktop + mobile)
-        const selectedClassesDesktop = Array.from(desktopClassFilters).filter(c => c.checked).map(c => c.dataset.class);
-        const selectedClassesModal = Array.from(modalClassFilters).filter(c => c.checked).map(c => c.dataset.class);
+        // Lire les filtres
+        const selectedClassesDesktop = Array.from(desktopClassCheckboxes).filter(c => c.checked).map(c => c.dataset.class);
+        const selectedClassesModal = Array.from(classModalCheckboxes).filter(c => c.checked).map(c => c.dataset.class);
         const selectedClasses = [...new Set([...selectedClassesDesktop, ...selectedClassesModal])];
-
-        // Lit les autres filtres depuis la modale
-        const selectedTeams = Array.from(teamFilters).filter(c => c.checked).map(c => c.dataset.team);
-        const selectedGuilds = Array.from(guildFilters).filter(c => c.checked).map(c => c.dataset.guild);
+        const selectedTeams = Array.from(teamModalCheckboxes).filter(c => c.checked).map(c => c.dataset.team);
+        const selectedGuilds = Array.from(guildModalCheckboxes).filter(c => c.checked).map(c => c.dataset.guild);
         const cpMin = parseCpFilter(cpMinFilter.value);
         const cpMax = parseCpFilter(cpMaxFilter.value) || Infinity;
         const selectedPtTag = ptTagFilter.value;
         const ptMode = ptTagMode.value;
 
+        // Appliquer aux lignes
         let visibleRank = 1;
         memberRows.forEach(row => {
             const classMatch = selectedClasses.length === 0 || selectedClasses.includes(row.dataset.class);
@@ -48,56 +46,87 @@ export function initLeaderboardFilters() {
             if (selectedPtTag) {
                 const playerTags = JSON.parse(row.dataset.ptTags || '[]');
                 const hasTag = playerTags.includes(selectedPtTag);
-                if ((ptMode === 'has' && !hasTag) || (ptMode === 'missing' && hasTag)) {
-                    ptMatch = false;
-                }
+                ptMatch = (ptMode === 'has' && hasTag) || (ptMode === 'missing' && !hasTag);
             }
 
-            if (classMatch && teamMatch && guildMatch && cpMatch && ptMatch) {
-                row.style.display = ''; // Sur mobile, le CSS gère le 'flex'
+            const isVisible = classMatch && teamMatch && guildMatch && cpMatch && ptMatch;
+            row.style.display = isVisible ? '' : 'none';
+
+            if (isVisible) {
                 row.querySelector('.rank-col').textContent = visibleRank;
                 row.classList.remove('rank-1', 'rank-2', 'rank-3');
                 if (visibleRank <= 3) row.classList.add(`rank-${visibleRank}`);
                 visibleRank++;
-            } else { row.style.display = 'none'; }
+            }
         });
 
-        // Met à jour le texte du bouton de filtre de classe (desktop)
-        if (classFilterBtn) {
-            const span = classFilterBtn.querySelector('span');
-            if (span) {
-                span.textContent = selectedClasses.length > 0 ? `Player (${selectedClasses.length})` : 'Player';
-                classFilterBtn.classList.toggle('active', selectedClasses.length > 0);
-            }
-        }
-
-        // Met à jour le texte du bouton d'ouverture des filtres (mobile)
-        let totalFilters = selectedClasses.length + selectedTeams.length + selectedGuilds.length + (cpMin > 0 ? 1 : 0) + (cpMax !== Infinity ? 1 : 0) + (selectedPtTag ? 1 : 0);
-        if (openFiltersBtn) {
-            openFiltersBtn.textContent = totalFilters > 0 ? `Filtres (${totalFilters})` : 'Filtres';
-            openFiltersBtn.classList.toggle('active', totalFilters > 0);
-        }
+        // Mettre à jour les indicateurs de filtre
+        updateFilterIndicators(selectedClasses, selectedTeams, selectedGuilds, cpMin, cpMax, selectedPtTag);
     }
 
-    // Attache les écouteurs d'événements à TOUS les filtres (desktop + modale)
-    document.querySelectorAll('#class-filter-panel input, #filters-modal input, #filters-modal select').forEach(el => {
-        el.addEventListener('change', applyFilters);
-        // 'keyup' pour les champs de texte CP
-        if (el.type === 'text') {
-            el.addEventListener('keyup', applyFilters);
+    function updateFilterIndicators(classes, teams, guilds, cpMin, cpMax, ptTag) {
+        // Bouton desktop (classe uniquement)
+        if (classFilterBtnDesktop) {
+            const span = classFilterBtnDesktop.querySelector('span');
+            if (span) {
+                span.textContent = classes.length > 0 ? `Player (${classes.length})` : 'Player';
+                classFilterBtnDesktop.classList.toggle('active', classes.length > 0);
+            }
         }
+
+        // Bouton mobile (compte total)
+        let totalFilters = classes.length + teams.length + guilds.length
+            + (cpMin > 0 ? 1 : 0) + (cpMax !== Infinity ? 1 : 0)
+            + (ptTag ? 1 : 0);
+        if (openFiltersBtnMobile) {
+            openFiltersBtnMobile.textContent = totalFilters > 0 ? `Filtres (${totalFilters})` : 'Filtres';
+            openFiltersBtnMobile.classList.toggle('active', totalFilters > 0);
+        }
+
+        // Mettre à jour le texte des boutons DANS la modale
+        document.querySelectorAll('#filters-modal .filter-modal-dropdown').forEach(dropdown => {
+            const btn = dropdown.querySelector('.filter-modal-dropdown-btn');
+            const checkboxes = dropdown.querySelectorAll('input[type="checkbox"]');
+            const selectedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+            const defaultText = btn.dataset.defaultText || 'Select';
+
+            if (selectedCount > 0) {
+                btn.textContent = `${defaultText} (${selectedCount})`;
+            } else {
+                btn.textContent = defaultText;
+            }
+        });
+    }
+
+
+    // --- GESTION DES DROPDOWNS ---
+
+    // Dropdowns DANS la modale de filtre
+    document.querySelectorAll('#filters-modal .filter-modal-dropdown-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const dropdown = button.closest('.filter-modal-dropdown');
+            if (!dropdown) return;
+
+            const panel = dropdown.querySelector('.filter-modal-dropdown-panel');
+            if (!panel) return;
+
+            // Ferme les autres dropdowns *dans la modale* avant d'ouvrir celui-ci
+            const isCurrentlyOpen = dropdown.classList.contains('open');
+            document.querySelectorAll('#filters-modal .filter-modal-dropdown').forEach(d => d.classList.remove('open'));
+
+            if (!isCurrentlyOpen) {
+                dropdown.classList.add('open');
+            }
+            e.stopPropagation();
+        });
     });
 
-    // --- LOGIQUE POUR LES AUTRES LEADERBOARDS (INCHANGÉE) ---
-
-    // Gère les menus déroulants (pour le filtre de classe desktop)
-    document.querySelectorAll('.dropdown-btn').forEach(button => {
+    // Dropdown du filtre de classe DESKTOP (en-tête de tableau)
+    document.querySelectorAll('.player-header-cell .dropdown-btn').forEach(button => {
         button.addEventListener('click', (e) => {
             let panel;
-            const parentContainer = button.closest('.dropdown-filter, .class-header-cell, .player-header-cell');
-            if (parentContainer) {
-                panel = parentContainer.querySelector('.dropdown-panel');
-            }
+            const parentContainer = button.closest('.player-header-cell');
+            if (parentContainer) panel = parentContainer.querySelector('.dropdown-panel');
             if (!panel) return;
 
             const isCurrentlyOpen = panel.classList.contains('show');
@@ -107,13 +136,38 @@ export function initLeaderboardFilters() {
         });
     });
 
+    // Fermeture globale des dropdowns au clic extérieur
     window.addEventListener('click', (e) => {
-        if (!e.target.closest('.dropdown-btn')) {
-            document.querySelectorAll('.dropdown-panel.show').forEach(panel => panel.classList.remove('show'));
+        // Ferme les dropdowns DESKTOP
+        if (!e.target.closest('.player-header-cell .dropdown-btn')) {
+            document.querySelectorAll('.player-header-cell .dropdown-panel.show').forEach(panel => panel.classList.remove('show'));
+        }
+        // Ferme les dropdowns DANS LA MODALE
+        if (!e.target.closest('.filter-modal-dropdown-btn')) {
+            document.querySelectorAll('#filters-modal .filter-modal-dropdown.open').forEach(dropdown => dropdown.classList.remove('open'));
         }
     });
 
-    // Filtre pour le classement des équipes (INCHANGÉ)
+
+    // Attache les écouteurs d'événements à TOUS les filtres
+    document.querySelectorAll('#class-filter-panel input, #filters-modal input, #filters-modal select').forEach(el => {
+        el.addEventListener('change', applyFilters);
+        if (el.type === 'text') {
+            el.addEventListener('keyup', applyFilters);
+        }
+        // Empêche la fermeture du dropdown quand on clique sur une checkbox/label dedans
+        if (el.closest('.filter-modal-dropdown-panel') || el.closest('#class-filter-panel')) {
+            el.addEventListener('click', e => e.stopPropagation());
+            if (el.parentElement.tagName === 'LABEL') {
+                el.parentElement.addEventListener('click', e => e.stopPropagation());
+            }
+        }
+    });
+
+    // Initialiser les indicateurs au chargement
+    applyFilters();
+
+    // --- LOGIQUE POUR LES AUTRES LEADERBOARDS (INCHANGÉE) ---
     const teamGuildFilter = document.getElementById('team-guild-filter');
     const allTeamRows = document.querySelectorAll('#teams-leaderboard-table tbody tr.team-data-row');
     if(teamGuildFilter) {

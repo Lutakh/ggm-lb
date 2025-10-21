@@ -4,7 +4,7 @@
     <div class="legend-item"><span class="class-tag class-swordbearer"></span> Sword</div>
     <div class="legend-item"><span class="class-tag class-acolyte"></span> Aco</div>
     <div class="legend-item"><span class="class-tag class-wayfarer"></span> Way</div>
-    <div class="legend-item"><span class="class-tag class-scholar"></span> Echo</div>
+    <div class="legend-item"><span class="class-tag class-scholar"></span> Scho</div>
     <div class="legend-item"><span class="class-tag class-shadowlash"></span> Shadow</div>
 </div>
 
@@ -14,7 +14,6 @@
     <thead>
         <tr>
             <th class="rank-col">Rank</th>
-
             <th class="player-header-cell">
                 <div class="header-content">
                     <button id="class-filter-btn" class="header-filter-btn dropdown-btn" title="Filter by class">
@@ -30,7 +29,6 @@
                     <label><input type="checkbox" data-class="Shadowlash"> Shadowlash</label>
                 </div>
             </th>
-
             <th>CP</th>
             <th>Play Hours <span id="table-timezone-note" class="timezone-header-note"></span></th>
             <th>Guild</th>
@@ -54,7 +52,6 @@
                 data-play-slots="<%= JSON.stringify(player.play_slots || []) %>"
             >
                 <td class="rank-col"><%= index + 1 %></td>
-
                 <td class="player-name-cell">
                     <span class="class-tag class-<%= player.class.toLowerCase() %>"><%= player.name %></span>
                     <% if (player.pt_tags && player.pt_tags.length > 0) {
@@ -63,7 +60,6 @@
                         <span class="pt-tag">PT<%= maxPt %></span>
                     <% } %>
                 </td>
-
                 <td class="cp-display" data-cp="<%= player.combat_power %>"></td>
                 <td>
                     <div class="play-hours-container">

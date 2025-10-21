@@ -100,7 +100,7 @@
         <button type="button" id="nav-modal-close-btn" class="player-select-close-btn">&times;</button>
     </div>
     <div id="nav-modal-content">
-        </div>
+    </div>
 </div>
 
 <div id="filters-modal-backdrop" class="player-select-modal-backdrop"></div>
@@ -113,12 +113,15 @@
 
         <div class="filter-group-modal filters-modal-class-filter">
             <h4>Class</h4>
-            <div id="filters-modal-class-panel" class="filters-modal-panel-grid">
-                <label><input type="checkbox" data-class="Swordbearer"> Swordbearer</label>
-                <label><input type="checkbox" data-class="Acolyte"> Acolyte</label>
-                <label><input type="checkbox" data-class="Wayfarer"> Wayfarer</label>
-                <label><input type="checkbox" data-class="Scholar"> Scholar</label>
-                <label><input type="checkbox" data-class="Shadowlash"> Shadowlash</label>
+            <div class="filter-modal-dropdown" data-filter-type="class">
+                <button type="button" class="filter-modal-dropdown-btn" data-default-text="All Classes">All Classes</button>
+                <div class="filter-modal-dropdown-panel">
+                    <label><input type="checkbox" data-class="Swordbearer"> Swordbearer</label>
+                    <label><input type="checkbox" data-class="Acolyte"> Acolyte</label>
+                    <label><input type="checkbox" data-class="Wayfarer"> Wayfarer</label>
+                    <label><input type="checkbox" data-class="Scholar"> Scholar</label>
+                    <label><input type="checkbox" data-class="Shadowlash"> Shadowlash</label>
+                </div>
             </div>
         </div>
 
@@ -132,20 +135,26 @@
 
         <div class="filter-group-modal">
             <h4>Guild</h4>
-            <div id="filters-modal-guild-panel" class="filters-modal-panel-grid check-grid">
-                <% guilds.forEach(name => { %>
-                    <label><input type="checkbox" data-guild="<%= name %>"> <%= name %></label>
-                <% }); %>
+             <div class="filter-modal-dropdown" data-filter-type="guild">
+                <button type="button" class="filter-modal-dropdown-btn" data-default-text="All Guilds">All Guilds</button>
+                <div class="filter-modal-dropdown-panel">
+                    <% guilds.forEach(name => { %>
+                        <label><input type="checkbox" data-guild="<%= name %>"> <%= name %></label>
+                    <% }); %>
+                </div>
             </div>
         </div>
 
         <div class="filter-group-modal">
             <h4>Team</h4>
-            <div id="filters-modal-team-panel" class="filters-modal-panel-grid check-grid">
-                 <% allTeamNames.forEach(name => { %>
-                    <label><input type="checkbox" data-team="<%= name %>"> <%= name %></label>
-                <% }); %>
-                 <label><input type="checkbox" data-team="No Team"> No Team</label>
+            <div class="filter-modal-dropdown" data-filter-type="team">
+                <button type="button" class="filter-modal-dropdown-btn" data-default-text="All Teams">All Teams</button>
+                <div class="filter-modal-dropdown-panel">
+                     <% allTeamNames.forEach(name => { %>
+                        <label><input type="checkbox" data-team="<%= name %>"> <%= name %></label>
+                    <% }); %>
+                     <label><input type="checkbox" data-team="No Team"> No Team</label>
+                </div>
             </div>
         </div>
 
