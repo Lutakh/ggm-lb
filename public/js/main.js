@@ -1,3 +1,5 @@
+// public/js/main.js
+
 import { initNavigation } from './modules/navigation.js';
 import { initPlayerForm } from './modules/playerForm.js';
 import { initLeaderboardFilters } from './modules/leaderboardFilters.js';
@@ -50,10 +52,13 @@ function showPlayerDetails(playerRow) {
 
     playerDetailTitle.innerHTML = `<span class="class-tag class-${data.class.toLowerCase()}">${data.name}</span>`;
 
+    // --- MODIFICATION ICI ---
+    // Ajout de la ligne pour la Classe
     playerDetailBody.innerHTML = `
         <ul class="player-detail-list">
             <li><strong>Rank:</strong> <span>${data.rank}</span></li>
             <li><strong>CP:</strong> <span>${formatCP(data.cp)}</span></li>
+            <li><strong>Class:</strong> <span><span class="class-tag class-${data.class.toLowerCase()}">${data.class}</span></span></li>
             <li><strong>Guild:</strong> <span>${data.guild || '-'}</span></li>
             <li><strong>Team:</strong> <span>${data.team || '-'}</span></li>
             <li><strong>Play Hours:</strong> ${playHoursHtml}</li>
@@ -61,6 +66,7 @@ function showPlayerDetails(playerRow) {
             <li><strong>Updated:</strong> <span>${formatRelativeTimeShort(data.updated)}</span></li>
         </ul>
     `;
+    // --- FIN DE LA MODIFICATION ---
 
     playerDetailModal.style.display = 'flex';
     playerDetailBackdrop.style.display = 'block';
