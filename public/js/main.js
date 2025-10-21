@@ -119,10 +119,11 @@ function showTeamDetails(teamRow) {
 
     let membersHtml = '<div class="team-detail-list">';
     members.forEach((player, index) => {
+        // --- Ordre Nom (Tag) puis CP ---
         membersHtml += `
             <div class="team-detail-player" data-player-name="${player.name}">
-                <span class="team-detail-player-cp">${formatCP(player.combat_power)}</span>
                 <span class="class-tag class-${player.class.toLowerCase()}">${player.name}</span>
+                <span class="team-detail-player-cp">${formatCP(player.combat_power)}</span>
             </div>
         `;
     });
@@ -134,22 +135,20 @@ function showTeamDetails(teamRow) {
     // Attacher les écouteurs pour le clic nidé
     teamDetailBody.querySelectorAll('.team-detail-player').forEach(playerEl => {
         playerEl.addEventListener('click', (e) => {
-            e.stopPropagation(); // Empêche la fermeture de la modale d'équipe
+            e.stopPropagation();
             const playerName = playerEl.dataset.playerName;
             const player = allPlayersMap.get(playerName);
             if (player) {
-                // Créer un objet "fakeRow" pour passer à showPlayerDetails
                 const fakeRow = {
                     dataset: {
                         ...player,
-                        rank: playerRankMap.get(playerName) || 'N/A', // Récupérer le rang individuel
+                        rank: playerRankMap.get(playerName) || 'N/A',
                         cp: player.combat_power,
                         playSlots: JSON.stringify(player.play_slots || '[]'),
                         updated: player.updated_at
                     }
                 };
-                // Indiquer que l'appel vient de la modale équipe
-                showPlayerDetails(fakeRow, true);
+                showPlayerDetails(fakeRow, true); // Indiquer que l'appel vient de la modale équipe
             }
         });
     });
@@ -177,8 +176,9 @@ function showGuildDetails(guildRow) {
 
     guildDetailTitle.textContent = data.guildName;
 
+    // --- Layout Class Distrib + Légende ---
     const classDistribHtml = `
-        <div class="guild-class-distrib">
+        <div class="guild-class-distrib centered">
             <span class="class-tag class-swordbearer" title="Swordbearer">${classDistrib.Swordbearer || 0}</span>
             <span class="class-tag class-acolyte" title="Acolyte">${classDistrib.Acolyte || 0}</span>
             <span class="class-tag class-wayfarer" title="Wayfarer">${classDistrib.Wayfarer || 0}</span>
@@ -192,9 +192,10 @@ function showGuildDetails(guildRow) {
             <li><strong>Rank:</strong> <span>${data.rank}</span></li>
             <li><strong>Total CP:</strong> <span>${formatCP(data.totalCp)}</span></li>
             <li><strong>Members:</strong> <span>${data.memberCount} / 120</span></li>
-            <li>
-                <strong>Class Distribution:</strong>
+            <li class="distrib-item">
+                <strong class="centered-title">Class Distribution</strong>
                 ${classDistribHtml}
+                ${shortClassLegendHtml}
             </li>
         </ul>
     `;
@@ -209,12 +210,10 @@ function closeGuildDetailModal() {
 }
 
 
-// --- MODALE DE FILTRES (Req 1) ---
+// --- MODALE DE FILTRES (JOUEURS UNIQUEMENT) ---
 const filtersModal = document.getElementById('filters-modal');
 const filtersBackdrop = document.getElementById('filters-modal-backdrop');
-const openFiltersBtn = document.getElementById('open-filters-btn');
-// const openFiltersBtnTeams = document.getElementById('open-filters-btn-teams'); // Supprimé
-// const openFiltersBtnGuilds = document.getElementById('open-filters-btn-guilds'); // Supprimé
+const openFiltersBtn = document.getElementById('open-filters-btn'); // Bouton filtre joueurs
 const closeFiltersBtn = document.getElementById('filters-modal-close-btn');
 
 function openFiltersModal() {
@@ -240,12 +239,39 @@ document.addEventListener('DOMContentLoaded', function() {
     // Peupler les maps de joueurs pour les modales
     const playersDataEl = document.getElementById('players-data');
     if (playersDataEl) {
-        const allPlayers = JSON.parse(playersDataEl.textContent);
-        allPlayers.forEach(p => allPlayersMap.set(p.name, p));
+        // Correction: S'assurer que les données complètes sont parsées
+        try {
+            const playersData = JSON.parse(playersDataEl.textContent || '[]');
+            playersData.forEach(p => allPlayersMap.set(p.name, p));
+        } catch (e) {
+            console.error("Erreur lors du parsing des données joueurs:", e);
+        }
     }
     document.querySelectorAll('#leaderboard-table tbody tr').forEach(row => {
         playerRankMap.set(row.dataset.name, row.dataset.rank);
+        // Stocker aussi les données complètes si elles ne sont pas déjà dans allPlayersMap (fallback)
+        if (!allPlayersMap.has(row.dataset.name)) {
+            try {
+                // Essayer de reconstituer un objet joueur à partir des data-*
+                const playerData = {
+                    id: row.dataset.id || null, // Assumer qu'un data-id existe ou ajouter le
+                    name: row.dataset.name,
+                    class: row.dataset.class,
+                    combat_power: row.dataset.cp,
+                    team: row.dataset.team,
+                    guild: row.dataset.guild,
+                    notes: row.dataset.notes,
+                    updated_at: row.dataset.updated,
+                    play_slots: JSON.parse(row.dataset.playSlots || '[]'),
+                    pt_tags: JSON.parse(row.dataset.ptTags || '[]')
+                };
+                allPlayersMap.set(playerData.name, playerData);
+            } catch(e){
+                console.error("Erreur lors de la reconstruction des données joueur depuis data-*:", e, row.dataset.name);
+            }
+        }
     });
+
 
     document.querySelectorAll('.cp-display').forEach(el => {
         el.textContent = formatCP(el.dataset.cp);
@@ -268,6 +294,7 @@ document.addEventListener('DOMContentLoaded', function() {
         playerTableBody.addEventListener('click', (e) => {
             const playerRow = e.target.closest('tr');
             if (!playerRow) return;
+            // Ne pas ouvrir la modale si on clique sur notes ou actions admin
             if (e.target.closest('.notes-col') || e.target.closest('.admin-actions')) {
                 return;
             }
@@ -313,7 +340,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- NOUVEAU: Logique pour le filtre mobile des équipes ---
+    // --- Logique pour le filtre mobile des équipes ---
     const teamMobileFilter = document.getElementById('team-guild-filter-mobile');
     const allTeamRows = document.querySelectorAll('#teams-leaderboard-table tbody tr.team-data-row');
 
@@ -325,13 +352,19 @@ document.addEventListener('DOMContentLoaded', function() {
             const memberCount = parseInt(row.dataset.memberCountVal || 0, 10);
             const isVisible = (selectedGuild === 'All') ||
                 (selectedGuild === 'Incomplete' && memberCount < 4) ||
-                (row.dataset.guildName === selectedGuild);
+                (row.dataset.guildName === selectedGuild); // Utiliser guildName ici
 
-            row.style.display = isVisible ? '' : 'none';
-            if (row.nextElementSibling) row.nextElementSibling.style.display = 'none'; // Garder les membres cachés
+            row.style.display = isVisible ? '' : 'none'; // Appliquer display: '' ou 'none'
+            if (row.nextElementSibling && row.nextElementSibling.classList.contains('team-members-row')) {
+                row.nextElementSibling.style.display = 'none'; // Toujours cacher les membres sur mobile
+            }
+
 
             if (isVisible) {
-                row.querySelector('.rank-col').textContent = visibleRank;
+                // Mettre à jour le rang seulement s'il est visible
+                const rankCell = row.querySelector('.rank-col');
+                if (rankCell) rankCell.textContent = visibleRank;
+
                 row.classList.remove('rank-1', 'rank-2', 'rank-3');
                 if(visibleRank <= 3) row.classList.add(`rank-${visibleRank}`);
                 visibleRank++;
@@ -341,7 +374,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (teamMobileFilter) {
         teamMobileFilter.addEventListener('change', applyTeamMobileFilter);
-        applyTeamMobileFilter(); // Appliquer au chargement
+        // Appliquer une fois au chargement SEULEMENT si on est sur mobile
+        if (window.innerWidth <= 768) {
+            applyTeamMobileFilter();
+        }
     }
+
+    // Réappliquer le filtre équipe si la fenêtre est redimensionnée en mobile
+    // ou réinitialiser si on passe en desktop
+    window.addEventListener('resize', () => {
+        if (window.innerWidth <= 768 && teamMobileFilter) {
+            applyTeamMobileFilter(); // Appliquer le filtre mobile
+        } else if (window.innerWidth > 768) {
+            // Réinitialiser l'affichage desktop
+            allTeamRows.forEach(row => {
+                row.style.display = ''; // Afficher toutes les lignes
+                // Réappliquer les rangs initiaux si nécessaire (ou recalculer selon filtre desktop)
+                const rankCell = row.querySelector('.rank-col');
+                // Note: idéalement, il faudrait relire le rang initial ou recalculer
+                // Pour l'instant, on laisse tel quel, le filtre desktop prendra le relais s'il existe
+            });
+            // Cacher les détails des membres par défaut sur desktop
+            document.querySelectorAll('#teams-leaderboard-table tbody tr.team-members-row').forEach(row => {
+                row.style.display = 'none';
+            });
+
+        }
+    });
 
 });

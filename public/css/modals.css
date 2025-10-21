@@ -220,30 +220,36 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
     padding: 12px 0;
     border-bottom: 1px solid var(--border-color);
     cursor: pointer;
-    display: flex; /* Utiliser flex pour aligner */
-    justify-content: space-between; /* Espace entre nom et CP */
-    align-items: center; /* Centrer verticalement */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 .team-detail-player:last-child { border-bottom: none; }
 .team-detail-player:hover { background-color: #f9f6f1; }
-.team-detail-player .class-tag { font-size: 1em; padding: 6px 12px; }
-.team-detail-player-cp {
+.team-detail-player .class-tag { /* Nom du joueur */
+    font-size: 1em;
+    padding: 6px 12px;
+    flex-grow: 1; /* Permet au nom de prendre l'espace */
+    margin-right: 10px; /* Espace avant le CP */
+    text-align: left; /* Assurer l'alignement à gauche */
+}
+.team-detail-player-cp { /* CP du joueur */
     font-weight: bold;
     color: var(--primary-color);
     font-size: 1.1em;
-    margin-left: 10px; /* Espace à gauche du CP */
+    white-space: nowrap; /* Empêcher le retour à la ligne */
 }
 /* Style pour la légende courte DANS la modale */
 .short-legend {
-    justify-content: center; /* Centrer la légende */
-    font-size: 0.8em; /* Plus petit */
-    gap: 8px; /* Moins d'espace */
+    justify-content: center;
+    font-size: 0.8em;
+    gap: 8px;
     margin-top: 15px;
     padding-top: 10px;
     border-top: 1px solid var(--border-color);
-    display: flex; /* S'assurer que flex est appliqué */
-    align-items: center; /* S'assurer que les éléments sont alignés */
-    flex-wrap: wrap; /* Permettre le retour à la ligne si nécessaire */
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
 }
 .short-legend .legend-item {
     display: flex;
@@ -270,37 +276,63 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
     padding: 0;
     margin: 0;
 }
-.guild-detail-list li {
-    display: flex; /* Garder flex */
-    flex-direction: column; /* Empiler verticalement pour Class Distrib */
-    align-items: flex-start; /* Aligner à gauche */
+/* Style pour Rank, Total CP, Members */
+.guild-detail-list li:not(.distrib-item) {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
     padding: 12px 0;
     border-bottom: 1px solid var(--border-color);
-    gap: 5px; /* Espace entre titre et valeur */
+    gap: 15px;
 }
-.guild-detail-list li:last-child { border-bottom: none; }
-.guild-detail-list li > strong { /* Le titre (Rank, Total CP...) */
+.guild-detail-list li:not(.distrib-item) strong {
     color: var(--primary-color);
     white-space: nowrap;
-    width: 100%; /* Prend toute la largeur */
+    width: auto;
 }
-.guild-detail-list li > span, /* La valeur (nombre) */
-.guild-detail-list li > div { /* La div pour class distrib */
+.guild-detail-list li:not(.distrib-item) span {
     font-weight: bold;
-    width: 100%; /* Prend toute la largeur */
-    text-align: right; /* Aligner la valeur à droite */
+    width: auto;
+    text-align: right;
 }
-.guild-detail-list li > .guild-class-distrib { /* Ajuster spécifiquement la distrib */
-    justify-content: flex-end; /* Aligner les tags à droite */
-    margin-top: 5px; /* Petit espace après le titre "Class Distribution" */
+/* Style spécifique pour l'item Class Distribution */
+.guild-detail-list li.distrib-item {
+    display: flex; /* Utiliser flex */
+    flex-direction: column; /* Empiler verticalement */
+    align-items: center; /* Centrer horizontalement */
+    padding: 15px 0 12px 0; /* Plus d'espace vertical */
+    border-bottom: none; /* Pas de bordure en bas */
+    gap: 10px; /* Espace entre titre, distrib et légende */
 }
+.guild-detail-list li.distrib-item strong.centered-title {
+    width: 100%;
+    text-align: center;
+    color: var(--primary-color);
+    margin: 0; /* Retirer marge par défaut */
+    font-size: 1.1em; /* Un peu plus grand peut-être */
+}
+.guild-detail-list li.distrib-item > div { /* Conteneurs pour distrib et légende */
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+.guild-detail-list li.distrib-item .guild-class-distrib {
+    margin-top: 5px; /* Espace sous le titre */
+}
+.guild-detail-list li.distrib-item .short-legend {
+    border-top: none;
+    margin-top: 10px; /* Espace au dessus de la légende */
+    padding-top: 0;
+}
+
 
 /* Styles pour .guild-class-distrib et ses enfants */
 .guild-class-distrib {
     display: flex;
-    flex-wrap: wrap; /* Permettre le retour à la ligne */
+    flex-wrap: wrap;
     gap: 8px;
-    justify-content: flex-end; /* Aligner à droite */
+    justify-content: center; /* Centrer les tags */
 }
 .guild-class-distrib .class-tag {
     min-width: 32px;
@@ -385,15 +417,15 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px; /* Assurer le padding */
-    border-radius: 10px; /* Assurer le border-radius */
-    border: 1px solid var(--border-color); /* Assurer la bordure */
-    background-color: #f9f6f1; /* Assurer le fond */
-    color: var(--text-color); /* Assurer la couleur */
-    font-family: 'Nunito', sans-serif; /* Assurer la police */
-    font-size: 1em; /* Assurer la taille */
-    cursor: pointer; /* Assurer le curseur */
-    font-weight: normal; /* Pas forcément en gras */
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background-color: #f9f6f1;
+    color: var(--text-color);
+    font-family: 'Nunito', sans-serif;
+    font-size: 1em;
+    cursor: pointer;
+    font-weight: normal;
 }
 
 .filter-modal-dropdown-btn::after {
@@ -421,13 +453,12 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
 }
 .filter-modal-dropdown-panel label {
     padding: 8px 12px;
-    display: block; /* Faire en sorte que le label prenne toute la largeur */
-    cursor: pointer; /* Curseur sur tout le label */
+    display: block;
+    cursor: pointer;
 }
 .filter-modal-dropdown-panel label:hover {
     background-color: #f9f6f1;
 }
-/* Aligner la checkbox et le texte */
 .filter-modal-dropdown-panel label input[type="checkbox"] {
     margin-right: 8px;
     vertical-align: middle;
