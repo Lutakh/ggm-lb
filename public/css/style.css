@@ -20,12 +20,16 @@ body {
     color: var(--text-color);
     margin: 0;
     padding: 20px;
+    /* Augmentation du padding-top pour laisser de la place au bouton de nav fixe */
+    padding-top: 80px;
     background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2-H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 header {
     text-align: center;
     margin-bottom: 20px;
     position: relative;
+    /* Le header est maintenant sous les boutons fixes */
+    margin-top: 0;
 }
 header h1 {
     font-size: 3em;
@@ -323,54 +327,71 @@ body.admin-mode .admin-team-select {
     border-bottom: none;
     margin: 0;
 }
+
+/* MODIFICATION (Req 4) : Ancienne navigation cachée */
 #main-nav, #top-nav {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 30px;
-    background-color: var(--surface-color);
-    padding: 10px;
-    border-radius: 12px;
-    box-shadow: 0 8px 16px rgba(140, 90, 58, 0.15);
-    flex-wrap: nowrap;
-    overflow-x: auto;
-}
-body.section-active #main-nav {
     display: none;
 }
-body:not(.section-active) #top-nav {
-    display: none;
-}
-.nav-btn {
+
+/* (Req 4) Style pour le nouveau bouton de navigation */
+#home-nav-btn {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     display: flex;
-    flex-direction: row;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 8px 15px;
-    font-size: 1em;
+    z-index: 1001;
+    transition: transform 0.2s;
+}
+#home-nav-btn:hover {
+    transform: scale(1.1);
+}
+#home-nav-btn svg {
+    width: 24px;
+    height: 24px;
+    fill: var(--text-color);
+}
+
+/* (Req 4) Style pour la nouvelle modale de navigation */
+#nav-modal-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px 20px 20px 20px;
+}
+.nav-btn-modal {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    font-size: 1.2em;
     font-weight: 700;
-    background: var(--surface-color);
-    border: 2px solid var(--border-color);
+    background-color: #f9f6f1;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
     cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
     text-decoration: none;
     color: var(--text-color);
-    border-radius: 12px;
+}
+.nav-btn-modal:hover {
+    background-color: #f4e8d8;
+}
+.nav-btn-modal svg {
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
     flex-shrink: 0;
 }
-.nav-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 12px rgba(140, 90, 58, 0.2);
-}
-.nav-btn.active {
-    border-color: var(--accent-color);
-    color: var(--accent-color);
-}
-.nav-btn svg {
-    width: 20px;
-    height: 20px;
-    fill: currentColor;
-}
+
+
 .pt-tag {
     background-color: var(--secondary-color);
     color: var(--primary-color);
@@ -472,13 +493,25 @@ body:not(.section-active) #top-nav {
     overflow-x: auto;
 }
 
+/* (Req 1) Ancien conteneur de filtres caché */
 .leaderboard-filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    align-items: center;
-    margin-bottom: 20px;
+    display: none;
 }
+
+/* (Req 1) Nouveau bouton de filtre (caché sur desktop) */
+#open-filters-btn {
+    display: none;
+    width: 100%;
+    margin-bottom: 15px;
+    background-color: var(--primary-color);
+    color: white;
+    font-size: 1.1em;
+}
+#open-filters-btn.active {
+    background-color: var(--accent-color);
+}
+
+
 .filter-group {
     display: flex;
     gap: 10px;
@@ -584,16 +617,6 @@ body:not(.section-active) #top-nav {
     background-color: transparent;
     padding: 2px 0;
 }
-.pt-leaderboard-player .class-tag {
-    /*width: 14px;
-    height: 14px;
-    min-width: 14px;
-    padding: 0;
-    font-size: 0;
-    border-radius: 50%;
-    flex-shrink: 0;*/
-}
-
 
 /* --- MODALS --- */
 #admin-settings-btn {
@@ -831,15 +854,13 @@ body.admin-mode .admin-actions {
     overflow-y: auto;
 }
 
-/* AJOUT : Style pour le compteur en ligne de Discord */
 #discord-online-count {
     color: var(--success-color);
     font-weight: bold;
 }
 
-/* --- BOUTON D'AIDE ET MODAL --- */
 .help-button {
-    background-color: #64b5f6; /* Bleu Scholar */
+    background-color: #64b5f6;
     color: white;
     border: none;
     font-weight: bold;
@@ -853,7 +874,6 @@ body.admin-mode .admin-actions {
 .help-button:hover {
     filter: brightness(1.1);
 }
-
 #pt-help-modal-body {
     padding: 20px 25px;
     white-space: normal;
@@ -861,234 +881,96 @@ body.admin-mode .admin-actions {
     max-height: 60vh;
     overflow-y: auto;
 }
+#pt-help-modal-body p { margin-top: 0; margin-bottom: 10px; }
+#pt-help-modal-body strong { display: block; margin-top: 15px; margin-bottom: 5px; color: var(--primary-color); font-size: 1.1em; }
+#pt-help-modal-body ul { list-style-type: disc; padding-left: 25px; margin-top: 5px; margin-bottom: 15px; }
+#pt-help-modal-body ul ul { list-style-type: circle; margin-top: 5px; }
 
-#pt-help-modal-body p {
-    margin-top: 0;
-    margin-bottom: 10px;
-}
+.class-header-cell, .player-header-cell { position: relative; }
+.header-content { display: flex; align-items: center; gap: 8px; }
+.header-filter-btn { background: none; border: 1px solid transparent; border-radius: 6px; cursor: pointer; padding: 4px; display: inline-flex; align-items: center; transition: background-color 0.2s, border-color 0.2s; gap: 8px; color: var(--text-color); font-weight: 800; }
+.header-filter-btn svg { width: 18px; height: 18px; fill: var(--text-color); }
+.header-filter-btn:hover { background-color: #f0e6d6; border-color: var(--border-color); }
+.header-filter-btn.active { background-color: #f0e6d6; border-color: var(--secondary-color); color: var(--accent-color); }
+.header-filter-btn.active svg { fill: var(--accent-color); }
+.class-header-cell .dropdown-panel, .player-header-cell .dropdown-panel { top: 100%; left: 0; right: auto; margin-top: 5px; }
 
-#pt-help-modal-body strong {
-    display: block;
-    margin-top: 15px;
-    margin-bottom: 5px;
-    color: var(--primary-color);
-    font-size: 1.1em;
-}
+.custom-guild-select { position: relative; width: 100%; }
+.guild-select-input { width: 100%; box-sizing: border-box; }
+.guild-select-panel { display: none; position: absolute; top: 100%; left: 0; right: 0; background-color: var(--surface-color); border: 1px solid var(--border-color); border-radius: 0 0 10px 10px; max-height: 150px; overflow-y: auto; z-index: 100; margin-top: -1px; }
+.custom-guild-select.open .guild-select-panel { display: block; }
+.guild-option { padding: 10px 12px; cursor: pointer; font-size: 0.9em; }
+.guild-option:hover, .guild-option.active { background-color: #f9f6f1; }
+.guild-option.create-new { font-style: italic; color: var(--primary-color); }
 
-#pt-help-modal-body ul {
-    list-style-type: disc;
-    padding-left: 25px;
-    margin-top: 5px;
-    margin-bottom: 15px;
-}
-
-#pt-help-modal-body ul ul {
-    list-style-type: circle;
-    margin-top: 5px;
-}
-
-/* --- STYLES POUR LE FILTRE DANS L'EN-TÊTE DU TABLEAU --- */
-.class-header-cell, .player-header-cell {
-    position: relative;
-}
-.header-content {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.header-filter-btn {
-    background: none;
-    border: 1px solid transparent;
-    border-radius: 6px;
-    cursor: pointer;
-    padding: 4px;
-    display: inline-flex;
-    align-items: center;
-    transition: background-color 0.2s, border-color 0.2s;
-    gap: 8px; /* Ajout d'un écart entre l'icône et le texte */
-    color: var(--text-color); /* Assure que le texte du bouton est visible */
-    font-weight: 800; /* Conserve le même poids de police que les autres en-têtes */
-}
-.header-filter-btn svg {
-    width: 18px;
-    height: 18px;
-    fill: var(--text-color);
-}
-.header-filter-btn:hover {
-    background-color: #f0e6d6;
-    border-color: var(--border-color);
-}
-.header-filter-btn.active {
-    background-color: #f0e6d6;
-    border-color: var(--secondary-color);
-    color: var(--accent-color);
-}
-.header-filter-btn.active svg {
-    fill: var(--accent-color);
-}
-.class-header-cell .dropdown-panel, .player-header-cell .dropdown-panel {
-    top: 100%;
-    left: 0;
-    right: auto;
-    margin-top: 5px;
-}
-/* ... (tout votre CSS existant) ... */
-
-/* --- STYLES POUR LE NOUVEAU SELECTEUR DE GUILDE --- */
-.custom-guild-select {
-    position: relative;
-    width: 100%;
-}
-
-.guild-select-input {
-    width: 100%;
-    box-sizing: border-box; /* Assure que le padding est inclus dans la largeur */
-}
-
-.guild-select-panel {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background-color: var(--surface-color);
-    border: 1px solid var(--border-color);
-    border-radius: 0 0 10px 10px;
-    max-height: 150px;
-    overflow-y: auto;
-    z-index: 100;
-    margin-top: -1px; /* Pour chevaucher la bordure de l'input */
-}
-
-.custom-guild-select.open .guild-select-panel {
-    display: block;
-}
-
-.guild-option {
-    padding: 10px 12px;
-    cursor: pointer;
-    font-size: 0.9em;
-}
-
-.guild-option:hover, .guild-option.active {
-    background-color: #f9f6f1;
-}
-
-.guild-option.create-new {
-    font-style: italic;
-    color: var(--primary-color);
-}
-
-/* --- TOOLTIP POUR LES TIMERS (Class Change & Paper Plane) --- */
-.timer-tooltip {
-    display: none; /* Caché par défaut */
-    position: absolute;
-    top: 100%; /* CORRECTION: Positionné en dessous */
-    left: 50%;
-    transform: translateX(-50%);
-    margin-top: 10px; /* Espace entre le timer et le tooltip */
-    background-color: var(--surface-color);
-    padding: 15px;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    z-index: 100; /* Assure qu'il est au-dessus des autres éléments */
-    width: 280px; /* Largeur fixe pour la lisibilité */
-    border: 1px solid var(--border-color);
-    pointer-events: none; /* Pour éviter que le tooltip ne bloque le hover */
-}
-
-/* Afficher le tooltip quand on survole l'élément parent (.timer-entry) */
-.timer-entry:hover .timer-tooltip {
-    display: block;
-}
-
-.tooltip-title { /* Style générique pour les titres de tooltip */
-    font-weight: bold;
-    color: var(--primary-color);
-    margin-bottom: 10px;
-    padding-bottom: 5px;
-    border-bottom: 1px solid var(--border-color);
-    font-size: 1.1em;
-}
-
-.tooltip-list { /* Style générique pour les listes de tooltip */
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.tooltip-item { /* Style générique pour les items dans les listes de tooltip */
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.9em;
-}
-
-.tooltip-item .timer-label {
-    opacity: 1;
-    font-weight: normal;
-    text-transform: none;
-}
-
-.tooltip-item .timer-value {
-    font-size: 0.9em;
-    padding: 2px 6px;
-    background-color: var(--primary-color);
-    color: white;
-    border-radius: 4px;
-}
-
-/* --- [MODIFICATION] STYLE POUR LES ÉVÉNEMENTS IMPORTANTS --- */
-.timer-label.important-event {
-    color: var(--gold);
-    font-weight: 800; /* Plus gras */
-}
-
+.timer-tooltip { display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 10px; background-color: var(--surface-color); padding: 15px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; width: 280px; border: 1px solid var(--border-color); pointer-events: none; }
+.timer-entry:hover .timer-tooltip { display: block; }
+.tooltip-title { font-weight: bold; color: var(--primary-color); margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid var(--border-color); font-size: 1.1em; }
+.tooltip-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.tooltip-item { display: flex; justify-content: space-between; align-items: center; font-size: 0.9em; }
+.tooltip-item .timer-label { opacity: 1; font-weight: normal; text-transform: none; }
+.tooltip-item .timer-value { font-size: 0.9em; padding: 2px 6px; background-color: var(--primary-color); color: white; border-radius: 4px; }
+.timer-label.important-event { color: var(--gold); font-weight: 800; }
 
 /* --- MODALE DÉTAIL JOUEUR (MOBILE) --- */
-#player-detail-modal-body {
+#player-detail-modal-body { padding: 10px 25px 25px 25px; max-height: 70vh; overflow-y: auto; }
+#player-detail-modal-header .class-tag { font-size: 1.1em; padding: 8px 14px; }
+.player-detail-list { list-style: none; padding: 0; margin: 0; }
+.player-detail-list li { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border-color); gap: 15px; }
+.player-detail-list li:last-child { border-bottom: none; }
+.player-detail-list li strong { color: var(--primary-color); white-space: nowrap; }
+.player-detail-list li span,
+.player-detail-list li div { text-align: right; font-weight: bold; }
+
+
+/* --- NOUVELLE MODALE DE FILTRES (Req 1) --- */
+.filters-modal-body {
     padding: 10px 25px 25px 25px;
     max-height: 70vh;
     overflow-y: auto;
-}
-
-#player-detail-modal-header .class-tag {
-    font-size: 1.1em;
-    padding: 8px 14px;
-}
-
-.player-detail-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-.player-detail-list li {
     display: flex;
-    justify-content: space-between;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--border-color);
+    flex-direction: column;
     gap: 15px;
 }
-.player-detail-list li:last-child {
-    border-bottom: none;
-}
-.player-detail-list li strong {
+.filter-group-modal h4 {
     color: var(--primary-color);
-    white-space: nowrap;
+    margin: 0 0 10px 0;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
 }
-.player-detail-list li span,
-.player-detail-list li div {
-    text-align: right;
-    font-weight: bold;
+.filters-modal-panel-grid {
+    display: grid;
+    gap: 10px;
 }
+.filters-modal-panel-grid.two-cols {
+    grid-template-columns: 1fr 1fr;
+}
+.filters-modal-panel-grid.check-grid {
+    grid-template-columns: 1fr 1fr;
+    max-height: 150px;
+    overflow-y: auto;
+    background: #fdfaf5;
+    padding: 10px;
+    border-radius: 8px;
+}
+.filters-modal-panel-grid label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9em;
+}
+
+/* (Req 1) Cacher le filtre de classe mobile sur desktop */
+.filters-modal-class-filter {
+    display: none;
+}
+
 
 /* --- STYLES MOBILES --- */
 @media (max-width: 768px) {
     body {
         padding: 10px;
+        padding-top: 70px; /* Espace pour le bouton de nav fixe */
     }
     .card {
         padding: 15px;
@@ -1113,90 +995,51 @@ body.admin-mode .admin-actions {
         width: 20px;
         height: 20px;
     }
+    /* (Req 4) Bouton de nav mobile */
+    #home-nav-btn {
+        width: 40px;
+        height: 40px;
+        top: 10px;
+        left: 10px;
+    }
+    #home-nav-btn svg {
+        width: 20px;
+        height: 20px;
+    }
+
 
     .top-bar {
         flex-wrap: wrap;
         padding: 10px;
         gap: 15px;
     }
-    .top-bar-section {
-        gap: 10px;
-    }
-    .top-bar-section svg {
-        width: 28px;
-        height: 28px;
-    }
+    .top-bar-section { gap: 10px; }
+    .top-bar-section svg { width: 28px; height: 28px; }
     .discord-section .discord-info span,
-    .guides-section span {
-        font-size: 0.9em;
-    }
-    .timers-list {
-        flex-wrap: wrap;
-        gap: 10px;
-        justify-content: center;
-        width: 100%;
-        order: 3; /* Met les timers en dernier */
-    }
-    .timer-entry {
-        flex-direction: row;
-        gap: 8px;
-        background-color: #f9f6f1;
-        padding: 5px 8px;
-        border-radius: 8px;
-        width: calc(50% - 10px); /* 2 par ligne */
-        box-sizing: border-box;
-    }
-    .timer-label {
-        font-size: 0.75em;
-        text-align: left;
-        flex-grow: 1;
-        opacity: 0.8;
-    }
-    .timer-value {
-        font-size: 0.8em;
-    }
-    .timers-section {
-        flex-basis: 100%;
-    }
-    .discord-section {
-        flex-grow: 1;
-    }
-    .guides-section {
-        flex-grow: 1;
-        justify-content: flex-end;
-    }
-    .timer-entry:hover .timer-tooltip {
-        display: none; /* Désactiver les tooltips au survol sur mobile */
-    }
+    .guides-section span { font-size: 0.9em; }
+    .timers-list { flex-wrap: wrap; gap: 10px; justify-content: center; width: 100%; order: 3; }
+    .timer-entry { flex-direction: row; gap: 8px; background-color: #f9f6f1; padding: 5px 8px; border-radius: 8px; width: calc(50% - 10px); box-sizing: border-box; }
+    .timer-label { font-size: 0.75em; text-align: left; flex-grow: 1; opacity: 0.8; }
+    .timer-value { font-size: 0.8em; }
+    .timers-section { flex-basis: 100%; }
+    .discord-section { flex-grow: 1; }
+    .guides-section { flex-grow: 1; justify-content: flex-end; }
+    .timer-entry:hover .timer-tooltip { display: none; }
 
     /* --- Formulaire d'ajout (mobile) --- */
-    #player-form {
-        grid-template-columns: 1fr;
-    }
-    #player-image-container {
-        grid-row: auto;
-    }
-    .form-step-1, #form-details {
-        grid-column: 1 / -1;
-    }
+    #player-form { grid-template-columns: 1fr; }
+    #player-image-container { grid-row: auto; }
+    .form-step-1, #form-details { grid-column: 1 / -1; }
 
     /* --- Players Leaderboard Table (Mobile) --- */
-    .leaderboard-filters {
-        flex-direction: column;
-        gap: 10px;
-        align-items: stretch;
+
+    /* (Req 1) Afficher le bouton de filtre */
+    #open-filters-btn {
+        display: block;
     }
-    .filter-group {
-        flex-direction: column;
-        gap: 5px;
-        align-items: stretch;
-    }
-    #cp-min, #cp-max {
-        width: 100%;
-        box-sizing: border-box;
-    }
-    .dropdown-btn {
-        width: 100%;
+    /* (Req 1) Afficher le filtre de classe DANS la modale */
+    .filters-modal-class-filter {
+        display: block;
     }
 
     #leaderboard-table thead {
@@ -1210,11 +1053,9 @@ body.admin-mode .admin-actions {
         padding: 10px 0;
         cursor: pointer;
     }
-
     #leaderboard-table tbody tr:hover {
         background-color: #f9f6f1;
     }
-
     #leaderboard-table td {
         display: none; /* Cache toutes les cellules par défaut */
         border: none;
@@ -1224,7 +1065,7 @@ body.admin-mode .admin-actions {
     /* Afficher Rank (col 1) */
     #leaderboard-table td:nth-child(1) {
         display: block;
-        width: 50px;
+        width: 40px; /* Largeur réduite */
         text-align: center;
         flex-shrink: 0;
     }
@@ -1239,12 +1080,23 @@ body.admin-mode .admin-actions {
         font-size: 1em;
     }
 
+    /* MODIFICATION (Req 3) : Afficher "Updated" (col 7) */
+    #leaderboard-table th:nth-child(7),
+    #leaderboard-table td:nth-child(7) {
+        display: block;
+        width: 40px;
+        font-size: 0.8em;
+        text-align: right;
+        color: #666;
+        flex-shrink: 0;
+        padding: 5px 0;
+    }
+
     /* Cache le reste des colonnes */
     #leaderboard-table th:nth-child(3), #leaderboard-table td:nth-child(3),
     #leaderboard-table th:nth-child(4), #leaderboard-table td:nth-child(4),
     #leaderboard-table th:nth-child(5), #leaderboard-table td:nth-child(5),
     #leaderboard-table th:nth-child(6), #leaderboard-table td:nth-child(6),
-    #leaderboard-table th:nth-child(7), #leaderboard-table td:nth-child(7),
     #leaderboard-table th:nth-child(8), #leaderboard-table td:nth-child(8) {
         display: none;
     }

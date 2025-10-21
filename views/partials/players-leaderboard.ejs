@@ -1,48 +1,14 @@
 <div class="view-tabs"><h2>Players Leaderboard</h2></div>
 
 <div class="leaderboard-legend">
-    <div class="legend-item"><span class="class-tag class-swordbearer"></span> Swordbearer</div>
-    <div class="legend-item"><span class="class-tag class-acolyte"></span> Acolyte</div>
-    <div class="legend-item"><span class="class-tag class-wayfarer"></span> Wayfarer</div>
-    <div class="legend-item"><span class="class-tag class-scholar"></span> Scholar</div>
-    <div class="legend-item"><span class="class-tag class-shadowlash"></span> Shadowlash</div>
+    <div class="legend-item"><span class="class-tag class-swordbearer"></span> Sword</div>
+    <div class="legend-item"><span class="class-tag class-acolyte"></span> Aco</div>
+    <div class="legend-item"><span class="class-tag class-wayfarer"></span> Way</div>
+    <div class="legend-item"><span class="class-tag class-scholar"></span> Echo</div>
+    <div class="legend-item"><span class="class-tag class-shadowlash"></span> Shadow</div>
 </div>
 
-<div id="filters" class="leaderboard-filters">
-    <div class="filter-group">
-        <input type="text" id="cp-min" placeholder="Min CP (e.g., 500k)">
-        <input type="text" id="cp-max" placeholder="Max CP (e.g., 1.5m)">
-    </div>
-    <div class="filter-group dropdown-filter">
-        <button id="guild-filter-btn" class="dropdown-btn">All Guilds</button>
-        <div id="guild-filter-panel" class="dropdown-panel">
-            <% guilds.forEach(name => { %>
-                <label><input type="checkbox" data-guild="<%= name %>"> <%= name %></label>
-            <% }); %>
-        </div>
-    </div>
-    <div class="filter-group dropdown-filter">
-        <button id="team-filter-btn" class="dropdown-btn">All Teams</button>
-        <div id="team-filter-panel" class="dropdown-panel">
-             <% allTeamNames.forEach(name => { %>
-                <label><input type="checkbox" data-team="<%= name %>"> <%= name %></label>
-            <% }); %>
-             <label><input type="checkbox" data-team="No Team"> No Team</label>
-        </div>
-    </div>
-    <div class="filter-group">
-        <select id="pt-tag-filter">
-            <option value="">All PT Progress</option>
-             <% perilousTrials.forEach(pt => { %>
-                <option value="<%= pt.name %>"><%= pt.name %></option>
-            <% }); %>
-        </select>
-        <select id="pt-tag-mode">
-            <option value="has">Has Tag</option>
-            <option value="missing">Missing Tag</option>
-        </select>
-    </div>
-</div>
+<button id="open-filters-btn" class="action-btn-main">Filtres</button>
 
 <table id="leaderboard-table">
     <thead>

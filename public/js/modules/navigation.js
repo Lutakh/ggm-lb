@@ -1,16 +1,19 @@
 export function initNavigation() {
-    const mainNav = document.getElementById('main-nav');
-    const topNav = document.getElementById('top-nav');
+    // --- SÉLECTEURS POUR LA NOUVELLE MODALE ---
+    const navModalBtn = document.getElementById('home-nav-btn');
+    const navModal = document.getElementById('nav-modal');
+    const navModalBackdrop = document.getElementById('nav-modal-backdrop');
+    const navModalContent = document.getElementById('nav-modal-content');
+    const navModalCloseBtn = document.getElementById('nav-modal-close-btn');
+
     const mainSections = document.querySelectorAll('.main-section');
     const urlParams = new URLSearchParams(window.location.search);
     const section = urlParams.get('section');
 
-    if (!mainNav || !topNav) return;
+    if (!navModalBtn || !navModal || !navModalContent) return;
 
-    const homeBtn = document.createElement('a');
-    homeBtn.href = '/';
-    homeBtn.className = 'nav-btn';
-    homeBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>Home</span>`;
+    // --- DÉFINITION DES BOUTONS ---
+    const homeBtn = { href: '/', svg: '<svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>', label: 'Home' };
 
     const navButtons = [
         { target: 'add-update-section', svg: '<svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>', label: 'Add / Update' },
@@ -19,40 +22,74 @@ export function initNavigation() {
         { target: 'guilds-leaderboard-section', svg: '<svg viewBox="0 0 24 24"><path d="M12 3L4 9v12h16V9l-8-6zm0 2.62L17.19 9H6.81L12 5.62zM6 19v-8.45l6 4.5 6-4.5V19H6z"/></svg>', label: 'Guilds' },
         { target: 'perilous-trials-section', svg: '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>', label: 'Perilous Trials' },
     ];
-    
-    // Vider les conteneurs pour éviter les doublons au rechargement à chaud
-    mainNav.innerHTML = '';
-    topNav.innerHTML = '';
 
-    navButtons.forEach(b => {
-        const btn = document.createElement('button');
-        btn.className = 'nav-btn';
-        btn.dataset.target = b.target;
-        btn.innerHTML = `${b.svg}<span>${b.label}</span>`;
-        mainNav.appendChild(btn.cloneNode(true));
-        topNav.appendChild(btn);
-    });
-    topNav.prepend(homeBtn);
+    // --- FONCTIONS DE LA MODALE ---
+    function openNavModal() {
+        navModal.style.display = 'flex';
+        navModalBackdrop.style.display = 'block';
+    }
+
+    function closeNavModal() {
+        navModal.style.display = 'none';
+        navModalBackdrop.style.display = 'none';
+    }
 
     function showSection(targetId) {
         document.body.classList.add('section-active');
         mainSections.forEach(s => { s.style.display = s.id === targetId ? 'block' : 'none'; });
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.target === targetId);
-        });
+        // Met à jour l'URL pour garder la section active
+        const url = new URL(window.location);
+        url.searchParams.set('section', targetId);
+        window.history.pushState({}, '', url);
     }
 
+    function goToHome() {
+        document.body.classList.remove('section-active');
+        mainSections.forEach(s => { s.style.display = 'none'; });
+        // Met à jour l'URL pour enlever la section
+        const url = new URL(window.location);
+        url.searchParams.delete('section');
+        window.history.pushState({}, '', url);
+    }
+
+    // --- REMPLISSAGE ET ÉVÉNEMENTS ---
+    navModalContent.innerHTML = ''; // Vider au cas où
+
+    // 1. Bouton Home
+    const homeLink = document.createElement('a');
+    homeLink.href = homeBtn.href;
+    homeLink.className = 'nav-btn-modal';
+    homeLink.innerHTML = `${homeBtn.svg}<span>${homeBtn.label}</span>`;
+    homeLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeNavModal();
+        goToHome();
+    });
+    navModalContent.appendChild(homeLink);
+
+    // 2. Autres boutons de section
+    navButtons.forEach(b => {
+        const btn = document.createElement('button');
+        btn.className = 'nav-btn-modal';
+        btn.dataset.target = b.target;
+        btn.innerHTML = `${b.svg}<span>${b.label}</span>`;
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            closeNavModal();
+            showSection(b.target);
+        });
+        navModalContent.appendChild(btn);
+    });
+
+    // 3. Événements de la modale
+    navModalBtn.addEventListener('click', openNavModal);
+    navModalCloseBtn.addEventListener('click', closeNavModal);
+    navModalBackdrop.addEventListener('click', closeNavModal);
+
+    // 4. Afficher la section initiale si elle est dans l'URL
     if (section) {
         showSection(section);
     } else {
         document.body.classList.remove('section-active');
     }
-
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (btn.dataset.target) showSection(btn.dataset.target);
-            else window.location.href = '/';
-        });
-    });
 }

@@ -2,7 +2,6 @@
 
 <main>
     <%- include('partials/top-bar') %>
-    <%- include('partials/nav-menu') %>
 
     <div id="add-update-section" class="main-section card">
         <h2>Add / Update a Character</h2>
@@ -65,7 +64,7 @@
         <button type="button" id="create-new-player-btn" class="action-btn-main">Create New</button>
     </div>
     <div id="player-select-list" class="player-select-list">
-        </div>
+    </div>
 </div>
 
 <script id="players-data" type="application/json">
@@ -73,6 +72,7 @@
 </script>
 
 <%- include('partials/admin-modal') %>
+
 <div id="notes-modal-backdrop" class="player-select-modal-backdrop"></div>
 <div id="notes-modal" class="player-select-modal">
     <div class="player-select-modal-header">
@@ -80,7 +80,7 @@
         <button type="button" id="notes-modal-close-btn" class="player-select-close-btn">&times;</button>
     </div>
     <div id="notes-modal-body" style="padding: 20px 25px; white-space: pre-wrap; line-height: 1.6;">
-        </div>
+    </div>
 </div>
 
 <div id="player-detail-modal-backdrop" class="player-select-modal-backdrop"></div>
@@ -90,7 +90,82 @@
         <button type="button" id="player-detail-modal-close-btn" class="player-select-close-btn">&times;</button>
     </div>
     <div id="player-detail-modal-body">
+    </div>
+</div>
+
+<div id="nav-modal-backdrop" class="player-select-modal-backdrop"></div>
+<div id="nav-modal" class="player-select-modal">
+    <div class="player-select-modal-header">
+        <h3>Navigation</h3>
+        <button type="button" id="nav-modal-close-btn" class="player-select-close-btn">&times;</button>
+    </div>
+    <div id="nav-modal-content">
         </div>
+</div>
+
+<div id="filters-modal-backdrop" class="player-select-modal-backdrop"></div>
+<div id="filters-modal" class="player-select-modal">
+    <div class="player-select-modal-header">
+        <h3>Player Filters</h3>
+        <button type="button" id="filters-modal-close-btn" class="player-select-close-btn">&times;</button>
+    </div>
+    <div class="filters-modal-body">
+
+        <div class="filter-group-modal filters-modal-class-filter">
+            <h4>Class</h4>
+            <div id="filters-modal-class-panel" class="filters-modal-panel-grid">
+                <label><input type="checkbox" data-class="Swordbearer"> Swordbearer</label>
+                <label><input type="checkbox" data-class="Acolyte"> Acolyte</label>
+                <label><input type="checkbox" data-class="Wayfarer"> Wayfarer</label>
+                <label><input type="checkbox" data-class="Scholar"> Scholar</label>
+                <label><input type="checkbox" data-class="Shadowlash"> Shadowlash</label>
+            </div>
+        </div>
+
+        <div class="filter-group-modal">
+            <h4>Combat Power</h4>
+            <div class="filters-modal-panel-grid two-cols">
+                <input type="text" id="filters-modal-cp-min" placeholder="Min CP (e.g., 500k)">
+                <input type="text" id="filters-modal-cp-max" placeholder="Max CP (e.g., 1.5m)">
+            </div>
+        </div>
+
+        <div class="filter-group-modal">
+            <h4>Guild</h4>
+            <div id="filters-modal-guild-panel" class="filters-modal-panel-grid check-grid">
+                <% guilds.forEach(name => { %>
+                    <label><input type="checkbox" data-guild="<%= name %>"> <%= name %></label>
+                <% }); %>
+            </div>
+        </div>
+
+        <div class="filter-group-modal">
+            <h4>Team</h4>
+            <div id="filters-modal-team-panel" class="filters-modal-panel-grid check-grid">
+                 <% allTeamNames.forEach(name => { %>
+                    <label><input type="checkbox" data-team="<%= name %>"> <%= name %></label>
+                <% }); %>
+                 <label><input type="checkbox" data-team="No Team"> No Team</label>
+            </div>
+        </div>
+
+        <div class="filter-group-modal">
+            <h4>PT Progress</h4>
+            <div class="filters-modal-panel-grid two-cols">
+                <select id="filters-modal-pt-tag-filter">
+                    <option value="">All PT Progress</option>
+                     <% perilousTrials.forEach(pt => { %>
+                        <option value="<%= pt.name %>"><%= pt.name %></option>
+                    <% }); %>
+                </select>
+                <select id="filters-modal-pt-tag-mode">
+                    <option value="has">Has Tag</option>
+                    <option value="missing">Missing Tag</option>
+                </select>
+            </div>
+        </div>
+
+    </div>
 </div>
 
 <%- include('partials/footer') %>

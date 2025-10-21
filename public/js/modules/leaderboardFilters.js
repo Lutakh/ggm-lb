@@ -1,58 +1,35 @@
 import { parseCpFilter } from './utils.js';
 
 export function initLeaderboardFilters() {
-    // --- GESTION DES MENUS DÉROULANTS PERSONNALISÉS ---
-    document.querySelectorAll('.dropdown-btn').forEach(button => {
-        button.addEventListener('click', (e) => {
-            // Logique améliorée pour trouver le panneau de filtre associé
-            let panel;
-            // MODIFICATION: Ajout de .player-header-cell
-            const parentContainer = button.closest('.dropdown-filter, .class-header-cell, .player-header-cell');
-            if (parentContainer) {
-                panel = parentContainer.querySelector('.dropdown-panel');
-            }
 
-            if (!panel) {
-                console.error('Dropdown panel not found for button', button);
-                return;
-            }
+    // --- SÉLECTEURS DES FILTRES (Req 1) ---
+    // Filtres de la modale
+    const modalClassFilters = document.querySelectorAll('#filters-modal-class-panel input');
+    const teamFilters = document.querySelectorAll('#filters-modal-team-panel input');
+    const guildFilters = document.querySelectorAll('#filters-modal-guild-panel input');
+    const cpMinFilter = document.getElementById('filters-modal-cp-min');
+    const cpMaxFilter = document.getElementById('filters-modal-cp-max');
+    const ptTagFilter = document.getElementById('filters-modal-pt-tag-filter');
+    const ptTagMode = document.getElementById('filters-modal-pt-tag-mode');
 
-            // Ferme tous les autres panneaux avant de gérer celui-ci
-            const isCurrentlyOpen = panel.classList.contains('show');
-            document.querySelectorAll('.dropdown-panel').forEach(p => {
-                p.classList.remove('show');
-            });
+    // Filtre de classe du 'th' (desktop)
+    const desktopClassFilters = document.querySelectorAll('#class-filter-panel input');
 
-            if (!isCurrentlyOpen) {
-                panel.classList.add('show');
-            }
+    // Bouton de filtre principal (desktop 'th')
+    const classFilterBtn = document.getElementById('class-filter-btn');
+    // Bouton d'ouverture de la modale (mobile)
+    const openFiltersBtn = document.getElementById('open-filters-btn');
 
-            e.stopPropagation(); // Empêche la fermeture immédiate par le listener global
-        });
-    });
-
-    // Ferme les menus si on clique n'importe où ailleurs sur la page
-    window.addEventListener('click', (e) => {
-        if (!e.target.closest('.dropdown-btn')) {
-            document.querySelectorAll('.dropdown-panel.show').forEach(panel => {
-                panel.classList.remove('show');
-            });
-        }
-    });
-
-    // --- LOGIQUE D'APPLICATION DES FILTRES ---
-    // ✅ CORRECTION : Le sélecteur ne cible plus le filtre des PT
-    const classFilters = document.querySelectorAll('#class-filter-panel input');
-    const teamFilters = document.querySelectorAll('#team-filter-panel input');
-    const guildFilters = document.querySelectorAll('#guild-filter-panel input');
-    const cpMinFilter = document.getElementById('cp-min');
-    const cpMaxFilter = document.getElementById('cp-max');
+    // Lignes du tableau
     const memberRows = document.querySelectorAll('#leaderboard-table tbody tr');
-    const ptTagFilter = document.getElementById('pt-tag-filter');
-    const ptTagMode = document.getElementById('pt-tag-mode');
 
     function applyFilters() {
-        const selectedClasses = Array.from(classFilters).filter(c => c.checked).map(c => c.dataset.class);
+        // Fusionne les filtres de classe (desktop + mobile)
+        const selectedClassesDesktop = Array.from(desktopClassFilters).filter(c => c.checked).map(c => c.dataset.class);
+        const selectedClassesModal = Array.from(modalClassFilters).filter(c => c.checked).map(c => c.dataset.class);
+        const selectedClasses = [...new Set([...selectedClassesDesktop, ...selectedClassesModal])];
+
+        // Lit les autres filtres depuis la modale
         const selectedTeams = Array.from(teamFilters).filter(c => c.checked).map(c => c.dataset.team);
         const selectedGuilds = Array.from(guildFilters).filter(c => c.checked).map(c => c.dataset.guild);
         const cpMin = parseCpFilter(cpMinFilter.value);
@@ -77,7 +54,7 @@ export function initLeaderboardFilters() {
             }
 
             if (classMatch && teamMatch && guildMatch && cpMatch && ptMatch) {
-                row.style.display = '';
+                row.style.display = ''; // Sur mobile, le CSS gère le 'flex'
                 row.querySelector('.rank-col').textContent = visibleRank;
                 row.classList.remove('rank-1', 'rank-2', 'rank-3');
                 if (visibleRank <= 3) row.classList.add(`rank-${visibleRank}`);
@@ -85,34 +62,58 @@ export function initLeaderboardFilters() {
             } else { row.style.display = 'none'; }
         });
 
-        // Met à jour le texte des boutons de filtre
-
-        // MODIFICATION: Logique pour mettre à jour le bouton de filtre de classe dans l'en-tête
-        const classFilterBtn = document.getElementById('class-filter-btn');
+        // Met à jour le texte du bouton de filtre de classe (desktop)
         if (classFilterBtn) {
             const span = classFilterBtn.querySelector('span');
-            if (span) { // C'est le nouveau bouton d'en-tête
+            if (span) {
                 span.textContent = selectedClasses.length > 0 ? `Player (${selectedClasses.length})` : 'Player';
                 classFilterBtn.classList.toggle('active', selectedClasses.length > 0);
-            } else { // Fallback pour l'ancienne structure (au cas où)
-                classFilterBtn.textContent = selectedClasses.length > 0 ? `${selectedClasses.length} class(es)` : 'All Classes';
             }
         }
 
-        const teamFilterBtn = document.getElementById('team-filter-btn');
-        if (teamFilterBtn) teamFilterBtn.textContent = selectedTeams.length > 0 ? `${selectedTeams.length} team(s)` : 'All Teams';
-
-        const guildFilterBtn = document.getElementById('guild-filter-btn');
-        if (guildFilterBtn) guildFilterBtn.textContent = selectedGuilds.length > 0 ? `${selectedGuilds.length} guild(s)` : 'All Guilds';
+        // Met à jour le texte du bouton d'ouverture des filtres (mobile)
+        let totalFilters = selectedClasses.length + selectedTeams.length + selectedGuilds.length + (cpMin > 0 ? 1 : 0) + (cpMax !== Infinity ? 1 : 0) + (selectedPtTag ? 1 : 0);
+        if (openFiltersBtn) {
+            openFiltersBtn.textContent = totalFilters > 0 ? `Filtres (${totalFilters})` : 'Filtres';
+            openFiltersBtn.classList.toggle('active', totalFilters > 0);
+        }
     }
 
-    // Attache les écouteurs d'événements
-    document.querySelectorAll('#filters input, #filters select, .dropdown-panel input').forEach(el => {
+    // Attache les écouteurs d'événements à TOUS les filtres (desktop + modale)
+    document.querySelectorAll('#class-filter-panel input, #filters-modal input, #filters-modal select').forEach(el => {
         el.addEventListener('change', applyFilters);
-        el.addEventListener('keyup', applyFilters);
+        // 'keyup' pour les champs de texte CP
+        if (el.type === 'text') {
+            el.addEventListener('keyup', applyFilters);
+        }
     });
 
-    // --- FILTRE POUR LE CLASSEMENT DES ÉQUIPES (INCHANGÉ) ---
+    // --- LOGIQUE POUR LES AUTRES LEADERBOARDS (INCHANGÉE) ---
+
+    // Gère les menus déroulants (pour le filtre de classe desktop)
+    document.querySelectorAll('.dropdown-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+            let panel;
+            const parentContainer = button.closest('.dropdown-filter, .class-header-cell, .player-header-cell');
+            if (parentContainer) {
+                panel = parentContainer.querySelector('.dropdown-panel');
+            }
+            if (!panel) return;
+
+            const isCurrentlyOpen = panel.classList.contains('show');
+            document.querySelectorAll('.dropdown-panel').forEach(p => p.classList.remove('show'));
+            if (!isCurrentlyOpen) panel.classList.add('show');
+            e.stopPropagation();
+        });
+    });
+
+    window.addEventListener('click', (e) => {
+        if (!e.target.closest('.dropdown-btn')) {
+            document.querySelectorAll('.dropdown-panel.show').forEach(panel => panel.classList.remove('show'));
+        }
+    });
+
+    // Filtre pour le classement des équipes (INCHANGÉ)
     const teamGuildFilter = document.getElementById('team-guild-filter');
     const allTeamRows = document.querySelectorAll('#teams-leaderboard-table tbody tr.team-data-row');
     if(teamGuildFilter) {
