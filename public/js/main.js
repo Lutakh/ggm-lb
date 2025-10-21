@@ -2,6 +2,7 @@ import { initNavigation } from './modules/navigation.js';
 import { initPlayerForm } from './modules/playerForm.js';
 import { initLeaderboardFilters } from './modules/leaderboardFilters.js';
 import { initPerilousTrials } from './modules/perilousTrials.js';
+// MODIFICATION : Ajout de minutesToFormattedTime et formatRelativeTimeShort
 import { updateTimers, formatCP, formatRelativeTime, formatRelativeTimeShort, minutesToFormattedTime } from './modules/utils.js';
 import { initDiscordWidget } from './modules/discordWidget.js';
 
@@ -18,7 +19,9 @@ function closeNotesModal() {
 }
 
 window.showFullNote = function(playerName, note) {
-    if (!note || note.trim() === '' || note.trim() === '-') return;
+    if (!note || note.trim() === '' || note.trim() === '-') {
+        return;
+    }
     notesTitle.textContent = `Notes for ${playerName}`;
     notesBody.textContent = note;
     notesModal.style.display = 'flex';
@@ -39,7 +42,7 @@ function showPlayerDetails(playerRow) {
     const playSlots = JSON.parse(data.playSlots || '[]');
 
     let playHoursHtml = '-';
-    if (playSlots.length > 0 && playSlots[0] !== null) {
+    if (playSlots.length > 0 && playSlots[0] !== null) { // Vérifie que playSlots n'est pas juste [null]
         playHoursHtml = playSlots.map(slot =>
             `<div>${minutesToFormattedTime(slot.start_minutes)} - ${minutesToFormattedTime(slot.end_minutes)}</div>`
         ).join('');
@@ -47,12 +50,10 @@ function showPlayerDetails(playerRow) {
 
     playerDetailTitle.innerHTML = `<span class="class-tag class-${data.class.toLowerCase()}">${data.name}</span>`;
 
-    // MODIFICATION (Req 1) : Ajout de la ligne pour la classe
     playerDetailBody.innerHTML = `
         <ul class="player-detail-list">
             <li><strong>Rank:</strong> <span>${data.rank}</span></li>
             <li><strong>CP:</strong> <span>${formatCP(data.cp)}</span></li>
-            <li><strong>Class:</strong> <span><span class="class-tag class-${data.class.toLowerCase()}">${data.class}</span></span></li>
             <li><strong>Guild:</strong> <span>${data.guild || '-'}</span></li>
             <li><strong>Team:</strong> <span>${data.team || '-'}</span></li>
             <li><strong>Play Hours:</strong> ${playHoursHtml}</li>
@@ -70,7 +71,7 @@ function closePlayerDetailModal() {
     if (playerDetailBackdrop) playerDetailBackdrop.style.display = 'none';
 }
 
-// --- MODALE DE FILTRES ---
+// --- NOUVELLE MODALE DE FILTRES (Req 1) ---
 const filtersModal = document.getElementById('filters-modal');
 const filtersBackdrop = document.getElementById('filters-modal-backdrop');
 const openFiltersBtn = document.getElementById('open-filters-btn');
@@ -85,39 +86,6 @@ function closeFiltersModal() {
     if (filtersBackdrop) filtersBackdrop.style.display = 'none';
 }
 
-// --- NOUVELLE MODALE POUR LES TIMERS MOBILES (Req 3) ---
-const timerDetailModal = document.getElementById('timer-detail-modal');
-const timerDetailBackdrop = document.getElementById('timer-detail-modal-backdrop');
-const timerDetailTitle = document.getElementById('timer-detail-modal-title');
-const timerDetailBody = document.getElementById('timer-detail-modal-body');
-const timerDetailCloseBtn = document.getElementById('timer-detail-modal-close-btn');
-
-function showTimerDetails(timerElement) {
-    if (!timerElement || !timerDetailModal) return;
-
-    const type = timerElement.dataset.timerType; // paper-plane ou class-change
-    const title = timerElement.querySelector('.timer-label').textContent;
-    let tooltipContent = '';
-
-    // Trouver le contenu du tooltip associé (caché en CSS sur mobile)
-    const tooltipElement = timerElement.querySelector('.timer-tooltip');
-    if (tooltipElement) {
-        tooltipContent = tooltipElement.innerHTML; // Copie le HTML interne du tooltip
-    } else {
-        tooltipContent = "<p>No further details available.</p>"; // Fallback
-    }
-
-    timerDetailTitle.textContent = title.replace(' in', ''); // Enlève " in" du titre
-    timerDetailBody.innerHTML = tooltipContent; // Injecte le contenu du tooltip
-
-    timerDetailModal.style.display = 'flex';
-    timerDetailBackdrop.style.display = 'block';
-}
-
-function closeTimerDetailModal() {
-    if (timerDetailModal) timerDetailModal.style.display = 'none';
-    if (timerDetailBackdrop) timerDetailBackdrop.style.display = 'none';
-}
 
 document.addEventListener('DOMContentLoaded', function() {
     initNavigation();
@@ -133,6 +101,7 @@ document.addEventListener('DOMContentLoaded', function() {
         el.textContent = formatCP(el.dataset.cp);
     });
 
+    // MODIFICATION (Req 3) : Utilise le format court pour la date
     document.querySelectorAll('[data-timestamp]').forEach(el => {
         el.textContent = formatRelativeTimeShort(el.dataset.timestamp);
     });
@@ -150,7 +119,10 @@ document.addEventListener('DOMContentLoaded', function() {
         playerTableBody.addEventListener('click', (e) => {
             const playerRow = e.target.closest('tr');
             if (!playerRow) return;
-            if (e.target.closest('.notes-col') || e.target.closest('.admin-actions')) return;
+            if (e.target.closest('.notes-col') || e.target.closest('.admin-actions')) {
+                return;
+            }
+            // Ouvre la modale de détail uniquement sur mobile
             if (window.innerWidth <= 768) {
                 e.preventDefault();
                 showPlayerDetails(playerRow);
@@ -158,23 +130,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- MODALE DE FILTRES ---
+    // --- NOUVEAUX ÉVÉNEMENTS POUR LA MODALE DE FILTRES (Req 1) ---
     if (openFiltersBtn) openFiltersBtn.addEventListener('click', openFiltersModal);
     if (closeFiltersBtn) closeFiltersBtn.addEventListener('click', closeFiltersModal);
     if (filtersBackdrop) filtersBackdrop.addEventListener('click', closeFiltersModal);
-
-    // --- NOUVELLE MODALE DE TIMERS MOBILES (Req 3) ---
-    if (timerDetailCloseBtn) timerDetailCloseBtn.addEventListener('click', closeTimerDetailModal);
-    if (timerDetailBackdrop) timerDetailBackdrop.addEventListener('click', closeTimerDetailModal);
-
-    // Ajouter des écouteurs de clic aux timers concernés (Paper Plane & Class Change) sur mobile
-    document.querySelectorAll('.timer-entry[data-timer-type="paper-plane"], .timer-entry[data-timer-type="class-change"]').forEach(timerEntry => {
-        timerEntry.addEventListener('click', () => {
-            // N'ouvre la modale que sur mobile
-            if (window.innerWidth <= 768) {
-                showTimerDetails(timerEntry);
-            }
-        });
-    });
-
 });
