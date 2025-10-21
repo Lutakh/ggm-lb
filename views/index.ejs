@@ -1,5 +1,32 @@
 <%- include('partials/header') %>
 
+<nav id="desktop-sidebar">
+    <a href="/" class="sidebar-btn" data-target="home">
+        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        <span>Home</span>
+    </a>
+    <a href="#" class="sidebar-btn" data-target="add-update-section">
+        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        <span>Add / Update</span>
+    </a>
+    <a href="#" class="sidebar-btn" data-target="players-leaderboard-section">
+        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        <span>Players</span>
+    </a>
+    <a href="#" class="sidebar-btn" data-target="teams-leaderboard-section">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-9h4v-2h-4v2zm0 4h4v-2h-4v2z"/></svg>
+        <span>Teams</span>
+    </a>
+    <a href="#" class="sidebar-btn" data-target="guilds-leaderboard-section">
+        <svg viewBox="0 0 24 24"><path d="M12 3L4 9v12h16V9l-8-6zm0 2.62L17.19 9H6.81L12 5.62zM6 19v-8.45l6 4.5 6-4.5V19H6z"/></svg>
+        <span>Guilds</span>
+    </a>
+    <a href="#" class="sidebar-btn" data-target="perilous-trials-section">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+        <span>Perilous Trials</span>
+    </a>
+</nav>
+
 <main>
     <%- include('partials/top-bar') %>
 
@@ -9,29 +36,25 @@
             <div id="player-image-container"></div>
             <div class="form-step-1">
                 <div id="player-selection-ui">
-
- <div id="player-name-display">No player selected</div>
+                     <div id="player-name-display">No player selected</div>
 
      <input type="hidden" name="name" id="name-input-hidden">
                 </div>
                 <button type="button" id="open-player-select-btn" class="action-btn-main">Select Player</button>
             </div>
             <div id="form-details">
-
-    <select id="class-select" name="pClass">
+                <select id="class-select" name="pClass">
                     <option value="" disabled selected>Class</option>
 
                   <option value="Swordbearer">Swordbearer</option>
                     <option value="Acolyte">Acolyte</option>
                     <option value="Wayfarer">Wayfarer</option>
-
-            <option value="Scholar">Scholar</option>
+                    <option value="Scholar">Scholar</option>
                     <option value="Shadowlash">Shadowlash</option>
 
            </select>
                 <input id="cp-input" type="text" name="cp" placeholder="Combat Power (e.g., 554k)" required>
-                <select id="guild-select" name="guild"><option value="" selected>Guild (Optional)</option><% guilds.forEach(name => { %><option
-value="<%= name %>"><%= name %></option><% });
+                <select id="guild-select" name="guild"><option value="" selected>Guild (Optional)</option><% guilds.forEach(name => { %><option value="<%= name %>"><%= name %></option><% });
 %></select>
                 <div class="admin-team-select">
                     <select id="team-select" name="team"><option value="" disabled selected>Team</option><% allTeamNames.forEach(name => { %><option value="<%= name %>"><%= name %></option><% });
@@ -72,8 +95,7 @@ class="main-section card">
         <h3>Select or Create a Player</h3>
         <button type="button" class="player-select-close-btn">&times;</button>
     </div>
-
- <div class="player-select-controls">
+     <div class="player-select-controls">
 
   <input type="text" id="player-filter-input" placeholder="Filter or type new name..." autocomplete="off">
         <button type="button" id="create-new-player-btn" class="action-btn-main">Create New</button>
@@ -94,8 +116,7 @@ class="main-section card">
         <h3 id="notes-modal-title">Notes</h3>
         <button type="button" id="notes-modal-close-btn" class="player-select-close-btn">&times;</button>
     </div>
-    <div id="notes-modal-body"
-style="padding: 20px 25px;
+    <div id="notes-modal-body" style="padding: 20px 25px;
 white-space: pre-wrap; line-height: 1.6;">
     </div>
 </div>
@@ -139,63 +160,53 @@ id="guild-detail-modal" class="player-select-modal">
         <button type="button" id="nav-modal-close-btn" class="player-select-close-btn">&times;</button>
     </div>
     <div id="nav-modal-content">
-    </div>
+        </div>
 </div>
 
 <div id="filters-modal-backdrop" class="player-select-modal-backdrop"></div>
 <div id="filters-modal" class="player-select-modal">
-
   <div class="player-select-modal-header">
 
 <h3>Player Filters</h3>
         <button type="button" id="filters-modal-close-btn" class="player-select-close-btn">&times;</button>
     </div>
     <div class="filters-modal-body">
-
         <div class="filter-group-modal filters-modal-class-filter">
             <h4>Class</h4>
             <div class="filter-modal-dropdown" data-filter-type="class">
                 <button type="button" class="filter-modal-dropdown-btn" data-default-text="All Classes">All Classes</button>
-
-     <div class="filter-modal-dropdown-panel">
+                 <div class="filter-modal-dropdown-panel">
 
     <label><input type="checkbox" data-class="Swordbearer"> Swordbearer</label>
                     <label><input type="checkbox" data-class="Acolyte"> Acolyte</label>
                     <label><input type="checkbox" data-class="Wayfarer"> Wayfarer</label>
                     <label><input type="checkbox" data-class="Scholar"> Scholar</label>
-
-                  <label><input type="checkbox" data-class="Shadowlash"> Shadowlash</label>
+                    <label><input type="checkbox" data-class="Shadowlash"> Shadowlash</label>
 
              </div>
             </div>
         </div>
-
         <div class="filter-group-modal">
             <h4>Combat Power</h4>
             <div class="filters-modal-panel-grid two-cols">
-
-         <input type="text" id="filters-modal-cp-min" placeholder="Min CP (e.g., 500k)">
+                 <input type="text" id="filters-modal-cp-min" placeholder="Min CP (e.g., 500k)">
 
 <input type="text" id="filters-modal-cp-max" placeholder="Max CP (e.g., 1.5m)">
             </div>
         </div>
-
         <div class="filter-group-modal">
             <h4>Guild</h4>
              <div class="filter-modal-dropdown" data-filter-type="guild">
-
-         <button type="button" class="filter-modal-dropdown-btn" data-default-text="All Guilds">All Guilds</button>
+                 <button type="button" class="filter-modal-dropdown-btn" data-default-text="All Guilds">All Guilds</button>
                 <div class="filter-modal-dropdown-panel">
 
              <% guilds.forEach(name => { %>
                         <label><input type="checkbox" data-guild="<%= name %>"> <%= name %></label>
-
-      <% });
+                      <% });
 %>
                 </div>
             </div>
         </div>
-
         <div class="filter-group-modal">
             <h4>Team</h4>
             <div class="filter-modal-dropdown" data-filter-type="team">
@@ -210,20 +221,16 @@ id="guild-detail-modal" class="player-select-modal">
                 </div>
             </div>
         </div>
-
         <div class="filter-group-modal">
             <h4>PT Progress</h4>
             <div class="filters-modal-panel-grid two-cols">
-
 
             <select id="filters-modal-pt-tag-filter">
                     <option value="">All PT Progress</option>
                      <% perilousTrials.forEach(pt => { %>
                         <option value="<%= pt.name %>"><%= pt.name %></option>
 
-
-  <% });
-%>
+  <% }); %>
                 </select>
                 <select id="filters-modal-pt-tag-mode">
                     <option value="has">Has Tag</option>
@@ -233,7 +240,6 @@ id="guild-detail-modal" class="player-select-modal">
 
   </div>
         </div>
-
     </div>
 </div>
 

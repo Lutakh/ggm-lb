@@ -1,13 +1,37 @@
 /* --- STYLES MOBILES --- */
 @media (max-width: 768px) {
-    body { padding: 10px; padding-top: 70px; }
+    body {
+        padding: 10px;
+        padding-top: 70px;
+        padding-left: 10px; /* Annule le padding desktop */
+    }
+    main {
+        max-width: 1200px; /* Rétablir max-width si annulé sur desktop */
+        margin: 0 auto; /* Rétablir le centrage */
+    }
     .card { padding: 15px; }
+    header { /* Ajustement header si nécessaire */
+        padding-left: 0; /* Annule le décalage desktop si appliqué */
+    }
     header h1 { font-size: 1.5em; gap: 10px; }
     .logo { width: 35px; height: 35px; }
     #admin-settings-btn { width: 40px; height: 40px; top: 10px; right: 10px; }
     #admin-settings-btn svg { width: 20px; height: 20px; }
-    #home-nav-btn { width: 40px; height: 40px; top: 10px; left: 10px; }
+
+    /* --- NOUVEAU: Gestion Sidebar/Bouton Nav --- */
+    #desktop-sidebar {
+        display: none; /* Cacher la sidebar sur mobile */
+    }
+    #home-nav-btn {
+        display: flex; /* Afficher le bouton flottant sur mobile */
+        top: 10px; /* Positionnement ajusté */
+        left: 10px; /* Positionnement ajusté */
+        width: 40px;
+        height: 40px;
+    }
     #home-nav-btn svg { width: 20px; height: 20px; }
+    /* --- Fin Nouveau --- */
+
 
     /* Cacher la top bar si une section est active */
     body.section-active .top-bar {
@@ -87,25 +111,14 @@
     .guild-leaderboard-table td:nth-child(4) { display: none; } /* Members */
     .guild-leaderboard-table td:nth-child(5) { display: none; } /* Class Distrib */
 
-    /* --- NOUVEAU: Perilous Trials (Mobile) --- */
-
-    /* Cacher les filtres desktop PT */
-    #perilous-trials-section .desktop-pt-controls {
-        display: none;
-    }
-    /* Afficher les filtres mobiles PT */
-    #perilous-trials-section .mobile-pt-controls {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 15px;
-    }
-    #perilous-trials-section .mobile-pt-controls .action-btn-main {
-        flex-grow: 1; /* Le bouton filtre prend plus de place */
-    }
+    /* --- Perilous Trials (Mobile) --- */
+    #perilous-trials-section .desktop-pt-controls { display: none; }
+    #perilous-trials-section .mobile-pt-controls { display: flex; gap: 10px; margin-bottom: 15px; }
+    #perilous-trials-section .mobile-pt-controls .action-btn-main { flex-grow: 1; }
 
     /* Tableau Global PT (Mobile) */
     #pt-global-leaderboard-table thead { display: none; }
-    #pt-global-leaderboard-table tbody tr { display: flex; align-items: center; width: 100%; padding: 10px 0; }
+    #pt-global-leaderboard-table tbody tr { display: flex; align-items: center; width: 100%; padding: 10px 0; cursor: pointer; /* Rendre cliquable */ }
     #pt-global-leaderboard-table tbody tr:hover { background-color: #f9f6f1; }
     #pt-global-leaderboard-table td { display: none; border: none; padding: 5px; }
 
@@ -113,8 +126,9 @@
     #pt-global-leaderboard-table td:nth-child(2) { display: block; flex-grow: 1; width: auto; } /* Player */
     #pt-global-leaderboard-table td:nth-child(4) { display: block; width: 80px; font-size: 1em; text-align: right; font-weight: bold; color: var(--primary-color); flex-shrink: 0; padding: 5px 0; } /* Points */
 
-    /* Cacher CP (col 3) */
-    #pt-global-leaderboard-table td:nth-child(3) { display: none; }
+    /* Cacher CP (col 3) et l'en-tête de colonne joueur */
+    #pt-global-leaderboard-table .pt-global-cp-col { display: none; }
+
 
     /* Tableau PT Individuel (Mobile) */
     #pt-leaderboard-table thead { display: none; }
