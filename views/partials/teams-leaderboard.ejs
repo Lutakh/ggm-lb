@@ -1,16 +1,20 @@
 <div class="view-tabs"><h2>Teams Leaderboard</h2></div>
 
-<button id="open-filters-btn-teams" class="action-btn-main">Filtres</button>
+<select id="team-guild-filter-mobile">
+    <option value="All">All Server Teams</option>
+    <option value="Incomplete">Incomplete Teams</option>
+    <% guilds.forEach(name => { %><option value="<%= name %>"><%= name %></option><% }); %>
+</select>
 
 <div id="teams-filters">
     <label>Filter by Guild:</label>
     <select id="team-guild-filter">
         <option value="All">All Server Teams</option>
         <option value="Incomplete">Incomplete Teams</option>
-        <% guilds.forEach(name => { %><option value="<%= name %>"><%= name %></option><% });
-%>
+        <% guilds.forEach(name => { %><option value="<%= name %>"><%= name %></option><% }); %>
     </select>
 </div>
+
 <div class="leaderboard-legend">
     <div class="legend-item"><span class="class-tag class-swordbearer"></span> Sword</div>
     <div class="legend-item"><span class="class-tag class-acolyte"></span> Aco</div>
@@ -24,8 +28,7 @@
             <th class="rank-col">Rank</th> <th>Team</th>
             <th>Total CP</th>
             <th>Members</th>
-
-          <th>Class Distribution</th>
+            <th>Class Distribution</th>
         </tr>
     </thead>
     <tbody id="teams-tbody">
@@ -35,52 +38,42 @@
                 data-guild-name="<%= team.guild %>"
                 data-total-cp="<%= team.total_cp %>"
                 data-member-count="<%= team.member_count %>"
-                data-members="<%= JSON.stringify(team.members) %>"
+                data-members="<%= JSON.stringify(team.members.map(p => ({name: p.name, class: p.class, combat_power: p.combat_power }))) %>"
                 data-guild="<%= team.guild %>"
                 data-team="<%= team.name %>"
-                data-member-count-val="<%= team.member_count %>"
+                data-member-count-val="<%= team.member_count %>" <%# Ajouté pour le filtre Incomplete %>
             >
                 <td class="rank-col"><%= index + 1 %></td>
-
-  <td><strong><%= team.name %></strong><br><span class="guild-name"><%= team.guild %></span></td>
+                <td><strong><%= team.name %></strong><br><span class="guild-name"><%= team.guild %></span></td>
                 <td class="cp-display" data-cp="<%= team.total_cp %>"></td>
                 <td><%= team.member_count %> / 4</td>
                 <td>
                     <div class="class-distrib">
-
-        <span class="class-tag class-swordbearer" title="Swordbearer"><%= team.class_distribution.Swordbearer %></span>
+                        <span class="class-tag class-swordbearer" title="Swordbearer"><%= team.class_distribution.Swordbearer %></span>
                         <span class="class-tag class-acolyte" title="Acolyte"><%= team.class_distribution.Acolyte %></span>
                         <span class="class-tag class-wayfarer" title="Wayfarer"><%= team.class_distribution.Wayfarer %></span>
-                        <span class="class-tag class-scholar" title="Scholar
-%></span>
+                        <span class="class-tag class-scholar" title="Scholar"><%= team.class_distribution.Scholar %></span>
                         <span class="class-tag class-shadowlash" title="Shadowlash"><%= team.class_distribution.Shadowlash %></span>
                     </div>
                 </td>
             </tr>
-            <tr class="team-members-row">
-
-      <td colspan="5" class="team-members-cell">
+            <tr class="team-members-row"> <%# Caché par défaut sur mobile %>
+                <td colspan="5" class="team-members-cell">
                     <div class="team-members">
                         <% team.members.forEach(player => { %>
                             <div class="team-player-card">
-
-                  <div class="team-player-info">
+                                <div class="team-player-info">
                                     <strong><span class="class-tag class-<%= player.class.toLowerCase() %>"><%= player.name %></span></strong>
                                     <div class="team-player-details">
-
-                                      <span class="cp-display" data-cp="<%= player.combat_power %>"></span>
-                                        <span>Notes: <%= player.notes ||
-'-' %></span>
+                                        <span class="cp-display" data-cp="<%= player.combat_power %>"></span>
+                                        <span>Notes: <%= player.notes || '-' %></span>
                                     </div>
                                 </div>
                             </div>
-
-                     <% });
-%>
+                         <% }); %>
                     </div>
                 </td>
             </tr>
-        <% });
-%>
+        <% }); %>
     </tbody>
 </table>

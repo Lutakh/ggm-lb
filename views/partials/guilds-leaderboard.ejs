@@ -1,22 +1,12 @@
 <div class="view-tabs"><h2>Guild Leaderboard</h2></div>
 
-<button id="open-filters-btn-guilds" class="action-btn-main">Filtres</button>
-
-<div class="leaderboard-legend">
-    <div class="legend-item"><span class="class-tag class-swordbearer"></span> Sword</div>
-    <div class="legend-item"><span class="class-tag class-acolyte"></span> Aco</div>
-    <div class="legend-item"><span class="class-tag class-wayfarer"></span> Way</div>
-    <div class="legend-item"><span class="class-tag class-scholar"></span> Scho</div>
-    <div class="legend-item"><span class="class-tag class-shadowlash"></span> Shadow</div>
-</div>
 <table class="guild-leaderboard-table">
     <thead>
         <tr>
             <th class="rank-col">Rank</th> <th>Guild</th>
             <th>Total CP</th>
             <th>Members</th>
-
-       <th>Class Distribution</th>
+            <th>Class Distribution</th>
         </tr>
     </thead>
     <tbody id="guilds-tbody">
@@ -31,22 +21,18 @@
             >
                 <td class="rank-col"><%= index + 1 %></td>
                 <td><strong><%= guild.name %></strong></td>
-
-          <td class="cp-display" data-cp="<%= guild.total_cp %>"></td>
+                <td class="cp-display" data-cp="<%= guild.total_cp %>"></td>
                 <td><%= guild.member_count %></td>
                 <td>
                     <div class="class-distrib">
                         <span class="class-tag class-swordbearer" title="Swordbearer"><%= guild.class_distribution.Swordbearer %></span>
-
-                      <span class="class-tag class-acolyte" title="Acolyte"><%= guild.class_distribution.Acolyte %></span>
+                        <span class="class-tag class-acolyte" title="Acolyte"><%= guild.class_distribution.Acolyte %></span>
                         <span class="class-tag class-wayfarer" title="Wayfarer"><%= guild.class_distribution.Wayfarer %></span>
                         <span class="class-tag class-scholar" title="Scholar"><%= guild.class_distribution.Scholar %></span>
-
-         <span class="class-tag class-shadowlash" title="Shadowlash"><%= guild.class_distribution.Shadowlash %></span>
+                        <span class="class-tag class-shadowlash" title="Shadowlash"><%= guild.class_distribution.Shadowlash %></span>
                     </div>
                 </td>
             </tr>
-        <% });
-%>
+        <% }); %>
     </tbody>
 </table>

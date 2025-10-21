@@ -7,7 +7,7 @@
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.6);
-    z-index: 1000;
+    z-index: 1000; /* Z-index de base pour les fonds */
 }
 .player-select-modal {
     display: none;
@@ -20,7 +20,7 @@
     background-color: var(--surface-color);
     border-radius: 15px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    z-index: 1001;
+    z-index: 1001; /* Z-index de base pour les modales */
     flex-direction: column;
 }
 .player-select-modal-header {
@@ -67,7 +67,7 @@
     width: 100%;
     height: 100%;
     background: rgba(0,0,0,0.5);
-    z-index: 999;
+    z-index: 999; /* En dessous des autres modales */
     display: none;
 }
 #admin-modal {
@@ -79,7 +79,7 @@
     padding: 30px;
     border-radius: 15px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    z-index: 1000;
+    z-index: 1000; /* En dessous des autres modales */
     width: 90%;
     max-width: 600px;
     display: none;
@@ -123,6 +123,8 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
 .suggestion-item.active { background-color: #e0e0e0; }
 
 /* --- Notes Modal --- */
+#notes-modal-backdrop { z-index: 1000; }
+#notes-modal { z-index: 1001; }
 #notes-modal-body {
     padding: 20px 25px;
     white-space: pre-wrap;
@@ -132,6 +134,8 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
 }
 
 /* --- PT Help Modal --- */
+#pt-help-modal-backdrop { z-index: 1000; }
+#pt-help-modal { z-index: 1001; }
 #pt-help-modal-body {
     padding: 20px 25px;
     white-space: normal;
@@ -156,6 +160,8 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
 #pt-help-modal-body ul ul { list-style-type: circle; margin-top: 5px; }
 
 /* --- Player Detail Modal (Mobile) --- */
+#player-detail-modal-backdrop { z-index: 1000; } /* Z-index par défaut */
+#player-detail-modal { z-index: 1001; } /* Z-index par défaut */
 #player-detail-modal-body {
     padding: 10px 25px 25px 25px;
     max-height: 70vh;
@@ -188,40 +194,72 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
     font-weight: bold;
 }
 
-/* --- NOUVEAU: Team Detail Modal (Mobile) --- */
+/* --- Team Detail Modal (Mobile) --- */
+#team-detail-modal-backdrop { z-index: 1009; } /* En dessous du fond player-detail si ouvert depuis team-detail */
+#team-detail-modal { z-index: 1010; } /* En dessous de player-detail si ouvert depuis team-detail */
 #team-detail-modal-body {
     padding: 10px 25px 25px 25px;
     max-height: 70vh;
     overflow-y: auto;
 }
-#team-detail-modal-header .guild-name-modal {
-    font-size: 0.7em;
+#team-detail-modal-header .guild-prefix {
+    font-size: 0.9em;
     font-weight: normal;
     opacity: 0.8;
-    margin-left: 10px;
+    margin-right: 5px;
 }
-.team-detail-list {
+#team-detail-modal-header .team-name {
+    font-weight: bold;
+}
+.team-detail-list { /* Container pour les joueurs */
     list-style: none;
     padding: 0;
-    margin: 0;
+    margin: 0 0 15px 0; /* Espace avant la légende */
 }
 .team-detail-player {
     padding: 12px 0;
     border-bottom: 1px solid var(--border-color);
     cursor: pointer;
+    display: flex; /* Utiliser flex pour aligner */
+    justify-content: space-between; /* Espace entre nom et CP */
+    align-items: center; /* Centrer verticalement */
 }
 .team-detail-player:last-child { border-bottom: none; }
 .team-detail-player:hover { background-color: #f9f6f1; }
 .team-detail-player .class-tag { font-size: 1em; padding: 6px 12px; }
 .team-detail-player-cp {
-    float: right;
     font-weight: bold;
     color: var(--primary-color);
     font-size: 1.1em;
-    line-height: 1.8;
+    margin-left: 10px; /* Espace à gauche du CP */
+}
+/* Style pour la légende courte DANS la modale */
+.short-legend {
+    justify-content: center; /* Centrer la légende */
+    font-size: 0.8em; /* Plus petit */
+    gap: 8px; /* Moins d'espace */
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-color);
+    display: flex; /* S'assurer que flex est appliqué */
+    align-items: center; /* S'assurer que les éléments sont alignés */
+    flex-wrap: wrap; /* Permettre le retour à la ligne si nécessaire */
+}
+.short-legend .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 3px; /* Espace réduit entre point et texte */
+}
+.short-legend .legend-item .class-tag {
+    width: 10px; height: 10px; min-width: 10px; /* Plus petits points */
+    padding: 0; /* Pas de padding */
+    border-radius: 50%; /* Garder rond */
 }
 
-/* --- NOUVEAU: Guild Detail Modal (Mobile) --- */
+
+/* --- Guild Detail Modal (Mobile) --- */
+#guild-detail-modal-backdrop { z-index: 1000; }
+#guild-detail-modal { z-index: 1001; }
 #guild-detail-modal-body {
     padding: 10px 25px 25px 25px;
     max-height: 70vh;
@@ -233,28 +271,36 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
     margin: 0;
 }
 .guild-detail-list li {
-    display: flex;
-    justify-content: space-between;
+    display: flex; /* Garder flex */
+    flex-direction: column; /* Empiler verticalement pour Class Distrib */
+    align-items: flex-start; /* Aligner à gauche */
     padding: 12px 0;
     border-bottom: 1px solid var(--border-color);
-    gap: 15px;
-    align-items: center;
+    gap: 5px; /* Espace entre titre et valeur */
 }
 .guild-detail-list li:last-child { border-bottom: none; }
-.guild-detail-list li strong {
+.guild-detail-list li > strong { /* Le titre (Rank, Total CP...) */
     color: var(--primary-color);
     white-space: nowrap;
+    width: 100%; /* Prend toute la largeur */
 }
-.guild-detail-list li span,
-.guild-detail-list li div {
-    text-align: right;
+.guild-detail-list li > span, /* La valeur (nombre) */
+.guild-detail-list li > div { /* La div pour class distrib */
     font-weight: bold;
+    width: 100%; /* Prend toute la largeur */
+    text-align: right; /* Aligner la valeur à droite */
 }
+.guild-detail-list li > .guild-class-distrib { /* Ajuster spécifiquement la distrib */
+    justify-content: flex-end; /* Aligner les tags à droite */
+    margin-top: 5px; /* Petit espace après le titre "Class Distribution" */
+}
+
+/* Styles pour .guild-class-distrib et ses enfants */
 .guild-class-distrib {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: wrap; /* Permettre le retour à la ligne */
     gap: 8px;
-    justify-content: flex-end;
+    justify-content: flex-end; /* Aligner à droite */
 }
 .guild-class-distrib .class-tag {
     min-width: 32px;
@@ -271,13 +317,15 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
 
 
 /* --- Nav Modal --- */
-#nav-modal-content { /* Req 4 */
+#nav-modal-backdrop { z-index: 1000; }
+#nav-modal { z-index: 1001; }
+#nav-modal-content {
     display: flex;
     flex-direction: column;
     gap: 10px;
     padding: 10px 20px 20px 20px;
 }
-.nav-btn-modal { /* Req 4 */
+.nav-btn-modal {
     display: flex;
     align-items: center;
     gap: 15px;
@@ -299,7 +347,9 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
     flex-shrink: 0;
 }
 
-/* --- Filters Modal (Req 1 & 2) --- */
+/* --- Filters Modal (JOUEURS) --- */
+#filters-modal-backdrop { z-index: 1000; }
+#filters-modal { z-index: 1001; }
 .filters-modal-body {
     padding: 10px 25px 25px 25px;
     max-height: 70vh;
@@ -335,7 +385,17 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: 12px; /* Assurer le padding */
+    border-radius: 10px; /* Assurer le border-radius */
+    border: 1px solid var(--border-color); /* Assurer la bordure */
+    background-color: #f9f6f1; /* Assurer le fond */
+    color: var(--text-color); /* Assurer la couleur */
+    font-family: 'Nunito', sans-serif; /* Assurer la police */
+    font-size: 1em; /* Assurer la taille */
+    cursor: pointer; /* Assurer le curseur */
+    font-weight: normal; /* Pas forcément en gras */
 }
+
 .filter-modal-dropdown-btn::after {
     content: '▼';
     font-size: 0.7em;
@@ -361,7 +421,14 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
 }
 .filter-modal-dropdown-panel label {
     padding: 8px 12px;
+    display: block; /* Faire en sorte que le label prenne toute la largeur */
+    cursor: pointer; /* Curseur sur tout le label */
 }
 .filter-modal-dropdown-panel label:hover {
     background-color: #f9f6f1;
+}
+/* Aligner la checkbox et le texte */
+.filter-modal-dropdown-panel label input[type="checkbox"] {
+    margin-right: 8px;
+    vertical-align: middle;
 }

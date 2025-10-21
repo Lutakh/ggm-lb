@@ -4,7 +4,6 @@ import { initNavigation } from './modules/navigation.js';
 import { initPlayerForm } from './modules/playerForm.js';
 import { initLeaderboardFilters } from './modules/leaderboardFilters.js';
 import { initPerilousTrials } from './modules/perilousTrials.js';
-// MODIFICATION : Ajout de minutesToFormattedTime et formatRelativeTimeShort
 import { updateTimers, formatCP, formatRelativeTime, formatRelativeTimeShort, minutesToFormattedTime } from './modules/utils.js';
 import { initDiscordWidget } from './modules/discordWidget.js';
 
@@ -36,14 +35,26 @@ const playerDetailBackdrop = document.getElementById('player-detail-modal-backdr
 const playerDetailTitle = document.getElementById('player-detail-modal-title');
 const playerDetailBody = document.getElementById('player-detail-modal-body');
 const playerDetailCloseBtn = document.getElementById('player-detail-modal-close-btn');
+const initialPlayerModalZIndex = playerDetailModal?.style.zIndex || 1001; // Stocker z-index initial
+const initialPlayerBackdropZIndex = playerDetailBackdrop?.style.zIndex || 1000;
 
 // Map pour stocker les rangs des joueurs
 const playerRankMap = new Map();
 // Map pour stocker les données complètes des joueurs par leur nom
 const allPlayersMap = new Map();
 
-function showPlayerDetails(playerRow) {
+function showPlayerDetails(playerRow, isFromTeamModal = false) {
     if (!playerDetailModal || !playerRow) return;
+
+    // Augmenter z-index si ouvert depuis la modale d'équipe
+    if (isFromTeamModal) {
+        playerDetailModal.style.zIndex = '1011'; // Au dessus de la modale équipe (1010)
+        playerDetailBackdrop.style.zIndex = '1010'; // Au dessus du fond équipe (1009)
+    } else {
+        playerDetailModal.style.zIndex = initialPlayerModalZIndex;
+        playerDetailBackdrop.style.zIndex = initialPlayerBackdropZIndex;
+    }
+
 
     const data = playerRow.dataset;
     const playSlots = JSON.parse(data.playSlots || '[]');
@@ -57,8 +68,6 @@ function showPlayerDetails(playerRow) {
 
     playerDetailTitle.innerHTML = `<span class="class-tag class-${data.class.toLowerCase()}">${data.name}</span>`;
 
-    // --- MODIFICATION ICI ---
-    // Ajout de la ligne pour la Classe
     playerDetailBody.innerHTML = `
         <ul class="player-detail-list">
             <li><strong>Rank:</strong> <span>${data.rank || 'N/A'}</span></li>
@@ -71,7 +80,6 @@ function showPlayerDetails(playerRow) {
             <li><strong>Updated:</strong> <span>${formatRelativeTimeShort(data.updated)}</span></li>
         </ul>
     `;
-    // --- FIN DE LA MODIFICATION ---
 
     playerDetailModal.style.display = 'flex';
     playerDetailBackdrop.style.display = 'block';
@@ -82,19 +90,32 @@ function closePlayerDetailModal() {
     if (playerDetailBackdrop) playerDetailBackdrop.style.display = 'none';
 }
 
-// --- NOUVELLE MODALE DE DÉTAIL D'ÉQUIPE (MOBILE) ---
+// --- MODALE DE DÉTAIL D'ÉQUIPE (MOBILE) ---
 const teamDetailModal = document.getElementById('team-detail-modal');
 const teamDetailBackdrop = document.getElementById('team-detail-modal-backdrop');
 const teamDetailTitle = document.getElementById('team-detail-modal-title');
 const teamDetailBody = document.getElementById('team-detail-modal-body');
 const teamDetailCloseBtn = document.getElementById('team-detail-close-btn');
 
+const shortClassLegendHtml = `
+ <div class="leaderboard-legend short-legend">
+    <div class="legend-item"><span class="class-tag class-swordbearer"></span> Swd</div>
+    <div class="legend-item"><span class="class-tag class-acolyte"></span> Aco</div>
+    <div class="legend-item"><span class="class-tag class-wayfarer"></span> Way</div>
+    <div class="legend-item"><span class="class-tag class-scholar"></span> Sch</div>
+    <div class="legend-item"><span class="class-tag class-shadowlash"></span> Sha</div>
+ </div>
+ `;
+
 function showTeamDetails(teamRow) {
     if (!teamDetailModal || !teamRow) return;
     const data = teamRow.dataset;
     const members = JSON.parse(data.members || '[]');
+    const guildName = data.guildName;
+    const teamName = data.teamName;
 
-    teamDetailTitle.innerHTML = `<span>${data.teamName}</span><span class="guild-name-modal">${data.guildName}</span>`;
+    // Formatage du titre : "[GuildName] TeamName"
+    teamDetailTitle.innerHTML = `<span class="guild-prefix">[${guildName}]</span> <span class="team-name">${teamName}</span>`;
 
     let membersHtml = '<div class="team-detail-list">';
     members.forEach((player, index) => {
@@ -106,7 +127,9 @@ function showTeamDetails(teamRow) {
         `;
     });
     membersHtml += '</div>';
-    teamDetailBody.innerHTML = membersHtml;
+
+    // Ajouter la légende à la fin
+    teamDetailBody.innerHTML = membersHtml + shortClassLegendHtml;
 
     // Attacher les écouteurs pour le clic nidé
     teamDetailBody.querySelectorAll('.team-detail-player').forEach(playerEl => {
@@ -125,7 +148,8 @@ function showTeamDetails(teamRow) {
                         updated: player.updated_at
                     }
                 };
-                showPlayerDetails(fakeRow);
+                // Indiquer que l'appel vient de la modale équipe
+                showPlayerDetails(fakeRow, true);
             }
         });
     });
@@ -139,7 +163,7 @@ function closeTeamDetailModal() {
     if (teamDetailBackdrop) teamDetailBackdrop.style.display = 'none';
 }
 
-// --- NOUVELLE MODALE DE DÉTAIL DE GUILDE (MOBILE) ---
+// --- MODALE DE DÉTAIL DE GUILDE (MOBILE) ---
 const guildDetailModal = document.getElementById('guild-detail-modal');
 const guildDetailBackdrop = document.getElementById('guild-detail-modal-backdrop');
 const guildDetailTitle = document.getElementById('guild-detail-modal-title');
@@ -168,7 +192,10 @@ function showGuildDetails(guildRow) {
             <li><strong>Rank:</strong> <span>${data.rank}</span></li>
             <li><strong>Total CP:</strong> <span>${formatCP(data.totalCp)}</span></li>
             <li><strong>Members:</strong> <span>${data.memberCount} / 120</span></li>
-            <li><strong>Class Distribution:</strong> ${classDistribHtml}</li>
+            <li>
+                <strong>Class Distribution:</strong>
+                ${classDistribHtml}
+            </li>
         </ul>
     `;
 
@@ -182,12 +209,12 @@ function closeGuildDetailModal() {
 }
 
 
-// --- NOUVELLE MODALE DE FILTRES (Req 1) ---
+// --- MODALE DE FILTRES (Req 1) ---
 const filtersModal = document.getElementById('filters-modal');
 const filtersBackdrop = document.getElementById('filters-modal-backdrop');
 const openFiltersBtn = document.getElementById('open-filters-btn');
-const openFiltersBtnTeams = document.getElementById('open-filters-btn-teams'); // Nouveau
-const openFiltersBtnGuilds = document.getElementById('open-filters-btn-guilds'); // Nouveau
+// const openFiltersBtnTeams = document.getElementById('open-filters-btn-teams'); // Supprimé
+// const openFiltersBtnGuilds = document.getElementById('open-filters-btn-guilds'); // Supprimé
 const closeFiltersBtn = document.getElementById('filters-modal-close-btn');
 
 function openFiltersModal() {
@@ -203,7 +230,7 @@ function closeFiltersModal() {
 document.addEventListener('DOMContentLoaded', function() {
     initNavigation();
     initPlayerForm();
-    initLeaderboardFilters();
+    initLeaderboardFilters(); // Filtres JOUEURS uniquement via modale
     initPerilousTrials();
     initDiscordWidget('https://discord.com/api/guilds/1425816979641466912/widget.json');
 
@@ -220,12 +247,10 @@ document.addEventListener('DOMContentLoaded', function() {
         playerRankMap.set(row.dataset.name, row.dataset.rank);
     });
 
-
     document.querySelectorAll('.cp-display').forEach(el => {
         el.textContent = formatCP(el.dataset.cp);
     });
 
-    // MODIFICATION (Req 3) : Utilise le format court pour la date
     document.querySelectorAll('[data-timestamp]').forEach(el => {
         el.textContent = formatRelativeTimeShort(el.dataset.timestamp);
     });
@@ -246,7 +271,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (e.target.closest('.notes-col') || e.target.closest('.admin-actions')) {
                 return;
             }
-            // Ouvre la modale de détail uniquement sur mobile
             if (window.innerWidth <= 768) {
                 e.preventDefault();
                 showPlayerDetails(playerRow);
@@ -254,14 +278,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- NOUVEAUX ÉVÉNEMENTS POUR LA MODALE DE FILTRES (Req 1) ---
+    // --- ÉVÉNEMENTS POUR LA MODALE DE FILTRES JOUEURS ---
     if (openFiltersBtn) openFiltersBtn.addEventListener('click', openFiltersModal);
-    if (openFiltersBtnTeams) openFiltersBtnTeams.addEventListener('click', openFiltersModal); // Nouveau
-    if (openFiltersBtnGuilds) openFiltersBtnGuilds.addEventListener('click', openFiltersModal); // Nouveau
     if (closeFiltersBtn) closeFiltersBtn.addEventListener('click', closeFiltersModal);
     if (filtersBackdrop) filtersBackdrop.addEventListener('click', closeFiltersModal);
 
-    // --- NOUVEAUX ÉVÉNEMENTS POUR LES MODALES DE DÉTAIL (ÉQUIPE/GUILDE) ---
+    // --- ÉVÉNEMENTS POUR LES MODALES DE DÉTAIL (ÉQUIPE/GUILDE) ---
     if (teamDetailCloseBtn) teamDetailCloseBtn.addEventListener('click', closeTeamDetailModal);
     if (teamDetailBackdrop) teamDetailBackdrop.addEventListener('click', closeTeamDetailModal);
     if (guildDetailCloseBtn) guildDetailCloseBtn.addEventListener('click', closeGuildDetailModal);
@@ -290,4 +312,36 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // --- NOUVEAU: Logique pour le filtre mobile des équipes ---
+    const teamMobileFilter = document.getElementById('team-guild-filter-mobile');
+    const allTeamRows = document.querySelectorAll('#teams-leaderboard-table tbody tr.team-data-row');
+
+    function applyTeamMobileFilter() {
+        if (!teamMobileFilter) return;
+        const selectedGuild = teamMobileFilter.value;
+        let visibleRank = 1;
+        allTeamRows.forEach(row => {
+            const memberCount = parseInt(row.dataset.memberCountVal || 0, 10);
+            const isVisible = (selectedGuild === 'All') ||
+                (selectedGuild === 'Incomplete' && memberCount < 4) ||
+                (row.dataset.guildName === selectedGuild);
+
+            row.style.display = isVisible ? '' : 'none';
+            if (row.nextElementSibling) row.nextElementSibling.style.display = 'none'; // Garder les membres cachés
+
+            if (isVisible) {
+                row.querySelector('.rank-col').textContent = visibleRank;
+                row.classList.remove('rank-1', 'rank-2', 'rank-3');
+                if(visibleRank <= 3) row.classList.add(`rank-${visibleRank}`);
+                visibleRank++;
+            }
+        });
+    }
+
+    if (teamMobileFilter) {
+        teamMobileFilter.addEventListener('change', applyTeamMobileFilter);
+        applyTeamMobileFilter(); // Appliquer au chargement
+    }
+
 });
