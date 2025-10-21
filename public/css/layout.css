@@ -1,0 +1,146 @@
+header {
+    text-align: center;
+    margin-bottom: 20px;
+    position: relative;
+    margin-top: 0;
+}
+header h1 {
+    font-size: 3em;
+    font-weight: 800;
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+.logo {
+    width: 60px;
+    height: 60px;
+}
+.main-section {
+    display: none;
+}
+.main-section.active {
+    display: block;
+}
+.view-tabs {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--border-color);
+    margin-bottom: 20px;
+}
+.view-tabs h2 {
+    border-bottom: none;
+    margin: 0;
+}
+/* --- Navigation --- */
+#main-nav, #top-nav { display: none; } /* Req 4 */
+
+#home-nav-btn { /* Req 4 */
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+    transition: transform 0.2s;
+}
+#home-nav-btn:hover { transform: scale(1.1); }
+#home-nav-btn svg { width: 24px; height: 24px; fill: var(--text-color); }
+
+/* --- Top Bar --- */
+.top-bar {
+    display: flex;
+    align-items: center;
+    padding: 10px 25px;
+    gap: 20px;
+}
+.top-bar-section {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    text-decoration: none;
+    color: var(--text-color);
+    transition: transform 0.2s ease;
+}
+.top-bar-section:hover {
+    transform: scale(1.05);
+}
+.top-bar .timers-section {
+    flex-grow: 1;
+}
+.guides-section {
+    justify-content: flex-end;
+}
+.top-bar-section svg {
+    width: 38px;
+    height: 38px;
+}
+.discord-section svg {
+    fill: var(--discord-blue);
+}
+.discord-section .discord-info span {
+    font-weight: bold;
+    font-size: 1.1em;
+    display: block;
+}
+.discord-stats {
+    font-size: 0.8em;
+    opacity: 0.8;
+    display: flex;
+    gap: 10px;
+}
+.guides-section svg {
+    fill: var(--primary-color);
+}
+.guides-section span {
+    font-weight: bold;
+    font-size: 1.1em;
+}
+.timers-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 20px;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+}
+.timer-entry {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    position: relative; /* Nécessaire pour le positionnement absolu du tooltip */
+}
+.timer-label {
+    font-size: 0.8em;
+    font-weight: bold;
+    opacity: 0.7;
+    text-transform: uppercase;
+}
+.timer-value {
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 5px;
+    color: white;
+    background-color: var(--success-color);
+}
+.timer-value.urgent {
+    background-color: var(--accent-color);
+}
+.timer-value.server-day {
+    background-color: var(--primary-color);
+    font-family: 'Nunito', sans-serif;
+}
+.timer-label.important-event { color: var(--gold); font-weight: 800; }
