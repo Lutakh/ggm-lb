@@ -83,7 +83,7 @@ export function initLeaderboardFilters() {
 
         // Bouton mobile (JOUEURS)
         if (openFiltersBtnMobile) {
-            openFiltersBtnMobile.textContent = totalFilters > 0 ? `Filtres (${totalFilters})` : 'Filtres';
+            openFiltersBtnMobile.textContent = totalFilters > 0 ? `Filters (${totalFilters})` : 'Filters';
             openFiltersBtnMobile.classList.toggle('active', totalFilters > 0);
         }
 
