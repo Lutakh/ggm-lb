@@ -4,6 +4,7 @@ FROM node:18-alpine
 # Étape 2: Définir le répertoire de travail à l'intérieur du conteneur
 WORKDIR /usr/src/app
 
+RUN apk add --no-cache nano
 # Étape 3: Copier les fichiers de dépendances et les installer
 # On copie ces fichiers en premier pour profiter du cache Docker.
 COPY package*.json ./
