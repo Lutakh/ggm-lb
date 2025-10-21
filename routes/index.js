@@ -140,7 +140,7 @@ router.get('/', async (req, res) => {
             timers: {
                 daily: getNextReset() - now,
                 weekly: getNextReset(1) - now,
-                event: nextPaperPlaneReset - now,
+                event: (nextPaperPlaneReset - now) - 3600000,
                 classChange: activeClassChangeTimer,
                 allClassChanges: allClassChangeTimers,
                 serverDay: serverAgeInDays,
