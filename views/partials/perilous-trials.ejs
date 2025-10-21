@@ -37,6 +37,7 @@ class="class-tag class-wayfarer"></span> Way</div>
     <thead><tr><th>Rank</th><th>Team</th></tr></thead>
     <tbody></tbody>
 </table>
+
 <table id="pt-global-leaderboard-table" style="display: none;"> <thead>
         <tr>
             <th class="rank-col">Rank</th>
@@ -66,3 +67,54 @@ class="class-tag class-wayfarer"></span> Way</div>
     <tbody>
         </tbody>
 </table>
+<div class="admin-actions" id="pt-admin-form-container">
+    <h3>Update Leaderboard</h3>
+    <form id="pt-admin-form" action="/pt-leaderboard" method="POST">
+        <input type="hidden" name="admin_password" class="admin-pass-input">
+        <div class="pt-admin-form-row">
+            <div class="filter-group" style="flex-grow: 1;">
+                <label for="pt-id-input">Perilous Trial</label>
+                <select id="pt-id-input" name="pt_id" required>
+                    <option value="" disabled selected>Select PT</option>
+                    <% perilousTrials.forEach(pt => { %>
+                        <option value="<%= pt.id %>"><%= pt.name %></option>
+                    <% }); %>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="pt-team-rank">Rank</label>
+                <input type="number" name="rank" min="1" class="pt-team-rank-input" id="pt-team-rank" required>
+            </div>
+        </div>
+
+        <div class="pt-player-inputs">
+            <% for(let i = 0; i < 4; i++) { %>
+            <div class="pt-player-entry-container">
+                <label>Player <%= i + 1 %></label>
+                <div class="pt-player-selection-ui">
+                    <div class="pt-player-name-display" id="pt-player-display-<%= i %>">No player selected</div>
+                    <input type="hidden" name="players[<%= i %>][name]" id="pt-player-name-hidden-<%= i %>">
+                    <button type="button" class="pt-open-modal-btn action-btn-main" data-player-index="<%= i %>">Select</button>
+                </div>
+                <div class="pt-new-player-fields" id="pt-new-player-fields-<%= i %>">
+                    <select name="players[<%= i %>][class]">
+                        <option value="" disabled selected>Class</option>
+                        <option value="Swordbearer">Swordbearer</option>
+                        <option value="Acolyte">Acolyte</option>
+                        <option value="Wayfarer">Wayfarer</option>
+                        <option value="Scholar">Scholar</option>
+                        <option value="Shadowlash">Shadowlash</option>
+                    </select>
+                    <div class="custom-guild-select" data-guild-select-index="<%= i %>">
+                        <input type="text" name="players[<%= i %>][guild]" class="guild-select-input" placeholder="Guild (Optional)" autocomplete="off">
+                        <div class="guild-select-panel"></div>
+                    </div>
+                     <input type="text" name="players[<%= i %>][cp]" placeholder="CP (e.g., 1.2M)">
+                </div>
+            </div>
+            <% } %>
+        </div>
+
+        <button type="submit">Submit Team</button>
+    </form>
+</div>

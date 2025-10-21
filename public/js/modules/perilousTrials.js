@@ -34,6 +34,10 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
     // Admin
     const ptAdminForm = document.getElementById('pt-admin-form');
 
+    // *** CORRECTION ***
+    // Déclarer la variable de fonction ici, dans la portée de initPerilousTrials
+    let findNextAvailableRank = async (ptId) => {}; // Fonction vide par défaut
+
     // --- GESTION DE LA MODALE D'AIDE ---
     if (helpBtns.length > 0) {
         helpBtns.forEach(btn => {
@@ -73,7 +77,7 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
             if (ptAdminForm) {
                 const ptIdInput = ptAdminForm.querySelector('#pt-id-input');
                 if (ptIdInput) ptIdInput.value = newPtId;
-                findNextAvailableRank(newPtId);
+                findNextAvailableRank(newPtId); // Mettre à jour le rang lors du changement
             }
             closePtFiltersModal();
         });
@@ -205,7 +209,7 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
             if (ptAdminForm) {
                 const ptIdInput = ptAdminForm.querySelector('#pt-id-input');
                 if (ptIdInput) ptIdInput.value = newPtId;
-                findNextAvailableRank(newPtId);
+                findNextAvailableRank(newPtId); // Mettre à jour le rang
             }
         });
     }
@@ -280,9 +284,25 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
         let activePlayerIndex = null;
         let activeSuggestionIndex = -1;
 
-        async function findNextAvailableRank(ptId) {
-            // ... (code inchangé) ...
-        }
+        // *** CORRECTION ***
+        // Assigner la définition complète de la fonction à la variable déclarée plus haut
+        findNextAvailableRank = async (ptId) => {
+            if (!ptRankInput) return;
+            if (!ptId || ptId === 'global') {
+                ptRankInput.value = 1;
+                return;
+            }
+            try {
+                const response = await fetch(`/pt-leaderboard/${ptId}/next-rank`);
+                const data = await response.json();
+                if (data && data.nextRank) {
+                    ptRankInput.value = data.nextRank;
+                }
+            } catch (err) {
+                console.error("Error fetching next rank:", err);
+                ptRankInput.value = 1; // Fallback
+            }
+        };
 
         const getCurrentlySelectedNames = () => { /* ... (code inchangé) ... */ };
         const populatePlayerList = (filter = '') => { /* ... (code inchangé) ... */ };
@@ -309,8 +329,9 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
             input.addEventListener('change', validatePtForm);
         });
 
-        // Initialiser le rang pour le PT initial
-        findNextAvailableRank(ptIdInput.value);
+        // *** CORRECTION ***
+        // L'appel initial prématuré est supprimé d'ici.
+        // findNextAvailableRank(ptIdInput.value); // <--- SUPPRIMÉ
         validatePtForm(); // Valider l'état initial
     } // Fin de if(ptAdminForm)
 
@@ -335,6 +356,9 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
     // Initialise le rang suggéré pour admin SEULEMENT si ptAdminForm existe
     if (ptAdminForm && document.getElementById('pt-id-input')) {
         document.getElementById('pt-id-input').value = initialPtId; // Assure que l'input caché est correct
+
+        // *** CORRECTION ***
+        // C'est le seul appel d'initialisation nécessaire pour le rang
         findNextAvailableRank(initialPtId);
     }
 }
