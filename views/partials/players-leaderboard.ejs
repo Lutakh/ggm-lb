@@ -1,16 +1,14 @@
 <div class="view-tabs"><h2>Players Leaderboard</h2></div>
 
+<div class="leaderboard-legend">
+    <div class="legend-item"><span class="class-tag class-swordbearer"></span> Swordbearer</div>
+    <div class="legend-item"><span class="class-tag class-acolyte"></span> Acolyte</div>
+    <div class="legend-item"><span class="class-tag class-wayfarer"></span> Wayfarer</div>
+    <div class="legend-item"><span class="class-tag class-scholar"></span> Scholar</div>
+    <div class="legend-item"><span class="class-tag class-shadowlash"></span> Shadowlash</div>
+</div>
+
 <div id="filters" class="leaderboard-filters">
-    <div class="filter-group dropdown-filter">
-        <button id="class-filter-btn" class="dropdown-btn">All Classes</button>
-        <div id="class-filter-panel" class="dropdown-panel">
-            <label><input type="checkbox" data-class="Swordbearer"> Swordbearer</label>
-            <label><input type="checkbox" data-class="Acolyte"> Acolyte</label>
-            <label><input type="checkbox" data-class="Wayfarer"> Wayfarer</label>
-            <label><input type="checkbox" data-class="Scholar"> Scholar</label>
-            <label><input type="checkbox" data-class="Shadowlash"> Shadowlash</label>
-        </div>
-    </div>
     <div class="filter-group">
         <input type="text" id="cp-min" placeholder="Min CP (e.g., 500k)">
         <input type="text" id="cp-max" placeholder="Max CP (e.g., 1.5m)">
@@ -37,7 +35,7 @@
             <option value="">All PT Progress</option>
              <% perilousTrials.forEach(pt => { %>
                 <option value="<%= pt.name %>"><%= pt.name %></option>
-            <% }); %>
+             <% }); %>
         </select>
         <select id="pt-tag-mode">
             <option value="has">Has Tag</option>
@@ -50,8 +48,23 @@
     <thead>
         <tr>
             <th class="rank-col">Rank</th>
-            <th>Player</th>
-            <th>Class</th>
+
+            <th class="player-header-cell">
+                <div class="header-content">
+                    <button id="class-filter-btn" class="header-filter-btn dropdown-btn" title="Filter by class">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>
+                        <span>Player</span>
+                    </button>
+                </div>
+                <div id="class-filter-panel" class="dropdown-panel">
+                    <label><input type="checkbox" data-class="Swordbearer"> Swordbearer</label>
+                    <label><input type="checkbox" data-class="Acolyte"> Acolyte</label>
+                    <label><input type="checkbox" data-class="Wayfarer"> Wayfarer</label>
+                    <label><input type="checkbox" data-class="Scholar"> Scholar</label>
+                    <label><input type="checkbox" data-class="Shadowlash"> Shadowlash</label>
+                </div>
+            </th>
+
             <th>CP</th>
             <th>Play Hours <span id="table-timezone-note" class="timezone-header-note"></span></th>
             <th>Guild</th>
@@ -69,14 +82,16 @@
                 data-guild="<%= player.guild || '' %>"
                 data-pt-tags="<%= JSON.stringify(player.pt_tags) %>">
                 <td class="rank-col"><%= index + 1 %></td>
-                <td>
-                    <%= player.name %>
+
+                <td class="player-name-cell">
+                    <span class="class-tag class-<%= player.class.toLowerCase() %>"><%= player.name %></span>
                     <% if (player.pt_tags && player.pt_tags.length > 0) {
-                        const maxPt = Math.max(...player.pt_tags.map(tag => parseInt(tag.replace('PT', '')))); %>
+                        const maxPt = Math.max(...player.pt_tags.map(tag => parseInt(tag.replace('PT', ''))));
+                    %>
                         <span class="pt-tag">PT<%= maxPt %></span>
                     <% } %>
                 </td>
-                <td><span class="class-tag class-<%= player.class.toLowerCase() %>"><%= player.class %></span></td>
+
                 <td class="cp-display" data-cp="<%= player.combat_power %>"></td>
                 <td>
                     <div class="play-hours-container">

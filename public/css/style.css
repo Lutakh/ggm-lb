@@ -115,15 +115,14 @@ tbody tr:last-child td {
 #leaderboard-table th, #leaderboard-table td {
     word-wrap: break-word;
 }
-#leaderboard-table th:nth-child(1), #leaderboard-table td:nth-child(1) { width: 10%; text-align: center; } /* Rank */
-#leaderboard-table th:nth-child(2), #leaderboard-table td:nth-child(2) { width: 20%; } /* Player */
-#leaderboard-table th:nth-child(3), #leaderboard-table td:nth-child(3) { width: 15%; text-align: center; }  /* Class */
-#leaderboard-table th:nth-child(4), #leaderboard-table td:nth-child(4) { width: 10%; text-align: right; } /* CP */
-#leaderboard-table th:nth-child(5), #leaderboard-table td:nth-child(5) { width: 40%; } /* Play Hours */
-#leaderboard-table th:nth-child(6), #leaderboard-table td:nth-child(6) { width: 15%; } /* Guild */
-#leaderboard-table th:nth-child(7), #leaderboard-table td:nth-child(7) { width: 10%; } /* Notes */
-#leaderboard-table th:nth-child(8), #leaderboard-table td:nth-child(8) { width: 10%; }  /* Updated */
-#leaderboard-table th:nth-child(9), #leaderboard-table td:nth-child(9) { width: 60px; text-align: center; } /* Actions */
+#leaderboard-table th:nth-child(1), #leaderboard-table td:nth-child(1) { width: 8%; text-align: center; } /* Rank */
+#leaderboard-table th:nth-child(2), #leaderboard-table td:nth-child(2) { width: 25%; } /* Player */
+#leaderboard-table th:nth-child(3), #leaderboard-table td:nth-child(3) { width: 10%; text-align: right; } /* CP */
+#leaderboard-table th:nth-child(4), #leaderboard-table td:nth-child(4) { width: 32%; } /* Play Hours */
+#leaderboard-table th:nth-child(5), #leaderboard-table td:nth-child(5) { width: 15%; } /* Guild */
+#leaderboard-table th:nth-child(6), #leaderboard-table td:nth-child(6) { width: 10%; } /* Notes */
+#leaderboard-table th:nth-child(7), #leaderboard-table td:nth-child(7) { width: 10%; }  /* Updated */
+#leaderboard-table th:nth-child(8), #leaderboard-table td:nth-child(8) { width: 60px; text-align: center; } /* Actions */
 
 
 .class-tag {
@@ -134,7 +133,7 @@ tbody tr:last-child td {
     font-weight: bold;
     font-size: 0.9em;
     text-align: center;
-    min-width: 80px;
+    white-space: nowrap;
     box-sizing: border-box;
 }
 
@@ -586,13 +585,13 @@ body:not(.section-active) #top-nav {
     padding: 2px 0;
 }
 .pt-leaderboard-player .class-tag {
-    width: 14px;
+    /*width: 14px;
     height: 14px;
     min-width: 14px;
     padding: 0;
     font-size: 0;
     border-radius: 50%;
-    flex-shrink: 0;
+    flex-shrink: 0;*/
 }
 
 
@@ -889,7 +888,7 @@ body.admin-mode .admin-actions {
 }
 
 /* --- STYLES POUR LE FILTRE DANS L'EN-TÊTE DU TABLEAU --- */
-.class-header-cell {
+.class-header-cell, .player-header-cell {
     position: relative;
 }
 .header-content {
@@ -920,15 +919,17 @@ body.admin-mode .admin-actions {
     border-color: var(--border-color);
 }
 .header-filter-btn.active {
-    background-color: var(--secondary-color);
+    background-color: #f0e6d6;
+    border-color: var(--secondary-color);
+    color: var(--accent-color);
 }
 .header-filter-btn.active svg {
-    fill: white;
+    fill: var(--accent-color);
 }
-.class-header-cell .dropdown-panel {
+.class-header-cell .dropdown-panel, .player-header-cell .dropdown-panel {
     top: 100%;
-    right: 0;
-    left: auto;
+    left: 0;
+    right: auto;
     margin-top: 5px;
 }
 /* ... (tout votre CSS existant) ... */
@@ -1044,7 +1045,4 @@ body.admin-mode .admin-actions {
 .timer-label.important-event {
     color: var(--gold);
     font-weight: 800; /* Plus gras */
-    text-shadow: 0 0 5px rgba(0, 0, 0, 0.4);
-    /* Optionnel: pour un effet plus "brillant" */
-    -webkit-text-stroke: 0.5px rgba(0,0,0,0.1);
 }

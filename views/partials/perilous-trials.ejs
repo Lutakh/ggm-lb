@@ -34,13 +34,13 @@
     <thead>
         <tr>
             <th class="rank-col">Rank</th>
-            <th>Player</th>
-            <th class="class-header-cell">
+
+            <th class="player-header-cell">
                 <div class="header-content">
-                    <button id="pt-class-filter-btn" class="header-filter-btn dropdown-btn" title="Filter by class">
+                     <button id="pt-class-filter-btn" class="header-filter-btn dropdown-btn" title="Filter by class">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>
-                        <span>Class</span>
-                    </button>
+                        <span>Player</span>
+                     </button>
                 </div>
                 <div id="pt-class-filter-panel" class="dropdown-panel">
                     <label><input type="checkbox" data-class="Swordbearer"> Swordbearer</label>
@@ -50,6 +50,7 @@
                     <label><input type="checkbox" data-class="Shadowlash"> Shadowlash</label>
                 </div>
             </th>
+
             <th>CP</th>
             <th>Total Points</th>
         </tr>
@@ -99,7 +100,7 @@
                         <input type="text" name="players[<%= i %>][guild]" class="guild-select-input" placeholder="Guild (Optional)" autocomplete="off">
                         <div class="guild-select-panel"></div>
                     </div>
-                    <input type="text" name="players[<%= i %>][cp]" placeholder="CP (e.g., 1.2M)">
+                     <input type="text" name="players[<%= i %>][cp]" placeholder="CP (e.g., 1.2M)">
                 </div>
             </div>
             <% } %>
@@ -111,7 +112,7 @@
 
 <datalist id="guild-datalist-pt">
     <% guilds.forEach(name => { %>
-        <option value="<%= name %>"></option>
+         <option value="<%= name %>"></option>
     <% }); %>
 </datalist>
 

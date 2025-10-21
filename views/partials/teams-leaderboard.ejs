@@ -20,7 +20,7 @@
             <th class="rank-col">Rank</th> <th>Team</th>
             <th>Total CP</th>
             <th>Members</th>
-            <th>Class Distribution</th>
+             <th>Class Distribution</th>
         </tr>
     </thead>
     <tbody>
@@ -45,16 +45,15 @@
                     <div class="team-members">
                         <% team.members.forEach(player => { %>
                             <div class="team-player-card">
-                                <span class="class-tag class-<%= player.class.toLowerCase() %>"><%= player.class %></span>
                                 <div class="team-player-info">
-                                    <strong><%= player.name %></strong>
+                                    <strong><span class="class-tag class-<%= player.class.toLowerCase() %>"><%= player.name %></span></strong>
                                     <div class="team-player-details">
                                         <span class="cp-display" data-cp="<%= player.combat_power %>"></span>
                                         <span>Notes: <%= player.notes || '-' %></span>
                                     </div>
                                 </div>
                             </div>
-                        <% }); %>
+                         <% }); %>
                     </div>
                 </td>
             </tr>
