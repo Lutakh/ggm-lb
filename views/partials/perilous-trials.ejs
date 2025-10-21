@@ -1,11 +1,18 @@
 <div class="view-tabs"><h2>Perilous Trial Leaderboards</h2></div>
-<div class="controls">
+
+<div class="mobile-pt-controls">
+    <button id="open-pt-filters-btn" class="action-btn-main">PT Filters</button>
+    <button id="pt-help-btn-mobile" class="help-button">Help</button>
+</div>
+
+<div class="controls desktop-pt-controls">
     <label for="pt-select" style="font-weight: bold;">Select a Trial to View:</label>
     <select id="pt-select">
         <option value="global" selected>Global PT Ranking</option>
         <% perilousTrials.forEach(pt => { %>
             <option value="<%= pt.id %>"><%= pt.name %></option>
-        <% }); %>
+        <% });
+%>
     </select>
     <div id="pt-global-mode-selector" style="display: none;">
         <label for="pt-global-mode" style="font-weight: bold;">Mode:</label>
@@ -14,149 +21,48 @@
             <option value="best">Best Rank/PT</option>
         </select>
     </div>
-    <button id="pt-help-btn" class="help-button">Help</button>
+    <button id="pt-help-btn-desktop" class="help-button">Help</button>
 </div>
 
 <div class="leaderboard-legend">
-    <div class="legend-item"><span class="class-tag class-swordbearer"></span> Swordbearer</div>
-    <div class="legend-item"><span class="class-tag class-acolyte"></span> Acolyte</div>
-    <div class="legend-item"><span class="class-tag class-wayfarer"></span> Wayfarer</div>
-    <div class="legend-item"><span class="class-tag class-scholar"></span> Scholar</div>
-    <div class="legend-item"><span class="class-tag class-shadowlash"></span> Shadowlash</div>
+    <div class="legend-item"><span class="class-tag class-swordbearer"></span> Sword</div>
+    <div class="legend-item"><span class="class-tag class-acolyte"></span> Aco</div>
+    <div class="legend-item"><span
+class="class-tag class-wayfarer"></span> Way</div>
+    <div class="legend-item"><span class="class-tag class-scholar"></span> Scho</div>
+    <div class="legend-item"><span class="class-tag class-shadowlash"></span> Shadow</div>
 </div>
 
 <table id="pt-leaderboard-table">
     <thead><tr><th>Rank</th><th>Team</th></tr></thead>
     <tbody></tbody>
 </table>
-
-<table id="pt-global-leaderboard-table" style="display: none;">
-    <thead>
+<table id="pt-global-leaderboard-table" style="display: none;"> <thead>
         <tr>
             <th class="rank-col">Rank</th>
+            <th class="player-header-cell pt-global-player-col">
+                 <div class="header-content">
 
-            <th class="player-header-cell">
-                <div class="header-content">
-                     <button id="pt-class-filter-btn" class="header-filter-btn dropdown-btn" title="Filter by class">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>
+   <button id="pt-class-filter-btn" class="header-filter-btn dropdown-btn" title="Filter by class">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10 18h4v-2h-4v2zm3 7h12v-2H6v2zM3 6v2h18V6H3z"/></svg>
                         <span>Player</span>
-                     </button>
-                </div>
+                    </button>
+
+   </div>
                 <div id="pt-class-filter-panel" class="dropdown-panel">
                     <label><input type="checkbox" data-class="Swordbearer"> Swordbearer</label>
                     <label><input type="checkbox" data-class="Acolyte"> Acolyte</label>
                     <label><input type="checkbox" data-class="Wayfarer"> Wayfarer</label>
-                    <label><input type="checkbox" data-class="Scholar"> Scholar</label>
+
+          <label><input type="checkbox" data-class="Scholar"> Scholar</label>
                     <label><input type="checkbox" data-class="Shadowlash"> Shadowlash</label>
                 </div>
             </th>
-
-            <th>CP</th>
-            <th>Total Points</th>
+            <th class="pt-global-cp-col">CP</th>
+            <th>Points</th>
         </tr>
-    </thead>
-    <tbody></tbody>
+
+</thead>
+    <tbody>
+        </tbody>
 </table>
-
-<div class="admin-actions" id="pt-admin-form-container">
-    <h3>Update Leaderboard</h3>
-    <form id="pt-admin-form" action="/pt-leaderboard" method="POST">
-        <input type="hidden" name="admin_password" class="admin-pass-input">
-        <div class="pt-admin-form-row">
-            <div class="filter-group" style="flex-grow: 1;">
-                <label for="pt-id-input">Perilous Trial</label>
-                <select id="pt-id-input" name="pt_id" required>
-                    <option value="" disabled selected>Select PT</option>
-                    <% perilousTrials.forEach(pt => { %>
-                        <option value="<%= pt.id %>"><%= pt.name %></option>
-                    <% }); %>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label for="pt-team-rank">Rank</label>
-                <input type="number" name="rank" min="1" class="pt-team-rank-input" id="pt-team-rank" required>
-            </div>
-        </div>
-
-        <div class="pt-player-inputs">
-            <% for(let i = 0; i < 4; i++) { %>
-            <div class="pt-player-entry-container">
-                <label>Player <%= i + 1 %></label>
-                <div class="pt-player-selection-ui">
-                    <div class="pt-player-name-display" id="pt-player-display-<%= i %>">No player selected</div>
-                    <input type="hidden" name="players[<%= i %>][name]" id="pt-player-name-hidden-<%= i %>">
-                    <button type="button" class="pt-open-modal-btn action-btn-main" data-player-index="<%= i %>">Select</button>
-                </div>
-                <div class="pt-new-player-fields" id="pt-new-player-fields-<%= i %>">
-                    <select name="players[<%= i %>][class]">
-                        <option value="" disabled selected>Class</option>
-                        <option value="Swordbearer">Swordbearer</option>
-                        <option value="Acolyte">Acolyte</option>
-                        <option value="Wayfarer">Wayfarer</option>
-                        <option value="Scholar">Scholar</option>
-                        <option value="Shadowlash">Shadowlash</option>
-                    </select>
-                    <div class="custom-guild-select" data-guild-select-index="<%= i %>">
-                        <input type="text" name="players[<%= i %>][guild]" class="guild-select-input" placeholder="Guild (Optional)" autocomplete="off">
-                        <div class="guild-select-panel"></div>
-                    </div>
-                     <input type="text" name="players[<%= i %>][cp]" placeholder="CP (e.g., 1.2M)">
-                </div>
-            </div>
-            <% } %>
-        </div>
-
-        <button type="submit">Submit Team</button>
-    </form>
-</div>
-
-<datalist id="guild-datalist-pt">
-    <% guilds.forEach(name => { %>
-         <option value="<%= name %>"></option>
-    <% }); %>
-</datalist>
-
-<div id="pt-player-select-modal-backdrop" class="player-select-modal-backdrop"></div>
-<div id="pt-player-select-modal" class="player-select-modal">
-    <div class="player-select-modal-header">
-        <h3>Select or Create a Player</h3>
-        <button type="button" id="pt-player-select-close-btn" class="player-select-close-btn">&times;</button>
-    </div>
-    <div class="player-select-controls">
-        <input type="text" id="pt-player-filter-input" placeholder="Filter or type new name..." autocomplete="off">
-        <button type="button" id="pt-create-new-player-btn" class="action-btn-main">Create New</button>
-    </div>
-    <div id="pt-player-select-list" class="player-select-list"></div>
-</div>
-
-<div id="pt-help-modal-backdrop" class="player-select-modal-backdrop"></div>
-<div id="pt-help-modal" class="player-select-modal">
-    <div class="player-select-modal-header">
-        <h3>Global Leaderboard Rules</h3>
-        <button type="button" id="pt-help-close-btn" class="player-select-close-btn">&times;</button>
-    </div>
-    <div id="pt-help-modal-body">
-        <p>The Global PT Leaderboard provides an overall ranking of players based on their performance across all individual Perilous Trial leaderboards.</p>
-        <strong>Point System:</strong>
-        <ul>
-            <li>Points are awarded to players who are part of a team ranked in the <strong>Top 50</strong> of any Perilous Trial.</li>
-            <li>The point distribution is as follows:
-                <ul>
-                    <li><strong>Rank 1:</strong> 50 points</li>
-                    <li><strong>Rank 2:</strong> 49 points</li>
-                    <li>...and so on, down to...</li>
-                    <li><strong>Rank 50:</strong> 1 point</li>
-                </ul>
-            </li>
-            <li>Each player in a ranked team receives the full amount of points for that rank.</li>
-        </ul>
-        <strong>Calculation:</strong>
-        <p>A player's total score is the sum of all points they have earned from all Perilous Trial leaderboards.</p>
-        <p>For example, if a player is in the Rank 1 team for PT1 (50 points) and the Rank 10 team for PT2 (41 points), their total score on the global leaderboard will be 91 points.</p>
-        <p>The final ranking is determined by sorting all players by their total accumulated points in descending order.</p>
-    </div>
-</div>
-
-<script id="pt-players-data-source" type="application/json">
-    <%- JSON.stringify(players.map(p => ({id: p.id, name: p.name, class: p.class}))) %>
-</script>

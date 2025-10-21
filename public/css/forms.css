@@ -1,0 +1,140 @@
+form {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+}
+#submit-btn:not(:disabled),
+#pt-admin-form button[type="submit"]:not(:disabled) {
+    background-color: var(--success-color);
+    color: white;
+}
+/* --- Add/Update Player Form --- */
+#player-form {
+    display: grid;
+    grid-template-columns: 2fr 3fr;
+    gap: 30px;
+    align-items: flex-start;
+}
+#player-image-container {
+    grid-column: 1 / 2;
+    grid-row: 1 / 3;
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+#player-image-container.visible {
+    display: flex;
+}
+#player-image-container img {
+    width: 100%;
+    height: auto;
+    max-height: 400px;
+    object-fit: contain;
+}
+.form-step-1 {
+    grid-column: 2 / 3;
+    display: flex;
+    align-items: flex-end;
+    gap: 15px;
+}
+#form-details {
+    grid-column: 2 / 3;
+    display: none;
+}
+#form-details.visible {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+#player-selection-ui {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+}
+#player-name-display {
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    background-color: #f9f6f1;
+    border-radius: 10px;
+    flex-grow: 1;
+    color: var(--text-color);
+}
+
+/* --- Admin PT Form --- */
+.pt-player-inputs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    width: 100%;
+    margin-bottom: 20px;
+}
+.pt-player-entry-container {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.pt-player-entry-container label { font-weight: bold; }
+.pt-player-selection-ui {
+    display: flex;
+    align-items: center;
+}
+.pt-player-name-display {
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    background-color: #f9f6f1;
+    border-radius: 10px;
+    flex-grow: 1;
+    color: var(--text-color);
+}
+.pt-new-player-fields {
+    display: none;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #fdfaf5;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+.pt-new-player-fields select[name*="[guild]"] { grid-column: 1 / -1; }
+
+/* --- Admin Guild Form --- */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+/* --- Custom Guild Select (in PT Admin) --- */
+.custom-guild-select {
+    position: relative;
+    width: 100%;
+}
+.guild-select-input {
+    width: 100%;
+    box-sizing: border-box;
+}
+.guild-select-panel {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 0 0 10px 10px;
+    max-height: 150px;
+    overflow-y: auto;
+    z-index: 100;
+    margin-top: -1px;
+}
+.custom-guild-select.open .guild-select-panel { display: block; }
+.guild-option {
+    padding: 10px 12px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+.guild-option:hover, .guild-option.active { background-color: #f9f6f1; }
+.guild-option.create-new {
+    font-style: italic;
+    color: var(--primary-color);
+}

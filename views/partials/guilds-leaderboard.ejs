@@ -1,11 +1,5 @@
 <div class="view-tabs"><h2>Guild Leaderboard</h2></div>
-<div class="leaderboard-legend">
-    <div class="legend-item"><span class="class-tag class-swordbearer"></span> Swordbearer</div>
-    <div class="legend-item"><span class="class-tag class-acolyte"></span> Acolyte</div>
-    <div class="legend-item"><span class="class-tag class-wayfarer"></span> Wayfarer</div>
-    <div class="legend-item"><span class="class-tag class-scholar"></span> Scholar</div>
-    <div class="legend-item"><span class="class-tag class-shadowlash"></span> Shadowlash</div>
-</div>
+
 <table class="guild-leaderboard-table">
     <thead>
         <tr>
@@ -15,9 +9,16 @@
             <th>Class Distribution</th>
         </tr>
     </thead>
-    <tbody>
+    <tbody id="guilds-tbody">
         <% rankedGuilds.forEach((guild, index) => { %>
-            <tr class="podium rank-<%= index + 1 %>">
+            <tr class="podium rank-<%= index + 1 %>"
+                data-rank="<%= index + 1 %>"
+                data-guild-name="<%= guild.name %>"
+                data-total-cp="<%= guild.total_cp %>"
+                data-member-count="<%= guild.member_count %>"
+                data-class-distrib="<%= JSON.stringify(guild.class_distribution) %>"
+                data-guild="<%= guild.name %>"
+            >
                 <td class="rank-col"><%= index + 1 %></td>
                 <td><strong><%= guild.name %></strong></td>
                 <td class="cp-display" data-cp="<%= guild.total_cp %>"></td>

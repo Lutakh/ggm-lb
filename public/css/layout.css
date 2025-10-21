@@ -1,0 +1,217 @@
+header {
+    text-align: center;
+    margin-bottom: 20px;
+    position: relative;
+    /* Suppression du margin-top: 0; car géré par padding-top du body */
+}
+header h1 {
+    font-size: 3em;
+    font-weight: 800;
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 0; /* Assurer qu'il n'y a pas de marge haute */
+    margin-bottom: 0; /* Réduire l'espace si besoin */
+}
+.logo {
+    width: 60px;
+    height: 60px;
+}
+.main-section {
+    display: none;
+}
+.main-section.active {
+    display: block;
+}
+.view-tabs {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--border-color);
+    margin-bottom: 20px;
+}
+.view-tabs h2 {
+    border-bottom: none;
+    margin: 0;
+}
+/* --- Navigation --- */
+#main-nav, #top-nav { display: none; } /* Caché car remplacé */
+
+/* Bouton mobile (reste visible par défaut) */
+#home-nav-btn {
+    position: fixed;
+    top: 15px; /* Ajusté */
+    left: 15px; /* Ajusté */
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+    transition: transform 0.2s;
+}
+#home-nav-btn:hover { transform: scale(1.1); }
+#home-nav-btn svg { width: 24px; height: 24px; fill: var(--text-color); }
+
+/* NOUVEAU: Barre latérale Desktop (cachée par défaut) */
+#desktop-sidebar {
+    display: none; /* Caché sur mobile */
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    width: 210px; /* Largeur de la sidebar */
+    background-color: var(--surface-color);
+    padding-top: 80px; /* Espace pour le header potentiel ou padding */
+    box-shadow: 2px 0 8px rgba(140, 90, 58, 0.1);
+    z-index: 900; /* En dessous des modales */
+    flex-direction: column;
+    gap: 5px; /* Espace entre les boutons */
+    border-right: 1px solid var(--border-color);
+    overflow-y: auto; /* Pour les petits écrans en hauteur */
+}
+
+.sidebar-btn {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    gap: 15px;
+    text-decoration: none;
+    color: var(--text-color);
+    font-weight: 700;
+    font-size: 1.05em;
+    border-left: 4px solid transparent; /* Indicateur actif */
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.sidebar-btn svg {
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+    flex-shrink: 0;
+}
+
+.sidebar-btn:hover {
+    background-color: #f9f6f1; /* Léger fond au survol */
+}
+
+.sidebar-btn.active {
+    background-color: #f4e8d8; /* Fond légèrement différent pour l'actif */
+    color: var(--primary-color); /* Couleur du texte actif */
+    border-left-color: var(--primary-color); /* Indicateur actif */
+}
+
+
+/* --- Top Bar --- */
+.top-bar {
+    display: flex;
+    align-items: center;
+    padding: 10px 25px;
+    gap: 20px;
+    /* margin-bottom: 20px; Remplacé par gap sur main */
+}
+.top-bar-section {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    text-decoration: none;
+    color: var(--text-color);
+    transition: transform 0.2s ease;
+}
+.top-bar-section:hover {
+    transform: scale(1.05);
+}
+.top-bar .timers-section {
+    flex-grow: 1;
+}
+.guides-section {
+    justify-content: flex-end;
+}
+.top-bar-section svg {
+    width: 38px;
+    height: 38px;
+}
+.discord-section svg {
+    fill: var(--discord-blue);
+}
+.discord-section .discord-info span {
+    font-weight: bold;
+    font-size: 1.1em;
+    display: block;
+}
+.discord-stats {
+    font-size: 0.8em;
+    opacity: 0.8;
+    display: flex;
+    gap: 10px;
+}
+#discord-online-count .status-dot { /* Style pour le point online/offline */
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 5px;
+    vertical-align: middle;
+}
+#discord-online-count .status-dot.online { background-color: var(--success-color); }
+#discord-online-count .status-dot.offline { background-color: var(--accent-color); }
+
+.guides-section svg {
+    fill: var(--primary-color);
+}
+.guides-section span {
+    font-weight: bold;
+    font-size: 1.1em;
+}
+.timers-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 20px;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+}
+.timer-entry {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    position: relative; /* Nécessaire pour le positionnement absolu du tooltip */
+}
+.timer-label {
+    font-size: 0.8em;
+    font-weight: bold;
+    opacity: 0.7;
+    text-transform: uppercase;
+    white-space: nowrap; /* Empêcher retour à la ligne */
+}
+.timer-value {
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 5px;
+    color: white;
+    background-color: var(--success-color);
+    font-size: 0.9em; /* Légèrement réduit */
+    white-space: nowrap; /* Empêcher retour à la ligne */
+}
+.timer-value.urgent {
+    background-color: var(--accent-color);
+}
+.timer-value.server-day {
+    background-color: var(--primary-color);
+    font-family: 'Nunito', sans-serif;
+    font-size: 1em; /* Taille normale pour Server Day */
+}
+.timer-label.important-event {
+    color: var(--gold);
+    font-weight: 800;
+}

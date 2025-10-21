@@ -44,7 +44,7 @@ router.get('/', async (req, res) => {
             const teamName = player.team;
             if (teamName && teamName !== 'No Team') {
                 if (!acc[teamName]) acc[teamName] = { members: [], total_cp: 0, guilds: new Set(), class_distribution: { Swordbearer: 0, Acolyte: 0, Wayfarer: 0, Scholar: 0, Shadowlash: 0 } };
-                acc[teamName].members.push(player);
+                acc[teamName].members.push(player); // player est l'objet complet
                 acc[teamName].total_cp += Number(player.combat_power);
                 if(player.guild) acc[teamName].guilds.add(player.guild);
                 if (acc[teamName].class_distribution[player.class] !== undefined) {

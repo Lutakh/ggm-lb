@@ -1,4 +1,11 @@
 <div class="view-tabs"><h2>Teams Leaderboard</h2></div>
+
+<select id="team-guild-filter-mobile">
+    <option value="All">All Server Teams</option>
+    <option value="Incomplete">Incomplete Teams</option>
+    <% guilds.forEach(name => { %><option value="<%= name %>"><%= name %></option><% }); %>
+</select>
+
 <div id="teams-filters">
     <label>Filter by Guild:</label>
     <select id="team-guild-filter">
@@ -7,28 +14,31 @@
         <% guilds.forEach(name => { %><option value="<%= name %>"><%= name %></option><% }); %>
     </select>
 </div>
-<div class="leaderboard-legend">
-    <div class="legend-item"><span class="class-tag class-swordbearer"></span> Swordbearer</div>
-    <div class="legend-item"><span class="class-tag class-acolyte"></span> Acolyte</div>
-    <div class="legend-item"><span class="class-tag class-wayfarer"></span> Wayfarer</div>
-    <div class="legend-item"><span class="class-tag class-scholar"></span> Scholar</div>
-    <div class="legend-item"><span class="class-tag class-shadowlash"></span> Shadowlash</div>
-</div>
+
 <table id="teams-leaderboard-table">
      <thead>
         <tr>
             <th class="rank-col">Rank</th> <th>Team</th>
             <th>Total CP</th>
             <th>Members</th>
-             <th>Class Distribution</th>
+            <th>Class Distribution</th>
         </tr>
     </thead>
-    <tbody>
+    <tbody id="teams-tbody">
         <% rankedTeams.forEach((team, index) => { %>
-            <tr class="team-data-row podium rank-<%= index + 1 %>" data-guild="<%= team.guild %>" data-member-count="<%= team.member_count %>">
-                <td class="rank-col"><%= index + 1 %></td>
+            <tr class="team-data-row podium rank-<%= index + 1 %>"
+                data-team-name="<%= team.name %>"
+                data-guild-name="<%= team.guild %>"
+                data-total-cp="<%= team.total_cp %>"
+                data-member-count="<%= team.member_count %>"
+                data-members="<%= JSON.stringify(team.members.map(p => ({name: p.name, class: p.class, combat_power: p.combat_power }))) %>"
+                data-guild="<%= team.guild %>" <%# Gardé pour filtre desktop éventuel %>
+                data-team="<%= team.name %>" <%# Gardé pour filtre via modale joueur éventuel %>
+                data-member-count-val="<%= team.member_count %>" <%# Ajouté pour le filtre Incomplete %>
+            >
+                <td class="rank-col"><%= index + 1 %></td> <%# Le rang sera mis à jour par JS au filtrage %>
                 <td><strong><%= team.name %></strong><br><span class="guild-name"><%= team.guild %></span></td>
-                <td class="cp-display" data-cp="<%= team.total_cp %>"></td>
+                <td class="cp-display" data-cp="<%= team.total_cp %>"></td> <%# Rempli par JS %>
                 <td><%= team.member_count %> / 4</td>
                 <td>
                     <div class="class-distrib">
@@ -40,7 +50,7 @@
                     </div>
                 </td>
             </tr>
-            <tr class="team-members-row">
+            <tr class="team-members-row"> <%# Caché par défaut sur mobile %>
                 <td colspan="5" class="team-members-cell">
                     <div class="team-members">
                         <% team.members.forEach(player => { %>
@@ -48,7 +58,7 @@
                                 <div class="team-player-info">
                                     <strong><span class="class-tag class-<%= player.class.toLowerCase() %>"><%= player.name %></span></strong>
                                     <div class="team-player-details">
-                                        <span class="cp-display" data-cp="<%= player.combat_power %>"></span>
+                                        <span class="cp-display" data-cp="<%= player.combat_power %>"></span> <%# Rempli par JS %>
                                         <span>Notes: <%= player.notes || '-' %></span>
                                     </div>
                                 </div>

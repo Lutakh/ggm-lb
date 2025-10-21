@@ -70,3 +70,22 @@ export function formatRelativeTime(isoString) {
     const days = Math.round(hours / 24);
     return `${days}d ago`;
 }
+
+/**
+ * NOUVELLE FONCTION (Req 3)
+ * Formate le temps relatif de manière concise (sans "ago")
+ */
+export function formatRelativeTimeShort(isoString) {
+    if (!isoString) return '-';
+    const date = new Date(isoString);
+    const now = new Date();
+    const seconds = Math.round((now - date) / 1000);
+
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.round(seconds / 60);
+    if (minutes < 60) return `${minutes}m`;
+    const hours = Math.round(minutes / 60);
+    if (hours < 24) return `${hours}h`;
+    const days = Math.round(hours / 24);
+    return `${days}d`;
+}

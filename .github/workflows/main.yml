@@ -33,6 +33,12 @@ jobs:
         if: github.ref == 'refs/heads/dev'
         run: |
           ssh ${{ secrets.NAS_USER }}@${{ secrets.NAS_IP }} "
+            # === CORRECTIONS ===
+            set -eo pipefail # Fait échouer le script à la moindre erreur
+            # Ajoute les chemins courants pour trouver git, docker, etc.
+            export PATH=\$PATH:/usr/local/bin:/opt/bin:/bin:/usr/bin
+            # ===================
+
             echo '🚀 Déploiement sur DEV...'
             cd /volume1/docker/ggm-lb-dev
             echo '1. Mise à jour du code...'
@@ -49,6 +55,12 @@ jobs:
         if: github.ref == 'refs/heads/main'
         run: |
           ssh ${{ secrets.NAS_USER }}@${{ secrets.NAS_IP }} "
+            # === CORRECTIONS ===
+            set -eo pipefail # Fait échouer le script à la moindre erreur
+            # Ajoute les chemins courants pour trouver git, docker, etc.
+            export PATH=\$PATH:/usr/local/bin:/opt/bin:/bin:/usr/bin
+            # ===================
+
             echo '🚀 Déploiement sur PROD (S81)...'
             cd /volume1/docker/ggm-lb-s81
             echo '1. Mise à jour du code...'
@@ -59,4 +71,3 @@ jobs:
             echo '✅ Déploiement PROD (S81) terminé.'
           "
         shell: bash
-

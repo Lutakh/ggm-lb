@@ -1,0 +1,175 @@
+/* --- Common Leaderboard Styles --- */
+.leaderboard-legend {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-bottom: 15px;
+    font-size: 0.9em;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.legend-item .class-tag {
+    width: 12px;
+    height: 12px;
+    min-width: 12px;
+    padding: 0;
+    border-radius: 50%;
+}
+.rank-col {
+    text-align: center !important;
+    font-weight: 800;
+    font-size: 1.2em;
+    color: var(--primary-color);
+}
+.podium {
+    border-radius: 8px;
+    border-width: 2px;
+    border-style: solid;
+}
+tr.rank-1, .team-entry.rank-1, tr.rank-1 {
+    background: linear-gradient(145deg, #fffbe0, #fff2b2);
+    border-color: #000;
+}
+tr.rank-2, .team-entry.rank-2, tr.rank-2 {
+    background: linear-gradient(145deg, #f0f0f0, #e0e0e0);
+    border-color: #000;
+}
+tr.rank-3, .team-entry.rank-3, tr.rank-3 {
+    background: linear-gradient(145deg, #ffe0c0, #ffcfa0);
+    border-color: #000;
+}
+.rank-1 .rank-col {
+    color: var(--gold);
+}
+.rank-2 .rank-col {
+    color: var(--silver);
+}
+.rank-3 .rank-col {
+    color: var(--bronze);
+}
+.class-distrib {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    align-items: center;
+}
+.class-distrib .class-tag {
+    min-width: 32px;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1em;
+    line-height: 32px;
+}
+
+/* --- Players Leaderboard --- */
+#players-leaderboard-section { overflow-x: auto; }
+
+#leaderboard-table th, #leaderboard-table td {
+    word-wrap: break-word;
+}
+#leaderboard-table th:nth-child(1), #leaderboard-table td:nth-child(1) { width: 8%; text-align: center; } /* Rank */
+#leaderboard-table th:nth-child(2), #leaderboard-table td:nth-child(2) { width: 25%; } /* Player */
+#leaderboard-table th:nth-child(3), #leaderboard-table td:nth-child(3) { width: 10%; text-align: right; } /* CP */
+#leaderboard-table th:nth-child(4), #leaderboard-table td:nth-child(4) { width: 32%; } /* Play Hours */
+#leaderboard-table th:nth-child(5), #leaderboard-table td:nth-child(5) { width: 15%; } /* Guild */
+#leaderboard-table th:nth-child(6), #leaderboard-table td:nth-child(6) { width: 10%; } /* Notes */
+#leaderboard-table th:nth-child(7), #leaderboard-table td:nth-child(7) { width: 10%; }  /* Updated */
+#leaderboard-table th:nth-child(8), #leaderboard-table td:nth-child(8) { width: 60px; text-align: center; } /* Actions */
+
+.play-hours-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+.play-hours-cell {
+    white-space: nowrap;
+}
+.notes-col {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+}
+.pt-tag {
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-size: 0.8em;
+    margin-left: 5px;
+}
+
+/* --- Teams Leaderboard --- */
+#teams-leaderboard-table th:nth-child(1), #teams-leaderboard-table td:nth-child(1) { width: 8%; } /* Rank */
+#teams-leaderboard-table th:nth-child(3), #teams-leaderboard-table td:nth-child(3) { width: 15%; } /* Total CP */
+#teams-leaderboard-table th:nth-child(4), #teams-leaderboard-table td:nth-child(4) { width: 12%; } /* Members */
+
+.team-data-row {
+    cursor: pointer;
+}
+.team-members-row {
+    display: none;
+}
+.team-members-row td {
+    padding: 0;
+    border-top: none;
+}
+.team-members {
+    padding: 15px;
+    background-color: #fdfaf5;
+}
+.team-player-card {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    padding: 10px;
+    border-top: 1px solid var(--border-color);
+}
+.team-members .team-player-card:first-child {
+    border-top: none;
+}
+
+/* --- Guilds Leaderboard --- */
+.guild-leaderboard-table th:nth-child(1), .guild-leaderboard-table td:nth-child(1) { width: 8%; } /* Rank */
+.guild-leaderboard-table th:nth-child(3), .guild-leaderboard-table td:nth-child(3) { width: 15%; } /* Total CP */
+.guild-leaderboard-table th:nth-child(4), .guild-leaderboard-table td:nth-child(4) { width: 12%; } /* Members */
+
+/* --- Perilous Trials Leaderboard --- */
+#perilous-trials-section .controls {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    align-items: center;
+}
+/* NOUVEAU: Cacher les contrôles mobiles sur desktop */
+.mobile-pt-controls {
+    display: none;
+}
+
+#pt-leaderboard-table th:first-child { width: 10%; }
+#pt-leaderboard-table th:last-child { width: 90%; }
+.pt-leaderboard-team {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.pt-leaderboard-player {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: transparent;
+    padding: 2px 0;
+}

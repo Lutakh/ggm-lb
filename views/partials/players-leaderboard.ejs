@@ -1,72 +1,40 @@
 <div class="view-tabs"><h2>Players Leaderboard</h2></div>
 
 <div class="leaderboard-legend">
-    <div class="legend-item"><span class="class-tag class-swordbearer"></span> Swordbearer</div>
-    <div class="legend-item"><span class="class-tag class-acolyte"></span> Acolyte</div>
-    <div class="legend-item"><span class="class-tag class-wayfarer"></span> Wayfarer</div>
-    <div class="legend-item"><span class="class-tag class-scholar"></span> Scholar</div>
-    <div class="legend-item"><span class="class-tag class-shadowlash"></span> Shadowlash</div>
+    <div class="legend-item"><span class="class-tag class-swordbearer"></span> Sword</div>
+    <div class="legend-item"><span class="class-tag class-acolyte"></span> Aco</div>
+    <div class="legend-item"><span class="class-tag class-wayfarer"></span> Way</div>
+    <div class="legend-item"><span class="class-tag class-scholar"></span> Scho</div>
+    <div class="legend-item"><span class="class-tag class-shadowlash"></span> Shadow</div>
 </div>
 
-<div id="filters" class="leaderboard-filters">
-    <div class="filter-group">
-        <input type="text" id="cp-min" placeholder="Min CP (e.g., 500k)">
-        <input type="text" id="cp-max" placeholder="Max CP (e.g., 1.5m)">
-    </div>
-    <div class="filter-group dropdown-filter">
-        <button id="guild-filter-btn" class="dropdown-btn">All Guilds</button>
-        <div id="guild-filter-panel" class="dropdown-panel">
-            <% guilds.forEach(name => { %>
-                <label><input type="checkbox" data-guild="<%= name %>"> <%= name %></label>
-            <% }); %>
-        </div>
-    </div>
-    <div class="filter-group dropdown-filter">
-        <button id="team-filter-btn" class="dropdown-btn">All Teams</button>
-        <div id="team-filter-panel" class="dropdown-panel">
-             <% allTeamNames.forEach(name => { %>
-                <label><input type="checkbox" data-team="<%= name %>"> <%= name %></label>
-            <% }); %>
-             <label><input type="checkbox" data-team="No Team"> No Team</label>
-        </div>
-    </div>
-    <div class="filter-group">
-        <select id="pt-tag-filter">
-            <option value="">All PT Progress</option>
-             <% perilousTrials.forEach(pt => { %>
-                <option value="<%= pt.name %>"><%= pt.name %></option>
-             <% }); %>
-        </select>
-        <select id="pt-tag-mode">
-            <option value="has">Has Tag</option>
-            <option value="missing">Missing Tag</option>
-        </select>
-    </div>
-</div>
+<button id="open-filters-btn" class="action-btn-main">Filters</button>
 
 <table id="leaderboard-table">
     <thead>
         <tr>
             <th class="rank-col">Rank</th>
-
             <th class="player-header-cell">
-                <div class="header-content">
+
+<div class="header-content">
                     <button id="class-filter-btn" class="header-filter-btn dropdown-btn" title="Filter by class">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>
                         <span>Player</span>
-                    </button>
+
+     </button>
                 </div>
                 <div id="class-filter-panel" class="dropdown-panel">
                     <label><input type="checkbox" data-class="Swordbearer"> Swordbearer</label>
                     <label><input type="checkbox" data-class="Acolyte"> Acolyte</label>
-                    <label><input type="checkbox" data-class="Wayfarer"> Wayfarer</label>
+
+     <label><input type="checkbox" data-class="Wayfarer"> Wayfarer</label>
                     <label><input type="checkbox" data-class="Scholar"> Scholar</label>
                     <label><input type="checkbox" data-class="Shadowlash"> Shadowlash</label>
                 </div>
             </th>
-
             <th>CP</th>
-            <th>Play Hours <span id="table-timezone-note" class="timezone-header-note"></span></th>
+
+      <th>Play Hours <span id="table-timezone-note" class="timezone-header-note"></span></th>
             <th>Guild</th>
             <th>Notes</th>
             <th class="last-modified-col">Updated</th>
@@ -75,42 +43,57 @@
     </thead>
     <tbody>
         <% players.forEach((player, index) => { %>
-            <tr class="podium rank-<%= index + 1 %>"
+
+ <tr class="podium rank-<%= index + 1 %>"
+                data-rank="<%= index + 1 %>"
+                data-name="<%= player.name %>"
                 data-cp="<%= player.combat_power %>"
                 data-class="<%= player.class %>"
-                data-team="<%= player.team || 'No Team' %>"
-                data-guild="<%= player.guild || '' %>"
-                data-pt-tags="<%= JSON.stringify(player.pt_tags) %>">
+                data-team="<%= player.team ||
+'No Team' %>"
+                data-guild="<%= player.guild ||
+'' %>"
+                data-pt-tags="<%= JSON.stringify(player.pt_tags) %>"
+                data-notes="<%= player.notes ?
+player.notes.replace(/"/g, '&quot;') : '-' %>"
+                data-updated="<%= player.updated_at %>"
+                data-play-slots="<%= JSON.stringify(player.play_slots || []) %>"
+            >
                 <td class="rank-col"><%= index + 1 %></td>
-
                 <td class="player-name-cell">
-                    <span class="class-tag class-<%= player.class.toLowerCase() %>"><%= player.name %></span>
+
+            <span class="class-tag class-<%= player.class.toLowerCase() %>"><%= player.name %></span>
                     <% if (player.pt_tags && player.pt_tags.length > 0) {
                         const maxPt = Math.max(...player.pt_tags.map(tag => parseInt(tag.replace('PT', ''))));
-                    %>
+%>
                         <span class="pt-tag">PT<%= maxPt %></span>
                     <% } %>
                 </td>
-
                 <td class="cp-display" data-cp="<%= player.combat_power %>"></td>
-                <td>
+
+ <td>
                     <div class="play-hours-container">
                         <% if (player.play_slots && player.play_slots.length > 0) { %>
                             <% player.play_slots.forEach(slot => { %>
-                                <div class="play-hours-cell" data-start-minutes="<%= slot.start_minutes %>" data-end-minutes="<%= slot.end_minutes %>"></div>
-                            <% }); %>
+
+                  <div class="play-hours-cell" data-start-minutes="<%= slot.start_minutes %>" data-end-minutes="<%= slot.end_minutes %>"></div>
+                            <% });
+%>
                         <% } else { %> - <% } %>
                     </div>
                 </td>
-                <td><%= player.guild || '-' %></td>
+                <td><%= player.guild ||
+'-' %></td>
                 <td class="notes-col" onclick="showFullNote('<%= player.name %>', `<%= player.notes ? player.notes.replace(/[`"']/g, '\\$&') : '' %>`)">
                     <%= player.notes || '-' %>
                 </td>
                 <td class="last-modified-col" data-timestamp="<%= player.updated_at %>"></td>
-                <td>
+
+     <td>
                     <div class="admin-actions">
                         <button class="action-btn" title="Update Team (Admin)" onclick="updateTeam('<%= player.id %>')">🔄</button>
-                        <form id="delete-form-<%= player.id %>" action="/delete-player/<%= player.id %>" method="POST" style="margin:0;"><input type="hidden" name="admin_password" id="delete-password-<%= player.id %>"><button type="button" class="action-btn" title="Delete (Admin)" onclick="deletePlayer('<%= player.id %>')">🗑️</button></form>
+                        <form id="delete-form-<%= player.id %>" action="/delete-player/<%= player.id %>" method="POST" style="margin:0;"><input type="hidden" name="admin_password" id="delete-password-<%= player.id %>"><button type="button" class="action-btn" title="Delete (Admin)" onclick="deletePlayer('<%=
+player.id %>')">🗑️</button></form>
                     </div>
                 </td>
             </tr>
