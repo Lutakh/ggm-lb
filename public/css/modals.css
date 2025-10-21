@@ -188,6 +188,88 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
     font-weight: bold;
 }
 
+/* --- NOUVEAU: Team Detail Modal (Mobile) --- */
+#team-detail-modal-body {
+    padding: 10px 25px 25px 25px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+#team-detail-modal-header .guild-name-modal {
+    font-size: 0.7em;
+    font-weight: normal;
+    opacity: 0.8;
+    margin-left: 10px;
+}
+.team-detail-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.team-detail-player {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+}
+.team-detail-player:last-child { border-bottom: none; }
+.team-detail-player:hover { background-color: #f9f6f1; }
+.team-detail-player .class-tag { font-size: 1em; padding: 6px 12px; }
+.team-detail-player-cp {
+    float: right;
+    font-weight: bold;
+    color: var(--primary-color);
+    font-size: 1.1em;
+    line-height: 1.8;
+}
+
+/* --- NOUVEAU: Guild Detail Modal (Mobile) --- */
+#guild-detail-modal-body {
+    padding: 10px 25px 25px 25px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+.guild-detail-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.guild-detail-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+    gap: 15px;
+    align-items: center;
+}
+.guild-detail-list li:last-child { border-bottom: none; }
+.guild-detail-list li strong {
+    color: var(--primary-color);
+    white-space: nowrap;
+}
+.guild-detail-list li span,
+.guild-detail-list li div {
+    text-align: right;
+    font-weight: bold;
+}
+.guild-class-distrib {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+}
+.guild-class-distrib .class-tag {
+    min-width: 32px;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1em;
+    line-height: 32px;
+}
+
+
 /* --- Nav Modal --- */
 #nav-modal-content { /* Req 4 */
     display: flex;

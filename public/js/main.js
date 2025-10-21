@@ -37,6 +37,11 @@ const playerDetailTitle = document.getElementById('player-detail-modal-title');
 const playerDetailBody = document.getElementById('player-detail-modal-body');
 const playerDetailCloseBtn = document.getElementById('player-detail-modal-close-btn');
 
+// Map pour stocker les rangs des joueurs
+const playerRankMap = new Map();
+// Map pour stocker les données complètes des joueurs par leur nom
+const allPlayersMap = new Map();
+
 function showPlayerDetails(playerRow) {
     if (!playerDetailModal || !playerRow) return;
 
@@ -56,7 +61,7 @@ function showPlayerDetails(playerRow) {
     // Ajout de la ligne pour la Classe
     playerDetailBody.innerHTML = `
         <ul class="player-detail-list">
-            <li><strong>Rank:</strong> <span>${data.rank}</span></li>
+            <li><strong>Rank:</strong> <span>${data.rank || 'N/A'}</span></li>
             <li><strong>CP:</strong> <span>${formatCP(data.cp)}</span></li>
             <li><strong>Class:</strong> <span><span class="class-tag class-${data.class.toLowerCase()}">${data.class}</span></span></li>
             <li><strong>Guild:</strong> <span>${data.guild || '-'}</span></li>
@@ -77,10 +82,112 @@ function closePlayerDetailModal() {
     if (playerDetailBackdrop) playerDetailBackdrop.style.display = 'none';
 }
 
+// --- NOUVELLE MODALE DE DÉTAIL D'ÉQUIPE (MOBILE) ---
+const teamDetailModal = document.getElementById('team-detail-modal');
+const teamDetailBackdrop = document.getElementById('team-detail-modal-backdrop');
+const teamDetailTitle = document.getElementById('team-detail-modal-title');
+const teamDetailBody = document.getElementById('team-detail-modal-body');
+const teamDetailCloseBtn = document.getElementById('team-detail-close-btn');
+
+function showTeamDetails(teamRow) {
+    if (!teamDetailModal || !teamRow) return;
+    const data = teamRow.dataset;
+    const members = JSON.parse(data.members || '[]');
+
+    teamDetailTitle.innerHTML = `<span>${data.teamName}</span><span class="guild-name-modal">${data.guildName}</span>`;
+
+    let membersHtml = '<div class="team-detail-list">';
+    members.forEach((player, index) => {
+        membersHtml += `
+            <div class="team-detail-player" data-player-name="${player.name}">
+                <span class="team-detail-player-cp">${formatCP(player.combat_power)}</span>
+                <span class="class-tag class-${player.class.toLowerCase()}">${player.name}</span>
+            </div>
+        `;
+    });
+    membersHtml += '</div>';
+    teamDetailBody.innerHTML = membersHtml;
+
+    // Attacher les écouteurs pour le clic nidé
+    teamDetailBody.querySelectorAll('.team-detail-player').forEach(playerEl => {
+        playerEl.addEventListener('click', (e) => {
+            e.stopPropagation(); // Empêche la fermeture de la modale d'équipe
+            const playerName = playerEl.dataset.playerName;
+            const player = allPlayersMap.get(playerName);
+            if (player) {
+                // Créer un objet "fakeRow" pour passer à showPlayerDetails
+                const fakeRow = {
+                    dataset: {
+                        ...player,
+                        rank: playerRankMap.get(playerName) || 'N/A', // Récupérer le rang individuel
+                        cp: player.combat_power,
+                        playSlots: JSON.stringify(player.play_slots || '[]'),
+                        updated: player.updated_at
+                    }
+                };
+                showPlayerDetails(fakeRow);
+            }
+        });
+    });
+
+    teamDetailModal.style.display = 'flex';
+    teamDetailBackdrop.style.display = 'block';
+}
+
+function closeTeamDetailModal() {
+    if (teamDetailModal) teamDetailModal.style.display = 'none';
+    if (teamDetailBackdrop) teamDetailBackdrop.style.display = 'none';
+}
+
+// --- NOUVELLE MODALE DE DÉTAIL DE GUILDE (MOBILE) ---
+const guildDetailModal = document.getElementById('guild-detail-modal');
+const guildDetailBackdrop = document.getElementById('guild-detail-modal-backdrop');
+const guildDetailTitle = document.getElementById('guild-detail-modal-title');
+const guildDetailBody = document.getElementById('guild-detail-modal-body');
+const guildDetailCloseBtn = document.getElementById('guild-detail-close-btn');
+
+function showGuildDetails(guildRow) {
+    if (!guildDetailModal || !guildRow) return;
+    const data = guildRow.dataset;
+    const classDistrib = JSON.parse(data.classDistrib || '{}');
+
+    guildDetailTitle.textContent = data.guildName;
+
+    const classDistribHtml = `
+        <div class="guild-class-distrib">
+            <span class="class-tag class-swordbearer" title="Swordbearer">${classDistrib.Swordbearer || 0}</span>
+            <span class="class-tag class-acolyte" title="Acolyte">${classDistrib.Acolyte || 0}</span>
+            <span class="class-tag class-wayfarer" title="Wayfarer">${classDistrib.Wayfarer || 0}</span>
+            <span class="class-tag class-scholar" title="Scholar">${classDistrib.Scholar || 0}</span>
+            <span class="class-tag class-shadowlash" title="Shadowlash">${classDistrib.Shadowlash || 0}</span>
+        </div>
+    `;
+
+    guildDetailBody.innerHTML = `
+        <ul class="guild-detail-list">
+            <li><strong>Rank:</strong> <span>${data.rank}</span></li>
+            <li><strong>Total CP:</strong> <span>${formatCP(data.totalCp)}</span></li>
+            <li><strong>Members:</strong> <span>${data.memberCount} / 120</span></li>
+            <li><strong>Class Distribution:</strong> ${classDistribHtml}</li>
+        </ul>
+    `;
+
+    guildDetailModal.style.display = 'flex';
+    guildDetailBackdrop.style.display = 'block';
+}
+
+function closeGuildDetailModal() {
+    if (guildDetailModal) guildDetailModal.style.display = 'none';
+    if (guildDetailBackdrop) guildDetailBackdrop.style.display = 'none';
+}
+
+
 // --- NOUVELLE MODALE DE FILTRES (Req 1) ---
 const filtersModal = document.getElementById('filters-modal');
 const filtersBackdrop = document.getElementById('filters-modal-backdrop');
 const openFiltersBtn = document.getElementById('open-filters-btn');
+const openFiltersBtnTeams = document.getElementById('open-filters-btn-teams'); // Nouveau
+const openFiltersBtnGuilds = document.getElementById('open-filters-btn-guilds'); // Nouveau
 const closeFiltersBtn = document.getElementById('filters-modal-close-btn');
 
 function openFiltersModal() {
@@ -102,6 +209,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     setInterval(updateTimers, 1000);
     updateTimers();
+
+    // Peupler les maps de joueurs pour les modales
+    const playersDataEl = document.getElementById('players-data');
+    if (playersDataEl) {
+        const allPlayers = JSON.parse(playersDataEl.textContent);
+        allPlayers.forEach(p => allPlayersMap.set(p.name, p));
+    }
+    document.querySelectorAll('#leaderboard-table tbody tr').forEach(row => {
+        playerRankMap.set(row.dataset.name, row.dataset.rank);
+    });
+
 
     document.querySelectorAll('.cp-display').forEach(el => {
         el.textContent = formatCP(el.dataset.cp);
@@ -138,6 +256,38 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- NOUVEAUX ÉVÉNEMENTS POUR LA MODALE DE FILTRES (Req 1) ---
     if (openFiltersBtn) openFiltersBtn.addEventListener('click', openFiltersModal);
+    if (openFiltersBtnTeams) openFiltersBtnTeams.addEventListener('click', openFiltersModal); // Nouveau
+    if (openFiltersBtnGuilds) openFiltersBtnGuilds.addEventListener('click', openFiltersModal); // Nouveau
     if (closeFiltersBtn) closeFiltersBtn.addEventListener('click', closeFiltersModal);
     if (filtersBackdrop) filtersBackdrop.addEventListener('click', closeFiltersModal);
+
+    // --- NOUVEAUX ÉVÉNEMENTS POUR LES MODALES DE DÉTAIL (ÉQUIPE/GUILDE) ---
+    if (teamDetailCloseBtn) teamDetailCloseBtn.addEventListener('click', closeTeamDetailModal);
+    if (teamDetailBackdrop) teamDetailBackdrop.addEventListener('click', closeTeamDetailModal);
+    if (guildDetailCloseBtn) guildDetailCloseBtn.addEventListener('click', closeGuildDetailModal);
+    if (guildDetailBackdrop) guildDetailBackdrop.addEventListener('click', closeGuildDetailModal);
+
+    const teamTableBody = document.getElementById('teams-tbody');
+    if (teamTableBody) {
+        teamTableBody.addEventListener('click', (e) => {
+            const teamRow = e.target.closest('.team-data-row');
+            if (!teamRow) return;
+            if (window.innerWidth <= 768) {
+                e.preventDefault();
+                showTeamDetails(teamRow);
+            }
+        });
+    }
+
+    const guildTableBody = document.getElementById('guilds-tbody');
+    if (guildTableBody) {
+        guildTableBody.addEventListener('click', (e) => {
+            const guildRow = e.target.closest('tr');
+            if (!guildRow) return;
+            if (window.innerWidth <= 768) {
+                e.preventDefault();
+                showGuildDetails(guildRow);
+            }
+        });
+    }
 });

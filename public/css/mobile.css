@@ -33,10 +33,19 @@
     #player-image-container { grid-row: auto; }
     .form-step-1, #form-details { grid-column: 1 / -1; }
 
-    /* --- Players Leaderboard Table (Mobile) --- */
-    #open-filters-btn { display: block; } /* Req 1 */
+    /* --- Filtres (Tous) --- */
+    #open-filters-btn,
+    #open-filters-btn-teams,
+    #open-filters-btn-guilds {
+        display: block;
+        width: 100%;
+        margin-bottom: 15px;
+    }
+    #teams-filters { display: none; } /* Cacher l'ancien dropdown des équipes */
     .filters-modal-class-filter { display: block; } /* Req 1 */
 
+
+    /* --- Players Leaderboard Table (Mobile) --- */
     #leaderboard-table thead { display: none; }
     #leaderboard-table tbody tr { display: flex; align-items: center; width: 100%; padding: 10px 0; cursor: pointer; }
     #leaderboard-table tbody tr:hover { background-color: #f9f6f1; }
@@ -51,7 +60,7 @@
         display: block;
         width: 60px; /* Un peu plus de place pour CP */
         font-size: 0.9em;
-        text-align: center;
+        text-align: right; /* CP aligné à droite */
         font-weight: bold;
         color: var(--primary-color);
         flex-shrink: 0;
@@ -64,4 +73,28 @@
     #leaderboard-table th:nth-child(5), #leaderboard-table td:nth-child(5), /* Guild */
     #leaderboard-table th:nth-child(6), #leaderboard-table td:nth-child(6), /* Notes */
     #leaderboard-table th:nth-child(8), #leaderboard-table td:nth-child(8) { display: none; } /* Actions */
+
+
+    /* --- Teams Leaderboard Table (Mobile) --- */
+    #teams-leaderboard-table thead { display: none; }
+    #teams-leaderboard-table tbody tr.team-data-row { display: flex; align-items: center; width: 100%; padding: 10px 0; cursor: pointer; }
+    #teams-leaderboard-table tbody tr.team-data-row:hover { background-color: #f9f6f1; }
+    #teams-leaderboard-table td { display: none; border: none; padding: 5px; }
+    #teams-leaderboard-table td:nth-child(1) { display: block; width: 40px; text-align: center; flex-shrink: 0; } /* Rank */
+    #teams-leaderboard-table td:nth-child(2) { display: block; flex-grow: 1; width: auto; } /* Team */
+    #teams-leaderboard-table td:nth-child(3) { display: block; width: 60px; font-size: 0.9em; text-align: right; font-weight: bold; color: var(--primary-color); flex-shrink: 0; padding: 5px 0; } /* CP */
+    #teams-leaderboard-table td:nth-child(4) { display: block; width: 50px; font-size: 0.9em; text-align: center; flex-shrink: 0; } /* Members */
+    #teams-leaderboard-table td:nth-child(5) { display: none; } /* Class Distrib */
+
+
+    /* --- Guilds Leaderboard Table (Mobile) --- */
+    .guild-leaderboard-table thead { display: none; }
+    .guild-leaderboard-table tbody tr { display: flex; align-items: center; width: 100%; padding: 10px 0; cursor: pointer; }
+    .guild-leaderboard-table tbody tr:hover { background-color: #f9f6f1; }
+    .guild-leaderboard-table td { display: none; border: none; padding: 5px; }
+    .guild-leaderboard-table td:nth-child(1) { display: block; width: 40px; text-align: center; flex-shrink: 0; } /* Rank */
+    .guild-leaderboard-table td:nth-child(2) { display: block; flex-grow: 1; width: auto; } /* Guild */
+    .guild-leaderboard-table td:nth-child(3) { display: block; width: 60px; font-size: 0.9em; text-align: right; font-weight: bold; color: var(--primary-color); flex-shrink: 0; padding: 5px 0; } /* CP */
+    .guild-leaderboard-table td:nth-child(4) { display: none; } /* Members */
+    .guild-leaderboard-table td:nth-child(5) { display: none; } /* Class Distrib */
 }

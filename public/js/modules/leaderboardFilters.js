@@ -18,9 +18,13 @@ export function initLeaderboardFilters() {
     // Boutons
     const classFilterBtnDesktop = document.getElementById('class-filter-btn');
     const openFiltersBtnMobile = document.getElementById('open-filters-btn');
+    const openFiltersBtnTeams = document.getElementById('open-filters-btn-teams'); // Nouveau
+    const openFiltersBtnGuilds = document.getElementById('open-filters-btn-guilds'); // Nouveau
 
     // Lignes du tableau
     const memberRows = document.querySelectorAll('#leaderboard-table tbody tr');
+    const allTeamRows = document.querySelectorAll('#teams-leaderboard-table tbody tr.team-data-row'); // Nouveau
+    const allGuildRows = document.querySelectorAll('.guild-leaderboard-table tbody tr'); // Nouveau
 
     function applyFilters() {
         // Lire les filtres
@@ -34,7 +38,7 @@ export function initLeaderboardFilters() {
         const selectedPtTag = ptTagFilter.value;
         const ptMode = ptTagMode.value;
 
-        // Appliquer aux lignes
+        // --- 1. Appliquer aux lignes JOUEURS ---
         let visibleRank = 1;
         memberRows.forEach(row => {
             const classMatch = selectedClasses.length === 0 || selectedClasses.includes(row.dataset.class);
@@ -60,6 +64,40 @@ export function initLeaderboardFilters() {
             }
         });
 
+        // --- 2. Appliquer aux lignes ÉQUIPES ---
+        let visibleTeamRank = 1;
+        allTeamRows.forEach(row => {
+            const teamMatch = selectedTeams.length === 0 || selectedTeams.includes(row.dataset.team);
+            const guildMatch = selectedGuilds.length === 0 || selectedGuilds.includes(row.dataset.guild);
+
+            const isVisible = teamMatch && guildMatch;
+            row.style.display = isVisible ? '' : 'none';
+            if (row.nextElementSibling) row.nextElementSibling.style.display = 'none'; // Cacher la ligne membres
+
+            if (isVisible) {
+                row.querySelector('.rank-col').textContent = visibleTeamRank;
+                row.classList.remove('rank-1', 'rank-2', 'rank-3');
+                if(visibleTeamRank <= 3) row.classList.add(`rank-${visibleTeamRank}`);
+                visibleTeamRank++;
+            }
+        });
+
+        // --- 3. Appliquer aux lignes GUILDES ---
+        let visibleGuildRank = 1;
+        allGuildRows.forEach(row => {
+            const guildMatch = selectedGuilds.length === 0 || selectedGuilds.includes(row.dataset.guild);
+            const isVisible = guildMatch;
+            row.style.display = isVisible ? '' : 'none';
+
+            if (isVisible) {
+                row.querySelector('.rank-col').textContent = visibleGuildRank;
+                row.classList.remove('rank-1', 'rank-2', 'rank-3');
+                if(visibleGuildRank <= 3) row.classList.add(`rank-${visibleGuildRank}`);
+                visibleGuildRank++;
+            }
+        });
+
+
         // Mettre à jour les indicateurs de filtre
         updateFilterIndicators(selectedClasses, selectedTeams, selectedGuilds, cpMin, cpMax, selectedPtTag);
     }
@@ -74,13 +112,27 @@ export function initLeaderboardFilters() {
             }
         }
 
-        // Bouton mobile (compte total)
+        // Compte total des filtres
         let totalFilters = classes.length + teams.length + guilds.length
             + (cpMin > 0 ? 1 : 0) + (cpMax !== Infinity ? 1 : 0)
             + (ptTag ? 1 : 0);
+
+        // Bouton mobile (JOUEURS)
         if (openFiltersBtnMobile) {
             openFiltersBtnMobile.textContent = totalFilters > 0 ? `Filtres (${totalFilters})` : 'Filtres';
             openFiltersBtnMobile.classList.toggle('active', totalFilters > 0);
+        }
+
+        // Bouton mobile (ÉQUIPES)
+        if (openFiltersBtnTeams) {
+            openFiltersBtnTeams.textContent = totalFilters > 0 ? `Filtres (${totalFilters})` : 'Filtres';
+            openFiltersBtnTeams.classList.toggle('active', totalFilters > 0);
+        }
+
+        // Bouton mobile (GUILDES)
+        if (openFiltersBtnGuilds) {
+            openFiltersBtnGuilds.textContent = totalFilters > 0 ? `Filtres (${totalFilters})` : 'Filtres';
+            openFiltersBtnGuilds.classList.toggle('active', totalFilters > 0);
         }
 
         // Mettre à jour le texte des boutons DANS la modale
@@ -167,32 +219,18 @@ export function initLeaderboardFilters() {
     // Initialiser les indicateurs au chargement
     applyFilters();
 
-    // --- LOGIQUE POUR LES AUTRES LEADERBOARDS (INCHANGÉE) ---
-    const teamGuildFilter = document.getElementById('team-guild-filter');
-    const allTeamRows = document.querySelectorAll('#teams-leaderboard-table tbody tr.team-data-row');
-    if(teamGuildFilter) {
-        teamGuildFilter.addEventListener('change', () => {
-            const selectedGuild = teamGuildFilter.value;
-            let visibleRank = 1;
-            allTeamRows.forEach(row => {
-                const isVisible = (selectedGuild === 'All') || (selectedGuild === 'Incomplete' && row.dataset.memberCount < 4) || (row.dataset.guild === selectedGuild);
-                row.style.display = isVisible ? '' : 'none';
-                if (row.nextElementSibling) row.nextElementSibling.style.display = 'none';
-                if (isVisible) {
-                    row.querySelector('.rank-col').textContent = visibleRank;
-                    row.classList.remove('rank-1', 'rank-2', 'rank-3');
-                    if(visibleRank <= 3) row.classList.add(`rank-${visibleRank}`);
-                    visibleRank++;
-                }
-            });
-        });
-    }
+    // --- LOGIQUE POUR LES AUTRES LEADERBOARDS (Ancienne logique de filtre de team supprimée) ---
+
+    // L'ancienne logique 'teamGuildFilter' a été supprimée et intégrée dans 'applyFilters'
 
     document.querySelectorAll('.team-data-row').forEach(headerRow => {
         headerRow.addEventListener('click', () => {
-            const membersRow = headerRow.nextElementSibling;
-            if (membersRow) {
-                membersRow.style.display = membersRow.style.display === 'table-row' ? 'none' : 'table-row';
+            // Sur mobile, cette logique est gérée par la modale
+            if (window.innerWidth > 768) {
+                const membersRow = headerRow.nextElementSibling;
+                if (membersRow) {
+                    membersRow.style.display = membersRow.style.display === 'table-row' ? 'none' : 'table-row';
+                }
             }
         });
     });

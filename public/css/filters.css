@@ -1,6 +1,8 @@
 /* --- Player Leaderboard Filters --- */
 .leaderboard-filters { display: none; } /* Req 1 */
-#open-filters-btn { /* Req 1 */
+#open-filters-btn,
+#open-filters-btn-teams,
+#open-filters-btn-guilds { /* Req 1 */
     display: none;
     width: 100%;
     margin-bottom: 15px;
@@ -8,7 +10,11 @@
     color: white;
     font-size: 1.1em;
 }
-#open-filters-btn.active { background-color: var(--accent-color); }
+#open-filters-btn.active,
+#open-filters-btn-teams.active,
+#open-filters-btn-guilds.active {
+    background-color: var(--accent-color);
+}
 
 .filter-group {
     display: flex;
