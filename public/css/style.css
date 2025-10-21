@@ -197,7 +197,6 @@ tr.rank-3, .team-entry.rank-3, tr.rank-3 {
 }
 .rank-1 .rank-col {
     color: var(--gold);
-    text-shadow: 0 0 5px rgba(0,0,0,0.3);
 }
 .rank-2 .rank-col {
     color: var(--silver);

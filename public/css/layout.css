@@ -214,5 +214,4 @@ header h1 {
 .timer-label.important-event {
     color: var(--gold);
     font-weight: 800;
-    text-shadow: 0 0 3px rgba(0,0,0,0.2); /* Ajout ombre légère */
 }
