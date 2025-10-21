@@ -47,8 +47,7 @@ export function initPerilousTrials() {
         ptGlobalTableBody.innerHTML = '';
 
         if (filteredLeaderboard.length === 0) {
-            ptGlobalTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No data for the global ranking yet.</td></tr>';
-            return;
+            ptGlobalTableBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No data for the global ranking yet.</td></tr>';
         }
 
         filteredLeaderboard.forEach((player, index) => {
@@ -59,15 +58,25 @@ export function initPerilousTrials() {
                 row.classList.add(`rank-${rank}`);
             }
 
+            // MODIFICATION: Suppression de la cellule classe, ajout du style au nom
             row.innerHTML = `
                 <td class="rank-col">${rank}</td>
-                <td>${player.name}</td>
-                <td><span class="class-tag class-${String(player.class || 'unknown').toLowerCase()}">${player.class || 'N/A'}</span></td>
+                <td class="player-name-cell"><span class="class-tag class-${String(player.class || 'unknown').toLowerCase()}">${player.name}</span></td>
                 <td class="cp-display" data-cp="${player.combat_power}">${formatCP(player.combat_power)}</td>
                 <td>${player.points}</td>
             `;
             ptGlobalTableBody.appendChild(row);
         });
+
+        // MODIFICATION: Mettre à jour le bouton de filtre de classe
+        const ptFilterBtn = document.getElementById('pt-class-filter-btn');
+        if (ptFilterBtn) {
+            const span = ptFilterBtn.querySelector('span');
+            if (span) {
+                span.textContent = selectedClasses.length > 0 ? `Player (${selectedClasses.length})` : 'Player';
+            }
+            ptFilterBtn.classList.toggle('active', selectedClasses.length > 0);
+        }
     }
 
     async function loadPtLeaderboard(ptId) {
@@ -100,7 +109,8 @@ export function initPerilousTrials() {
                     const name = entry[`player${i}_name`];
                     const pClass = entry[`player${i}_class`];
                     if (name) {
-                        teamHtml += `<div class="pt-leaderboard-player"><span class="class-tag class-${(pClass || 'unknown').toLowerCase()}"></span><span>${name}</span></div>`;
+                        // MODIFICATION: Le nom est enveloppé dans le class-tag
+                        teamHtml += `<div class="pt-leaderboard-player"><span class="class-tag class-${(pClass || 'unknown').toLowerCase()}">${name}</span></div>`;
                     }
                 }
                 teamHtml += '</div>';

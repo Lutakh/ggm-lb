@@ -6,7 +6,8 @@ export function initLeaderboardFilters() {
         button.addEventListener('click', (e) => {
             // Logique améliorée pour trouver le panneau de filtre associé
             let panel;
-            const parentContainer = button.closest('.dropdown-filter, .class-header-cell');
+            // MODIFICATION: Ajout de .player-header-cell
+            const parentContainer = button.closest('.dropdown-filter, .class-header-cell, .player-header-cell');
             if (parentContainer) {
                 panel = parentContainer.querySelector('.dropdown-panel');
             }
@@ -85,8 +86,18 @@ export function initLeaderboardFilters() {
         });
 
         // Met à jour le texte des boutons de filtre
+
+        // MODIFICATION: Logique pour mettre à jour le bouton de filtre de classe dans l'en-tête
         const classFilterBtn = document.getElementById('class-filter-btn');
-        if (classFilterBtn) classFilterBtn.textContent = selectedClasses.length > 0 ? `${selectedClasses.length} class(es)` : 'All Classes';
+        if (classFilterBtn) {
+            const span = classFilterBtn.querySelector('span');
+            if (span) { // C'est le nouveau bouton d'en-tête
+                span.textContent = selectedClasses.length > 0 ? `Player (${selectedClasses.length})` : 'Player';
+                classFilterBtn.classList.toggle('active', selectedClasses.length > 0);
+            } else { // Fallback pour l'ancienne structure (au cas où)
+                classFilterBtn.textContent = selectedClasses.length > 0 ? `${selectedClasses.length} class(es)` : 'All Classes';
+            }
+        }
 
         const teamFilterBtn = document.getElementById('team-filter-btn');
         if (teamFilterBtn) teamFilterBtn.textContent = selectedTeams.length > 0 ? `${selectedTeams.length} team(s)` : 'All Teams';
