@@ -102,7 +102,7 @@
     border-radius: 8px;
 }
 
-.dq-stamina-section label {
+.dq-stamina-section label { /* Pour "Stamina:" */
     font-weight: bold;
     margin-right: 5px; /* Petit espace après "Stamina:" */
     flex-shrink: 0; /* Empêche le label de rétrécir */
@@ -115,7 +115,6 @@
     font-size: 1em;
     border: 1px solid var(--border-color);
     border-radius: 5px;
-    /* ... (styles existants pour cacher les flèches) ... */
     -moz-appearance: textfield;
 }
 .dq-stamina-input::-webkit-outer-spin-button,
@@ -150,7 +149,7 @@
     color: #888;
 }
 
-.dq-stamina-timer-group { /* Groupe pour "Next in: Y min" */
+.dq-stamina-timer-group { /* Groupe pour "Next in: Y min Z sec" */
     display: flex;
     align-items: center;
     gap: 5px;
@@ -158,31 +157,52 @@
     flex-shrink: 0;
 }
 
-.dq-stamina-timer-group label {
+.dq-stamina-timer-group label { /* Pour "Next in:" */
     font-size: 0.85em;
     color: #555;
     font-weight: normal; /* Plus léger */
     white-space: nowrap; /* Empêche retour à la ligne du label */
+    flex-shrink: 0;
 }
 
-.dq-stamina-next-input {
+.dq-stamina-next-input { /* Input pour les minutes */
     width: 45px; /* Très petit */
     padding: 4px 6px;
     font-size: 0.9em;
     text-align: center;
     border: 1px solid var(--border-color);
     border-radius: 5px;
-    /* ... (styles existants pour cacher les flèches) ... */
     -moz-appearance: textfield;
+    flex-shrink: 0;
 }
 .dq-stamina-next-input::-webkit-outer-spin-button,
 .dq-stamina-next-input::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
-.dq-stamina-timer-group span { /* Pour le "min" après l'input */
+
+/* Input pour les secondes */
+.dq-stamina-next-seconds-input {
+    width: 45px; /* Même taille que minutes */
+    padding: 4px 6px;
+    font-size: 0.9em;
+    text-align: center;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    -moz-appearance: textfield;
+    flex-shrink: 0;
+}
+.dq-stamina-next-seconds-input::-webkit-outer-spin-button,
+.dq-stamina-next-seconds-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+
+.dq-stamina-timer-group span { /* Pour les labels "min" et "sec" */
     font-size: 0.85em;
     color: #555;
+    flex-shrink: 0;
 }
 
 
@@ -256,22 +276,23 @@
 
     .dq-stamina-timer-group {
         margin-left: 0; /* Ne plus pousser à droite */
-        /* width: 100%; /* Optionnel: forcer pleine largeur */
-        justify-content: flex-start; /* Aligner à gauche par défaut? Ou garder flex-end? */
+        justify-content: flex-start; /* Aligner à gauche par défaut? */
         margin-top: 5px; /* Espace si retour à la ligne */
+        width: 100%; /* Peut prendre toute la largeur si besoin */
     }
 
 }
 
 /* Ajustement pour très petits écrans si nécessaire */
-@media (max-width: 450px) {
+@media (max-width: 480px) { /* Seuil ajusté */
     .dq-stamina-section {
         gap: 10px 8px; /* Un peu plus d'espace vertical sur très petit écran */
     }
     .dq-stamina-timer-group {
-        /* Garder margin-left: auto si on veut tenter de le garder à droite? */
-        /* Ou forcer à gauche */
         margin-left: 0;
         justify-content: flex-start;
+        /* Peut-être forcer le retour à la ligne avant */
+        flex-basis: 100%; /* Force le groupe timer à prendre une nouvelle ligne */
+        margin-top: 8px;
     }
 }
