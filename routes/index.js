@@ -69,10 +69,13 @@ router.get('/', async (req, res) => {
         }, {});
         const rankedGuilds = Object.entries(guildsData).map(([name, data]) => ({ name, total_cp: data.total_cp, member_count: data.members.length, class_distribution: data.class_distribution })).sort((a, b) => b.total_cp - a.total_cp);
 
+        // --- NOUVEAU: Préparer la liste des joueurs pour les sélecteurs ---
+        const playerListForSelectors = players.map(p => ({ id: p.id, name: p.name }));
+
+
         // --- LOGIQUE DES TIMERS ---
         const now = new Date();
         const currentUTCDay = now.getUTCDay(); // 0=Dim, 1=Lun, 2=Mar, 3=Mer...
-
 
         // Fonction pour calculer la prochaine date de reset (Daily, Weekly, Event)
         // TOUT est basé sur 09:00 UTC
@@ -132,9 +135,10 @@ router.get('/', async (req, res) => {
             });
         }
 
-
         res.render('index', {
-            players, rankedTeams, rankedGuilds, allTeamNames, guilds, perilousTrials, serverSettings,
+            players, // Gardez la liste complète pour les classements
+            playerListForSelectors, // Ajoutez la liste simplifiée pour les dropdowns
+            rankedTeams, rankedGuilds, allTeamNames, guilds, perilousTrials, serverSettings,
             classChangeTimers: ccTimersResult.rows,
             notification: req.query.notification || null,
             timers: {
