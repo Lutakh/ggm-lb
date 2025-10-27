@@ -471,15 +471,15 @@ function renderQuestColumns() {
                      <span class="dq-stamina-separator">/</span>
                      <span class="dq-stamina-max">${MAX_STAMINA}</span>
                 </div>
-                <%# --- NOUVELLE PARTIE TIMER --- %>
+                <%-- Partie Timer --%>
                 <div class="dq-stamina-timer-group">
                      <label for="dq-stamina-next-input-${index}">Next in:</label>
                      <input type="number" id="dq-stamina-next-input-${index}" class="dq-stamina-next-input"
                             min="0" max="${STAMINA_REGEN_RATE_MINUTES - 1}" placeholder="min" data-index="${index}"
                             value="${minutesRemainingValue}" autocomplete="off">
-                     <span>min</span> <%# Affichage fixe "min" %>
+                     <span>min</span> <%-- Affichage fixe "min" --%>
                 </div>
-                 <%# --- FIN NOUVELLE PARTIE TIMER --- %>
+                 <%-- Fin Partie Timer --%>
             </div>
             <ul class="dq-quest-list">
                 ${questsHtml}
@@ -652,8 +652,9 @@ async function updateStaminaValue(index, inputElement, minutesInputElement = nul
     stopStaminaTimer(index); // Arrêter pendant la mise à jour
     // console.log(`Timer stopped for index ${index} during manual update.`); // Debug Log
 
-    // Comparer SEULEMENT la valeur stamina pour éviter appel inutile si juste le timer change
+    // Comparer SEULEMENT la valeur stamina pour éviter appel inutile si juste le timer change? Non, envoyer quand même si timer change.
     const currentCalculatedStamina = playerQuestData[index] ? calculateCurrentStamina(playerQuestData[index]) : staminaValue; // Fallback needed?
+
 
     // --- API Call ---
     try {
@@ -867,11 +868,11 @@ export function initDailyQuests() {
             }
         });
         // Appeler renderQuestColumns pour redessiner le bon nombre de colonnes
-        // renderQuestColumns(); // << CHANGEMENT: Appel déplacé après le fetch initial pour éviter rendu vide
+        renderQuestColumns(); // << Appel ICI pour redessiner
     };
 
     window.addEventListener('resize', handleResizeOrLoad);
-    // handleResizeOrLoad(); // L'appel initial est fait après le fetch
+    // L'appel initial est fait après le fetch initial
 
     // --- Écouteurs pour ouvrir la modale ---
     playerSelectorUIs.forEach(ui => {
@@ -895,28 +896,24 @@ export function initDailyQuests() {
 
     // --- Écouteurs pour la modale partagée (seulement si elle existe) ---
     if(playerSelectModal) {
-        if (playerSelectCloseModalBtn) {
-            playerSelectCloseModalBtn.addEventListener('click', closePlayerSelectModal);
-        }
-        if (playerSelectBackdrop) {
-            playerSelectBackdrop.addEventListener('click', closePlayerSelectModal);
-        }
+        if (playerSelectCloseModalBtn) playerSelectCloseModalBtn.addEventListener('click', closePlayerSelectModal);
+        if (playerSelectBackdrop) playerSelectBackdrop.addEventListener('click', closePlayerSelectModal);
+
         if (playerSelectFilterInput) {
             playerSelectFilterInput.addEventListener('input', () => {
                 populatePlayerModalList(playerSelectFilterInput.value);
-                activeModalSuggestionIndex = -1; // Reset keyboard selection on filter change
+                activeModalSuggestionIndex = -1;
             });
 
-            // Gestion clavier pour la modale
             playerSelectFilterInput.addEventListener('keydown', (e) => {
-                const items = playerSelectListContainer?.querySelectorAll('.suggestion-item'); // Add safe navigation
-                if (!items || (items.length === 0 && e.key !== 'Enter')) return; // Ne rien faire si liste vide (sauf Entrée)
+                const items = playerSelectListContainer?.querySelectorAll('.suggestion-item');
+                if (!items || (items.length === 0 && e.key !== 'Enter')) return;
 
-                if (e.key === 'ArrowDown') {
+                if (e.key === 'ArrowDown') { /* ... gestion flèches ... */
                     e.preventDefault();
                     activeModalSuggestionIndex = (activeModalSuggestionIndex + 1) % items.length;
                     updateActiveModalSuggestion(items);
-                } else if (e.key === 'ArrowUp') {
+                } else if (e.key === 'ArrowUp') { /* ... gestion flèches ... */
                     e.preventDefault();
                     activeModalSuggestionIndex = (activeModalSuggestionIndex - 1 + items.length) % items.length;
                     updateActiveModalSuggestion(items);
@@ -928,7 +925,6 @@ export function initDailyQuests() {
                         const playerName = activeItem.dataset.playerName;
                         setSelectedPlayer(activePlayerSelectorIndex, playerId, playerName);
                     } else if (items.length > 0 && activeModalSuggestionIndex === -1 && activePlayerSelectorIndex !== null) {
-                        // Si pas de sélection active mais liste non vide, sélectionner le premier
                         const firstItem = items[0];
                         const playerId = parseInt(firstItem.dataset.playerId, 10);
                         const playerName = firstItem.dataset.playerName;
@@ -939,11 +935,9 @@ export function initDailyQuests() {
                     }
                 }
             });
-
         } // end if playerSelectFilterInput
 
         if (playerSelectListContainer) {
-            // Gestion clic dans la liste de la modale
             playerSelectListContainer.addEventListener('click', (e) => {
                 const selectedItem = e.target.closest('.suggestion-item');
                 if (selectedItem && activePlayerSelectorIndex !== null) {
@@ -957,21 +951,18 @@ export function initDailyQuests() {
         // --- MODIFIÉ: Gestion clic sur "Create New" ---
         if (playerSelectCreatePlayerBtn) {
             playerSelectCreatePlayerBtn.addEventListener('click', (e) => {
-                // Vérifier si la modale a été ouverte depuis Daily Quests (on utilise activePlayerSelectorIndex comme indicateur)
-                // L'index sera 0, 1, ou 2 si ouvert depuis DQ, null sinon.
+                // Vérifier si la modale a été ouverte depuis Daily Quests
                 if (activePlayerSelectorIndex !== null && activePlayerSelectorIndex >= 0 && activePlayerSelectorIndex <= 2) {
-                    e.preventDefault(); // Empêcher toute action par défaut
-                    e.stopPropagation(); // Empêcher la propagation de l'événement
+                    e.preventDefault();
+                    e.stopPropagation();
                     alert("Player creation is not available here. Please use the 'Add / Update' section.");
-                    closePlayerSelectModal(); // Fermer la modale
+                    closePlayerSelectModal();
                 }
-                // Si activePlayerSelectorIndex est null, le bouton fonctionnera normalement (pour Add/Update Player)
             });
         }
         // ---------------------------------------------
 
     } // end if playerSelectModal
-
 
     // Fetch initial data & apply layout
     console.log("Performing initial data fetch (on init)...");

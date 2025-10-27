@@ -41,6 +41,7 @@
     overflow: hidden; /* Empêche le texte long de déborder */
     text-overflow: ellipsis;
     white-space: nowrap;
+    cursor: pointer; /* Indiquer qu'on peut cliquer */
 }
 .dq-player-name-display.player-selected {
     font-style: normal; /* Style normal quand un joueur est choisi */
