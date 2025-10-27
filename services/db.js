@@ -23,17 +23,17 @@ const initializeDb = async () => {
         // Table players - Ensure CREATE TABLE includes the new columns for first-time setup
         await client.query(`
             CREATE TABLE IF NOT EXISTS players (
-                id SERIAL PRIMARY KEY,
-                name TEXT NOT NULL UNIQUE,
-                class TEXT NOT NULL,
-                combat_power BIGINT NOT NULL,
-                team TEXT,
-                guild TEXT,
-                notes TEXT,
-                updated_at TIMESTAMPTZ DEFAULT NOW(),
+                                                   id SERIAL PRIMARY KEY,
+                                                   name TEXT NOT NULL UNIQUE,
+                                                   class TEXT NOT NULL,
+                                                   combat_power BIGINT NOT NULL,
+                                                   team TEXT,
+                                                   guild TEXT,
+                                                   notes TEXT,
+                                                   updated_at TIMESTAMPTZ DEFAULT NOW(),
                 stamina INTEGER DEFAULT 0,                 -- Ensure included here
                 stamina_last_updated TIMESTAMPTZ DEFAULT NOW() -- Ensure included here
-            );
+                );
         `);
         // Add columns if they don't exist (for existing tables)
         console.log('Checking players table for stamina columns...');
@@ -48,9 +48,9 @@ const initializeDb = async () => {
         await client.query(`CREATE TABLE IF NOT EXISTS class_change_timers (id SERIAL PRIMARY KEY, label TEXT NOT NULL, weeks_after_start INTEGER NOT NULL, is_active BOOLEAN DEFAULT true);`);
         await client.query(`CREATE TABLE IF NOT EXISTS player_pt_tags (
                                                                           player_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
-                                                                          pt_id INTEGER NOT NULL REFERENCES perilous_trials(id) ON DELETE CASCADE,
-                                                                          PRIMARY KEY (player_id, pt_id)
-                            );`);
+            pt_id INTEGER NOT NULL REFERENCES perilous_trials(id) ON DELETE CASCADE,
+            PRIMARY KEY (player_id, pt_id)
+            );`);
 
         // --- Logique de migration intelligente pour pt_leaderboard ---
         const checkColumn = await client.query(`
@@ -62,22 +62,22 @@ const initializeDb = async () => {
             console.log('⚠️ Old "pt_leaderboard" structure detected. Recreating table...');
             await client.query(`DROP TABLE IF EXISTS pt_leaderboard CASCADE;`); // Use CASCADE if needed
             await client.query(`CREATE TABLE pt_leaderboard (
-                id SERIAL PRIMARY KEY,
-                pt_id INTEGER NOT NULL REFERENCES perilous_trials(id) ON DELETE CASCADE,
-                rank INTEGER NOT NULL,
-                player1_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
-                player2_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
-                player3_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
-                player4_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
-                player1_name TEXT, player2_name TEXT, player3_name TEXT, player4_name TEXT,
-                UNIQUE(pt_id, rank)
-            );`);
+                                                                id SERIAL PRIMARY KEY,
+                                                                pt_id INTEGER NOT NULL REFERENCES perilous_trials(id) ON DELETE CASCADE,
+                                                                rank INTEGER NOT NULL,
+                                                                player1_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
+                                                                player2_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
+                                                                player3_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
+                                                                player4_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
+                                                                player1_name TEXT, player2_name TEXT, player3_name TEXT, player4_name TEXT,
+                                                                UNIQUE(pt_id, rank)
+                                );`);
             console.log('✅ Table "pt_leaderboard" recreated with new structure.');
         } else {
             // Ensure table exists even if structure was correct
             await client.query(`CREATE TABLE IF NOT EXISTS pt_leaderboard (
-                id SERIAL PRIMARY KEY,
-                pt_id INTEGER NOT NULL REFERENCES perilous_trials(id) ON DELETE CASCADE,
+                                                                              id SERIAL PRIMARY KEY,
+                                                                              pt_id INTEGER NOT NULL REFERENCES perilous_trials(id) ON DELETE CASCADE,
                 rank INTEGER NOT NULL,
                 player1_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
                 player2_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
@@ -85,20 +85,44 @@ const initializeDb = async () => {
                 player4_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
                 player1_name TEXT, player2_name TEXT, player3_name TEXT, player4_name TEXT,
                 UNIQUE(pt_id, rank)
-            );`);
+                );`);
             // console.log('Table "pt_leaderboard" structure confirmed or created.'); // Optional log
         }
 
-        // Nouvelle table pour le statut des quêtes quotidiennes
+        // ---- CORRECTION HERE ----
+        // Create daily_quest_status table WITHOUT the primary key initially
         await client.query(`
             CREATE TABLE IF NOT EXISTS daily_quest_status (
-                player_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+                                                              player_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
                 quest_key TEXT NOT NULL,
-                completed_at TIMESTAMPTZ NOT NULL,
-                -- Use DATE part for uniqueness constraint per day UTC
-                PRIMARY KEY (player_id, quest_key, DATE(completed_at AT TIME ZONE 'UTC'))
-            );
+                completed_at TIMESTAMPTZ NOT NULL
+                -- PRIMARY KEY defined below using CONSTRAINT
+                );
         `);
+        // Now, try to add the constraint separately, checking if it already exists
+        const constraintExists = await client.query(`
+            SELECT 1 FROM pg_constraint
+            WHERE conname = 'daily_quest_status_pkey' AND conrelid = 'daily_quest_status'::regclass;
+        `);
+        if (constraintExists.rowCount === 0) {
+            console.log('Adding primary key constraint to daily_quest_status...');
+            // Add the primary key constraint using the function - This might still be the tricky part
+            // Let's try WITHOUT the timezone conversion first for simplicity,
+            // relying on the application logic to handle the daily reset correctly.
+            // await client.query(`
+            //     ALTER TABLE daily_quest_status
+            //     ADD CONSTRAINT daily_quest_status_pkey PRIMARY KEY (player_id, quest_key, DATE(completed_at AT TIME ZONE 'UTC'));
+            // `);
+            // Simpler constraint: Unique per player/quest only. Daily logic handled in app.
+            await client.query(`
+                 ALTER TABLE daily_quest_status
+                 ADD CONSTRAINT daily_quest_status_pkey PRIMARY KEY (player_id, quest_key);
+             `);
+            console.log('✅ Primary key constraint added.');
+        } else {
+            console.log('Primary key constraint daily_quest_status_pkey already exists.');
+        }
+        // ---- END CORRECTION ----
         console.log('✅ Table "daily_quest_status" ensured.');
 
         // Trigger pour 'updated_at' sur players
@@ -131,7 +155,7 @@ const initializeDb = async () => {
         const ptCount = parseInt(ptCountRes.rows[0].count, 10);
         if (ptCount === 0) {
             console.log('⏳ Populating "perilous_trials" table with initial PTs...');
-            for (let i = 1; i <= 8; i++) {
+            for (let i = 1; i <= 8; i++) { // Populate initial PTs if table is empty
                 await client.query('INSERT INTO perilous_trials (name) VALUES ($1) ON CONFLICT (name) DO NOTHING', [`PT${i}`]);
             }
             console.log('✅ Initial PTs populated.');
