@@ -459,7 +459,7 @@ function renderQuestColumns() {
             console.warn("questListDefinition is empty or undefined during render.");
         }
 
-
+        // --- CORRECTED HTML STRING (Removed EJS comments) ---
         playerColumn.innerHTML = `
             <h3>${data.name}</h3>
             <div class="dq-stamina-section">
@@ -471,20 +471,19 @@ function renderQuestColumns() {
                      <span class="dq-stamina-separator">/</span>
                      <span class="dq-stamina-max">${MAX_STAMINA}</span>
                 </div>
-                <%-- Partie Timer --%>
                 <div class="dq-stamina-timer-group">
                      <label for="dq-stamina-next-input-${index}">Next in:</label>
                      <input type="number" id="dq-stamina-next-input-${index}" class="dq-stamina-next-input"
                             min="0" max="${STAMINA_REGEN_RATE_MINUTES - 1}" placeholder="min" data-index="${index}"
                             value="${minutesRemainingValue}" autocomplete="off">
-                     <span>min</span> <%-- Affichage fixe "min" --%>
-                </div>
-                 <%-- Fin Partie Timer --%>
-            </div>
+                     <span>min</span> </div>
+                 </div>
             <ul class="dq-quest-list">
                 ${questsHtml}
             </ul>
         `;
+        // --- END CORRECTION ---
+
         container.appendChild(playerColumn);
         // console.log(`Starting stamina timer for index ${index} after rendering column.`); // Debug Log
         startStaminaTimer(index); // Start timer after element is in DOM, using original index
