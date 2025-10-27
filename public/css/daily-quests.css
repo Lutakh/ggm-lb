@@ -22,7 +22,7 @@
     color: var(--primary-color);
 }
 
-/* ... (styles .dq-player-selection-ui, .dq-player-name-display, .dq-open-modal-btn) ... */
+/* Styles pour la nouvelle sélection de joueur */
 .dq-player-selection-ui {
     display: flex;
     align-items: center;
@@ -65,13 +65,21 @@
 .daily-quests-container.columns-2 { grid-template-columns: 1fr 1fr; }
 .daily-quests-container.columns-3 { grid-template-columns: 1fr 1fr 1fr; }
 
-/* ... (styles .dq-player-column, h3, .dq-stamina-section, input, span, .dq-quest-list, li, checkbox, label) ... */
+
 .dq-player-column {
     background-color: #fdfaf5;
     padding: 20px;
     border-radius: 10px;
     border: 1px solid var(--border-color);
+    display: flex; /* Allow flex for ordering if needed */
+    flex-direction: column;
 }
+.dq-player-column.dq-error-column p {
+    color: var(--accent-color);
+    font-style: italic;
+    text-align: center;
+}
+
 
 .dq-player-column h3 {
     margin-top: 0;
@@ -84,45 +92,104 @@
 
 .dq-stamina-section {
     display: flex;
+    flex-wrap: wrap; /* Permet le retour à la ligne si manque de place */
     align-items: center;
-    gap: 10px;
+    gap: 8px 10px; /* Vertical gap, Horizontal gap */
     margin-bottom: 20px;
     background-color: #fff;
-    padding: 10px;
+    padding: 10px 12px;
     border-radius: 8px;
 }
 
 .dq-stamina-section label {
     font-weight: bold;
+    margin-right: 5px; /* Petit espace après "Stamina:" */
+    flex-shrink: 0; /* Empêche le label de rétrécir */
 }
 
 .dq-stamina-input {
-    width: 60px;
+    width: 55px; /* Largeur réduite pour la valeur */
     text-align: center;
     padding: 5px 8px;
     font-size: 1em;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    /* ... (styles existants pour cacher les flèches) ... */
+    -moz-appearance: textfield;
 }
-/* Cacher les flèches sur l'input number */
 .dq-stamina-input::-webkit-outer-spin-button,
 .dq-stamina-input::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
-.dq-stamina-input[type=number] {
-    -moz-appearance: textfield; /* Firefox */
-}
 
+
+.dq-stamina-display-group { /* Groupe pour affichage X / MAX */
+    display: flex;
+    align-items: baseline; /* Aligner sur la ligne de base */
+    gap: 4px;
+    flex-shrink: 0;
+}
 
 .dq-stamina-current {
     font-weight: bold;
     color: var(--primary-color);
     font-size: 1.1em;
+    min-width: 2ch; /* Ensure space for 2 digits */
+    text-align: right;
 }
+
+.dq-stamina-separator {
+    font-size: 0.9em;
+    color: #888;
+}
+
+.dq-stamina-max {
+    font-size: 0.9em;
+    color: #888;
+}
+
+.dq-stamina-timer-group { /* Groupe pour "Next in: Y min" */
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: auto; /* Pousse ce groupe vers la droite sur desktop */
+    flex-shrink: 0;
+}
+
+.dq-stamina-timer-group label {
+    font-size: 0.85em;
+    color: #555;
+    font-weight: normal; /* Plus léger */
+    white-space: nowrap; /* Empêche retour à la ligne du label */
+}
+
+.dq-stamina-next-input {
+    width: 45px; /* Très petit */
+    padding: 4px 6px;
+    font-size: 0.9em;
+    text-align: center;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    /* ... (styles existants pour cacher les flèches) ... */
+    -moz-appearance: textfield;
+}
+.dq-stamina-next-input::-webkit-outer-spin-button,
+.dq-stamina-next-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.dq-stamina-timer-group span { /* Pour le "min" après l'input */
+    font-size: 0.85em;
+    color: #555;
+}
+
 
 .dq-quest-list {
     list-style: none;
     padding: 0;
     margin: 0;
+    flex-grow: 1; /* Take remaining vertical space */
 }
 
 .dq-quest-list li {
@@ -141,12 +208,18 @@
     width: 18px; /* Taille personnalisée si besoin */
     height: 18px;
     cursor: pointer;
+    accent-color: var(--primary-color); /* Style checkbox */
 }
 
 .dq-quest-list label {
     cursor: pointer;
     flex-grow: 1;
 }
+.dq-quest-list input[type="checkbox"]:checked + label {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
 
 .dq-placeholder, .dq-error {
     text-align: center;
@@ -162,7 +235,7 @@
 }
 
 
-/* --- NOUVEAU: Responsive Mobile --- */
+/* --- Responsive Mobile --- */
 @media (max-width: 768px) {
     .daily-quests-selectors {
         grid-template-columns: 1fr; /* Une seule colonne pour les sélecteurs */
@@ -178,5 +251,26 @@
     .daily-quests-container.columns-2,
     .daily-quests-container.columns-3 {
         grid-template-columns: 1fr;
+    }
+
+    .dq-stamina-timer-group {
+        margin-left: 0; /* Ne plus pousser à droite */
+        /* width: 100%; /* Optionnel: forcer pleine largeur */
+        justify-content: flex-start; /* Aligner à gauche par défaut? Ou garder flex-end? */
+        margin-top: 5px; /* Espace si retour à la ligne */
+    }
+
+}
+
+/* Ajustement pour très petits écrans si nécessaire */
+@media (max-width: 450px) {
+    .dq-stamina-section {
+        gap: 10px 8px; /* Un peu plus d'espace vertical sur très petit écran */
+    }
+    .dq-stamina-timer-group {
+        /* Garder margin-left: auto si on veut tenter de le garder à droite? */
+        /* Ou forcer à gauche */
+        margin-left: 0;
+        justify-content: flex-start;
     }
 }

@@ -193,7 +193,6 @@ router.post('/daily-quests/update', async (req, res) => {
             const result = await client.query(insertQuery, [playerId, questKey, completionTime, lastResetISO]);
             // -- DEBUG LOG --
             // console.log('[API /daily-quests/update] INSERT/UPDATE result:', result.command, result.rowCount);
-            // rowCount sera 1 pour une insertion ou une mise à jour effective, 0 si la ligne existait déjà et datait d'aujourd'hui.
 
         } else {
             // Supprimer seulement si la complétion à supprimer date d'APRÈS le dernier reset.
@@ -206,7 +205,6 @@ router.post('/daily-quests/update', async (req, res) => {
             const result = await client.query(deleteQuery, [playerId, questKey, lastResetISO]);
             // -- DEBUG LOG --
             // console.log('[API /daily-quests/update] DELETE result:', result.command, result.rowCount);
-            // rowCount sera 1 si une ligne d'aujourd'hui a été supprimée, 0 sinon.
         }
 
         await client.query('COMMIT'); // Commit transaction
@@ -222,26 +220,61 @@ router.post('/daily-quests/update', async (req, res) => {
 });
 
 
-// Mettre à jour manuellement la stamina
+// Mettre à jour manuellement la stamina ET/OU le timer (MODIFIÉ)
 router.post('/daily-quests/update-stamina', async (req, res) => {
-    const { playerId, stamina } = req.body;
+    const { playerId, stamina, minutesUntilNext } = req.body; // minutesUntilNext est optionnel
+
     const staminaValue = parseInt(stamina, 10);
+    const minutesValue = minutesUntilNext !== undefined && minutesUntilNext !== '' ? parseInt(minutesUntilNext, 10) : null;
+
+    // console.log(`[API /update-stamina] Received: Player ${playerId}, Stamina ${stamina}, Minutes ${minutesUntilNext}`); // Debug
 
     if (!playerId || isNaN(staminaValue) || staminaValue < 0 || staminaValue > MAX_STAMINA) {
-        return res.status(400).json({ error: 'Invalid parameters. Stamina must be between 0 and 99.' });
+        console.error('[API /update-stamina] Invalid stamina value:', staminaValue);
+        return res.status(400).json({ error: 'Invalid parameters. PlayerId and Stamina (0-99) are required.' });
+    }
+    // Validation pour les minutes restantes
+    if (minutesValue !== null && (isNaN(minutesValue) || minutesValue < 0 || minutesValue >= STAMINA_REGEN_RATE_MINUTES)) {
+        console.error('[API /update-stamina] Invalid minutes value:', minutesValue);
+        return res.status(400).json({ error: `Invalid parameters. Minutes until next must be between 0 and ${STAMINA_REGEN_RATE_MINUTES - 1}.` });
     }
 
     try {
-        // Mettre à jour stamina ET stamina_last_updated pour recalculer correctement la regen future
+        let newStaminaLastUpdated = new Date(); // Par défaut, maintenant
+
+        // Si les minutes restantes sont fournies ET que la stamina n'est pas déjà max
+        if (minutesValue !== null && staminaValue < MAX_STAMINA) {
+            // console.log(`[API /update-stamina] Adjusting timestamp based on minutesUntilNext: ${minutesValue}`); // Debug
+            // Calculer le timestamp du dernier gain de stamina
+            // Temps écoulé depuis le dernier gain = TAUX - minutes restantes
+            const minutesAgo = STAMINA_REGEN_RATE_MINUTES - minutesValue;
+            // Décaler le timestamp actuel en arrière
+            newStaminaLastUpdated.setMinutes(newStaminaLastUpdated.getMinutes() - minutesAgo);
+            // Optionnel: Mettre les secondes/ms à 0 pour la "propreté" du timestamp
+            newStaminaLastUpdated.setSeconds(0, 0);
+        } else if (minutesValue !== null && staminaValue >= MAX_STAMINA) {
+            // console.log(`[API /update-stamina] Stamina is max (${staminaValue}), ignoring minutesUntilNext.`); // Debug
+            // Si stamina max, le timestamp est simplement 'maintenant'
+            newStaminaLastUpdated = new Date();
+        }
+        // Si minutesValue n'est pas fourni, newStaminaLastUpdated reste à "maintenant"
+
+        const newStaminaLastUpdatedISO = newStaminaLastUpdated.toISOString();
+        // console.log(`[API /update-stamina] Final stamina: ${staminaValue}, Final timestamp: ${newStaminaLastUpdatedISO}`); // Debug
+
+        // Mettre à jour la BDD avec la stamina et le nouveau timestamp calculé
         await db.query(
-            'UPDATE players SET stamina = $1, stamina_last_updated = NOW() WHERE id = $2',
-            [staminaValue, playerId]
+            'UPDATE players SET stamina = $1, stamina_last_updated = $2 WHERE id = $3',
+            [staminaValue, newStaminaLastUpdatedISO, playerId]
         );
-        res.json({ success: true, stamina: staminaValue, staminaLastUpdated: new Date().toISOString() });
+
+        res.json({ success: true, stamina: staminaValue, staminaLastUpdated: newStaminaLastUpdatedISO });
+
     } catch (err) {
-        console.error('Error updating stamina:', err);
+        console.error('[API /update-stamina] Error:', err);
         res.status(500).json({ error: 'Failed to update stamina' });
     }
 });
+
 
 module.exports = router; // Make sure this is the last line
