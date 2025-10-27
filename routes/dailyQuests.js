@@ -37,42 +37,87 @@ const getLastDailyReset = () => {
 
 // Obtenir le statut des quêtes et la stamina pour plusieurs joueurs
 router.get('/daily-quests/status', async (req, res) => {
-    const playerIds = req.query.playerIds; // Attendu comme "1,2,3"
+    const playerIds = req.query.playerIds;
+    // --- START DEBUG LOG ---
+    // console.log(`[API /daily-quests/status] Received request for playerIds: ${playerIds}`);
+    // --- END DEBUG LOG ---
     if (!playerIds) {
+        console.error('[API /daily-quests/status] Error: playerIds parameter missing');
         return res.status(400).json({ error: 'playerIds parameter is required' });
     }
 
     const idsArray = playerIds.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id));
     if (idsArray.length === 0) {
+        console.error(`[API /daily-quests/status] Error: Invalid playerIds parameter: ${playerIds}`);
         return res.status(400).json({ error: 'Invalid playerIds parameter' });
     }
 
     const lastResetDate = getLastDailyReset();
     const lastResetISO = lastResetDate.toISOString();
+    // --- START DEBUG LOG ---
+    // console.log(`[API /daily-quests/status] Calculated last reset date: ${lastResetISO}`);
+    // console.log(`[API /daily-quests/status] Fetching data for IDs: ${idsArray.join(', ')}`);
+    // --- END DEBUG LOG ---
 
     try {
         const placeholders = idsArray.map((_, i) => `$${i + 1}`).join(',');
+        const queryParamsPlayers = [...idsArray];
+        const queryParamsQuests = [...idsArray, lastResetISO]; // Date is the last parameter
 
+        // --- START DEBUG LOG ---
+        // console.log(`[API /daily-quests/status] Player Query Placeholders: ${placeholders}`);
+        // console.log(`[API /daily-quests/status] Player Query Params:`, queryParamsPlayers);
+        // --- END DEBUG LOG ---
         // 1. Récupérer les données des joueurs (stamina)
         const playersResult = await db.query(
             `SELECT id, name, stamina, stamina_last_updated FROM players WHERE id IN (${placeholders})`,
-            idsArray
+            queryParamsPlayers // Utiliser les paramètres préparés
         );
+        // --- START DEBUG LOG ---
+        // console.log(`[API /daily-quests/status] Players Result Rows:`, playersResult.rows);
+        // --- END DEBUG LOG ---
 
+
+        // --- START DEBUG LOG ---
+        // console.log(`[API /daily-quests/status] Quest Query Placeholders: ${placeholders}, $${idsArray.length + 1}`);
+        // console.log(`[API /daily-quests/status] Quest Query Params:`, queryParamsQuests);
+        // --- END DEBUG LOG ---
         // 2. Récupérer le statut des quêtes complétées depuis le dernier reset
         const questsResult = await db.query(
             `SELECT player_id, quest_key
              FROM daily_quest_status
-             WHERE player_id IN (${placeholders}) AND completed_at >= $${idsArray.length + 1}`, // Le dernier placeholder est pour la date
-            [...idsArray, lastResetISO]
+             WHERE player_id IN (${placeholders}) AND completed_at >= $${idsArray.length + 1}`, // Date is the parameter after all IDs
+            queryParamsQuests // Utiliser les paramètres préparés
         );
+        // --- START DEBUG LOG ---
+        // console.log(`[API /daily-quests/status] Quests Result Rows:`, questsResult.rows);
+        // --- END DEBUG LOG ---
+
 
         // 3. Calculer la stamina actuelle et formater les résultats
         const now = new Date();
         const results = playersResult.rows.map(player => {
+            // --- START DEBUG LOG ---
+            // console.log(`[API /daily-quests/status] Processing player: ${player.name} (ID: ${player.id})`);
+            // --- END DEBUG LOG ---
             const lastUpdated = new Date(player.stamina_last_updated);
+            // Safety check for invalid date
+            if (isNaN(lastUpdated.getTime())) {
+                console.warn(`[API /daily-quests/status] Invalid stamina_last_updated for player ${player.id}: ${player.stamina_last_updated}`);
+                // Handle as if stamina hasn't regenerated since last manual update
+                return {
+                    playerId: player.id,
+                    name: player.name,
+                    stamina: Math.min(MAX_STAMINA, player.stamina || 0), // Use stored stamina, capped
+                    staminaLastUpdated: player.stamina_last_updated,
+                    completedQuests: questsResult.rows
+                        .filter(q => q.player_id === player.id)
+                        .map(q => q.quest_key) || [] // Ensure array
+                };
+            }
+
             const minutesPassed = Math.floor((now - lastUpdated) / (1000 * 60));
-            const regeneratedStamina = Math.floor(minutesPassed / STAMINA_REGEN_RATE_MINUTES);
+            const regeneratedStamina = minutesPassed > 0 ? Math.floor(minutesPassed / STAMINA_REGEN_RATE_MINUTES) : 0;
             const currentStamina = Math.min(MAX_STAMINA, (player.stamina || 0) + regeneratedStamina);
 
             const completedQuests = questsResult.rows
@@ -83,57 +128,99 @@ router.get('/daily-quests/status', async (req, res) => {
                 playerId: player.id,
                 name: player.name,
                 stamina: currentStamina,
-                staminaLastUpdated: player.stamina_last_updated, // Utile pour le debug ou affichage ?
-                completedQuests: completedQuests
+                staminaLastUpdated: player.stamina_last_updated,
+                completedQuests: completedQuests // Already an array from map
             };
         });
+        // --- START DEBUG LOG ---
+        // console.log(`[API /daily-quests/status] Final processed results:`, results);
+        // --- END DEBUG LOG ---
 
         res.json({ players: results, questsList: dailyQuestsList });
 
     } catch (err) {
-        console.error('Error fetching daily quest status:', err);
-        res.status(500).json({ error: 'Failed to fetch status' });
+        // Log the detailed error on the server
+        console.error('[API /daily-quests/status] FATAL ERROR:', err);
+        // Send a generic error response to the client
+        res.status(500).json({ error: 'Failed to fetch status' }); // Keep this generic for the client
     }
 });
 
-// Mettre à jour le statut d'une quête
+// Mettre à jour le statut d'une quête (CORRIGÉ pour ON CONFLICT)
 router.post('/daily-quests/update', async (req, res) => {
     const { playerId, questKey, completed } = req.body;
     if (!playerId || !questKey || typeof completed !== 'boolean') {
+        console.error('[API /daily-quests/update] Error: Missing parameters', req.body);
         return res.status(400).json({ error: 'Missing parameters' });
     }
 
-    const completionTime = new Date(); // Maintenant
-    const lastResetDate = getLastDailyReset();
+    const completionTime = new Date(); // Timestamp actuel
+    const lastResetDate = getLastDailyReset(); // Timestamp du dernier reset
+    const lastResetISO = lastResetDate.toISOString();
 
-    // Vérifier si la complétion est pour la journée actuelle (après le dernier reset)
-    if (completionTime < lastResetDate) {
+    // -- DEBUG LOG --
+    // console.log(`[API /daily-quests/update] Request: Player ${playerId}, Quest ${questKey}, Completed: ${completed}`);
+    // console.log(`[API /daily-quests/update] Current Time: ${completionTime.toISOString()}`);
+    // console.log(`[API /daily-quests/update] Last Reset: ${lastResetISO}`);
+    // -- END DEBUG LOG --
+
+    // Vérifier si la demande concerne bien la journée actuelle (après le dernier reset)
+    // Utile surtout pour le DELETE, car l'INSERT/UPDATE gère l'ancien timestamp
+    if (completionTime < lastResetDate && !completed) {
+        console.warn(`[API /daily-quests/update] Attempt to uncheck quest from a previous day denied.`);
+        // On pourrait techniquement autoriser la suppression, mais cela complexifie.
+        // Pour l'instant, on interdit la modification d'un état passé via décochage.
         return res.status(400).json({ error: 'Cannot update status for a previous day.' });
     }
 
+    const client = await db.getClient(); // Use a client for potential transaction
+
     try {
+        await client.query('BEGIN'); // Start transaction
+
         if (completed) {
-            // Insérer ou ignorer si déjà marqué comme complété pour AUJOURD'HUI
-            // ON CONFLICT utilise la clé primaire (player_id, quest_key, DATE(completed_at))
-            await db.query(
-                `INSERT INTO daily_quest_status (player_id, quest_key, completed_at)
-                 VALUES ($1, $2, $3)
-                 ON CONFLICT (player_id, quest_key, DATE(completed_at AT TIME ZONE 'UTC')) DO NOTHING`,
-                [playerId, questKey, completionTime]
-            );
+            // Essayer d'insérer. Si ça échoue (conflit sur player_id, quest_key),
+            // alors mettre à jour la ligne existante SEULEMENT si son completed_at est AVANT le dernier reset.
+            // Si elle date déjà d'aujourd'hui, l'UPDATE ne fera rien grâce à la clause WHERE.
+            const insertQuery = `
+                INSERT INTO daily_quest_status (player_id, quest_key, completed_at)
+                VALUES ($1, $2, $3)
+                    ON CONFLICT (player_id, quest_key)
+                DO UPDATE SET completed_at = EXCLUDED.completed_at
+                   WHERE daily_quest_status.completed_at < $4; -- Only update if the existing row is from a previous day
+            `;
+            // $1=playerId, $2=questKey, $3=completionTime, $4=lastResetISO
+            const result = await client.query(insertQuery, [playerId, questKey, completionTime, lastResetISO]);
+            // -- DEBUG LOG --
+            // console.log('[API /daily-quests/update] INSERT/UPDATE result:', result.command, result.rowCount);
+            // rowCount sera 1 pour une insertion ou une mise à jour effective, 0 si la ligne existait déjà et datait d'aujourd'hui.
+
         } else {
-            // Supprimer seulement si la complétion était aujourd'hui
-            await db.query(
-                'DELETE FROM daily_quest_status WHERE player_id = $1 AND quest_key = $2 AND completed_at >= $3',
-                [playerId, questKey, lastResetDate]
-            );
+            // Supprimer seulement si la complétion à supprimer date d'APRÈS le dernier reset.
+            // Cela empêche de supprimer accidentellement une ancienne entrée si on décoche "trop tard".
+            const deleteQuery = `
+                DELETE FROM daily_quest_status
+                WHERE player_id = $1 AND quest_key = $2 AND completed_at >= $3;
+            `;
+            // $1=playerId, $2=questKey, $3=lastResetISO
+            const result = await client.query(deleteQuery, [playerId, questKey, lastResetISO]);
+            // -- DEBUG LOG --
+            // console.log('[API /daily-quests/update] DELETE result:', result.command, result.rowCount);
+            // rowCount sera 1 si une ligne d'aujourd'hui a été supprimée, 0 sinon.
         }
+
+        await client.query('COMMIT'); // Commit transaction
         res.json({ success: true });
+
     } catch (err) {
-        console.error('Error updating daily quest status:', err);
+        await client.query('ROLLBACK'); // Rollback on error
+        console.error('[API /daily-quests/update] FATAL ERROR:', err);
         res.status(500).json({ error: 'Failed to update status' });
+    } finally {
+        client.release(); // Release client
     }
 });
+
 
 // Mettre à jour manuellement la stamina
 router.post('/daily-quests/update-stamina', async (req, res) => {
@@ -145,6 +232,7 @@ router.post('/daily-quests/update-stamina', async (req, res) => {
     }
 
     try {
+        // Mettre à jour stamina ET stamina_last_updated pour recalculer correctement la regen future
         await db.query(
             'UPDATE players SET stamina = $1, stamina_last_updated = NOW() WHERE id = $2',
             [staminaValue, playerId]
@@ -156,5 +244,4 @@ router.post('/daily-quests/update-stamina', async (req, res) => {
     }
 });
 
-// THIS IS THE CRUCIAL LINE - MAKE SURE IT'S HERE AND CORRECT
-module.exports = router;
+module.exports = router; // Make sure this is the last line

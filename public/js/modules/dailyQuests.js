@@ -3,14 +3,41 @@
 const STAMINA_REGEN_RATE_MINUTES = 24;
 const MAX_STAMINA = 99;
 let questListDefinition = []; // Sera rempli par l'appel API
-let selectedPlayerIds = [null, null, null];
+let selectedPlayerIds = [null, null, null]; // Contient les IDs
+let selectedPlayerNames = [null, null, null]; // Contient les Noms pour l'affichage
 let playerQuestData = [null, null, null]; // Pour stocker les données récupérées { playerId, name, stamina, completedQuests, staminaLastUpdated }
 let staminaIntervals = [null, null, null]; // Pour gérer les timers d'incrémentation
 
 const container = document.getElementById('daily-quests-container');
-const playerSelectors = document.querySelectorAll('.dq-player-select');
+const playerSelectorUIs = document.querySelectorAll('.dq-player-selection-ui'); // Nouveau sélecteur
 
-// --- Fonctions Utilitaires ---
+// --- Récupérer les éléments de la modale partagée ---
+const playerSelectModal = document.getElementById('player-select-modal');
+const playerSelectBackdrop = document.getElementById('player-select-modal-backdrop');
+const playerSelectFilterInput = document.getElementById('player-filter-input');
+const playerSelectListContainer = document.getElementById('player-select-list');
+const playerSelectCloseModalBtn = playerSelectModal?.querySelector('.player-select-close-btn');
+const playerSelectCreatePlayerBtn = document.getElementById('create-new-player-btn');
+
+let activePlayerSelectorIndex = null; // Pour savoir quel slot (0, 1, 2) on modifie via la modale
+let activeModalSuggestionIndex = -1; // Pour la navigation clavier dans la modale
+
+// --- Données joueurs pour la modale (récupérées depuis le script JSON) ---
+let allPlayersForModal = [];
+const playersSelectorDataElement = document.getElementById('player-selector-data');
+if (playersSelectorDataElement) {
+    try {
+        allPlayersForModal = JSON.parse(playersSelectorDataElement.textContent || '[]');
+        // console.log(`Loaded ${allPlayersForModal.length} players for modal selector.`); // Debug Log
+    } catch(e) {
+        console.error("Error parsing player-selector-data JSON:", e);
+    }
+} else {
+    console.error("Element #player-selector-data not found!");
+}
+
+
+// --- Fonctions Utilitaires : calculateCurrentStamina, stopStaminaTimer, startStaminaTimer ---
 function calculateCurrentStamina(playerData) {
     // console.log("Calculating stamina for:", playerData); // Debug Log
     if (!playerData || !playerData.staminaLastUpdated) {
@@ -119,6 +146,119 @@ function startStaminaTimer(index) {
     // Initial immediate display update when timer starts
     // console.log(`Initial display update for index ${index} when timer starts`); // Debug Log
     updateDisplay(true); // Indicate it's the initial call to potentially update input
+}
+
+// --- MODAL LOGIC ---
+
+// Met à jour la surbrillance dans la liste de la modale
+function updateActiveModalSuggestion(items) {
+    items.forEach((item, index) => {
+        item.classList.toggle('active', index === activeModalSuggestionIndex);
+        if (index === activeModalSuggestionIndex) {
+            item.scrollIntoView({ block: 'nearest' });
+        }
+    });
+}
+
+// Peuple la liste de la modale en filtrant les joueurs déjà sélectionnés ailleurs
+function populatePlayerModalList(filter = '') {
+    if (!playerSelectListContainer) return;
+    playerSelectListContainer.innerHTML = '';
+    const query = filter.toLowerCase();
+    // Get IDs selected in slots OTHER than the one currently being edited
+    const currentlySelectedIdsInOtherSlots = selectedPlayerIds.filter((id, i) => id !== null && i !== activePlayerSelectorIndex);
+
+    allPlayersForModal
+        .filter(p =>
+            // Filter by name AND exclude those already selected in *other* slots
+            p.name.toLowerCase().includes(query) &&
+            !currentlySelectedIdsInOtherSlots.includes(p.id)
+        )
+        .forEach(player => {
+            const item = document.createElement('div');
+            item.className = 'suggestion-item';
+            item.dataset.playerId = player.id; // Store ID
+            item.dataset.playerName = player.name; // Store name
+            item.innerHTML = `<span>${player.name}</span>`; // Display just the name
+            playerSelectListContainer.appendChild(item);
+        });
+    activeModalSuggestionIndex = -1; // Reset keyboard selection
+}
+
+function openPlayerSelectModal(index) {
+    if (!playerSelectModal || !playerSelectBackdrop || !playerSelectFilterInput) {
+        console.error("Player selection modal elements not found!");
+        return;
+    }
+    activePlayerSelectorIndex = index; // Remember which slot (0, 1, 2) we are editing
+    playerSelectFilterInput.value = ''; // Clear filter input
+    populatePlayerModalList(); // Populate the list (filtered)
+    playerSelectModal.style.display = 'flex';
+    playerSelectBackdrop.style.display = 'block';
+    playerSelectFilterInput.focus(); // Focus the input
+    activeModalSuggestionIndex = -1;
+}
+
+function closePlayerSelectModal() {
+    if (playerSelectModal) playerSelectModal.style.display = 'none';
+    if (playerSelectBackdrop) playerSelectBackdrop.style.display = 'none';
+    // Don't reset activePlayerSelectorIndex here, needed in setSelectedPlayer
+}
+
+// Function called when a player is chosen from the modal
+function setSelectedPlayer(index, playerId, playerName) {
+    if (index === null || index < 0 || index > 2) {
+        console.error("Invalid index provided to setSelectedPlayer:", index);
+        closePlayerSelectModal(); // Close modal to prevent being stuck
+        return;
+    }
+
+    // Check if the player is already selected IN ANOTHER SLOT
+    const alreadySelectedElsewhere = selectedPlayerIds.some((id, i) => id !== null && id === playerId && i !== index);
+    if (alreadySelectedElsewhere) {
+        alert(`${playerName} is already selected in another slot.`);
+        // Don't close the modal, let the user choose someone else
+        playerSelectFilterInput?.focus(); // Refocus input
+        return;
+    }
+
+    // console.log(`Setting player for index ${index}: ID ${playerId}, Name ${playerName}`);
+
+    // Stop the timer for the player previously in this slot *if* the player actually changed
+    if (selectedPlayerIds[index] !== playerId) {
+        stopStaminaTimer(index);
+    }
+
+    // Update the global arrays tracking selections
+    selectedPlayerIds[index] = playerId;
+    selectedPlayerNames[index] = playerName; // Also store the name
+
+    // Update the UI elements for the specific slot
+    const displayDiv = document.getElementById(`dq-player-display-${index}`);
+    const idInput = document.getElementById(`dq-player-id-hidden-${index}`);
+    const nameInput = document.getElementById(`dq-player-name-hidden-${index}`); // Hidden input for name
+
+    if (displayDiv && idInput && nameInput) {
+        if (playerId !== null && playerName !== null) {
+            // Update display for selected player
+            displayDiv.textContent = playerName;
+            displayDiv.classList.add('player-selected');
+            idInput.value = playerId;
+            nameInput.value = playerName; // Update hidden name input
+        } else {
+            // Update display for deselected player (e.g., if we add a "Clear" option later)
+            displayDiv.textContent = '-- Select Player --';
+            displayDiv.classList.remove('player-selected');
+            idInput.value = '';
+            nameInput.value = '';
+        }
+    } else {
+        console.error(`Could not find display/input elements for index ${index}`);
+    }
+
+    closePlayerSelectModal(); // Close the modal after selection
+    fetchAndUpdatePlayerData(); // Fetch data for the newly selected set of players
+    activePlayerSelectorIndex = null; // Reset the active index now that selection is done
 }
 
 
@@ -368,7 +508,7 @@ async function updateStaminaValue(index, inputElement) {
 
     // --- Check if value actually changed compared to *current calculated* state ---
     const currentCalculatedStamina = calculateCurrentStamina(playerQuestData[index]);
-    if (staminaValue === currentCalculatedStamina) {
+    if (staminaValue === currentCalculatedStamina && !needsCorrection) { // Only skip if value hasn't been corrected
         // console.log(`Stamina value (${staminaValue}) matches current calculated value. Restarting timer without API call.`);
         startStaminaTimer(index); // Just restart the timer
         // Update display just in case it was slightly off
@@ -428,12 +568,11 @@ async function updateStaminaValue(index, inputElement) {
     }
 }
 
-
 // --- Écouteurs d'Événements ---
 function attachEventListeners() {
     // console.log("Attaching event listeners..."); // Debug Log
 
-    // Remove potentially duplicated listeners before attaching new ones
+    // Remove potentially duplicated listeners before attaching new ones by cloning and replacing
     const questCheckboxes = container.querySelectorAll('.dq-quest-checkbox');
     questCheckboxes.forEach(checkbox => {
         const newCheckbox = checkbox.cloneNode(true);
@@ -446,16 +585,16 @@ function attachEventListeners() {
         const newInput = input.cloneNode(true);
         input.parentNode.replaceChild(newInput, input);
         // Add event listeners to the new input element
-        let debounceTimer;
-        newInput.addEventListener('input', (event) => handleStaminaInput(event, debounceTimer));
-        newInput.addEventListener('change', (event) => handleStaminaChange(event, debounceTimer));
-        newInput.addEventListener('blur', (event) => handleStaminaBlur(event, debounceTimer));
+        let debounceTimer; // Scope timer to this input's listeners
+        newInput.addEventListener('input', (event) => { debounceTimer = handleStaminaInput(event, debounceTimer); }); // Pass timer back
+        newInput.addEventListener('change', (event) => { debounceTimer = handleStaminaChange(event, debounceTimer); }); // Pass timer back
+        newInput.addEventListener('blur', (event) => { debounceTimer = handleStaminaBlur(event, debounceTimer); }); // Pass timer back
     });
 
     // console.log("Event listeners attached."); // Debug Log
 }
 
-// --- Event Handler Functions (to simplify attachEventListeners) ---
+// --- Event Handler Functions (return debounceTimer) ---
 function handleQuestChange(event) {
     const playerId = parseInt(event.target.dataset.playerId, 10);
     const questKey = event.target.dataset.questKey;
@@ -473,11 +612,12 @@ function handleStaminaInput(event, debounceTimer) {
         event.target.style.borderColor = ''; // Reset border
     }
 
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
+    clearTimeout(debounceTimer); // Clear previous timer on new input
+    const newTimer = setTimeout(() => {
         // console.log("Debounced stamina update triggered."); // Debug Log
         updateStaminaValue(index, event.target);
     }, 1200); // Debounce API call by 1.2 seconds after last input
+    return newTimer; // Return the new timer ID
 }
 
 function handleStaminaChange(event, debounceTimer) {
@@ -485,6 +625,7 @@ function handleStaminaChange(event, debounceTimer) {
     // console.log("Stamina 'change' event triggered."); // Debug Log
     const index = parseInt(event.target.dataset.index, 10);
     updateStaminaValue(index, event.target); // Force update/validation on change
+    return null; // No new timer needed
 }
 
 function handleStaminaBlur(event, debounceTimer) {
@@ -493,50 +634,123 @@ function handleStaminaBlur(event, debounceTimer) {
     const index = parseInt(event.target.dataset.index, 10);
     // Force update/validation on blur to catch final value
     updateStaminaValue(index, event.target);
+    return null; // No new timer needed
 }
 
 
 // --- Initialisation ---
 export function initDailyQuests() {
-    console.log("Initializing Daily Quests module..."); // Existing log
+    console.log("Initializing Daily Quests module...");
     if (!container) {
         console.error("Daily Quests container (#daily-quests-container) not found on init!");
         return;
     }
-    if (!playerSelectors || playerSelectors.length === 0) {
-        console.error("Player selector dropdowns (.dq-player-select) not found on init!");
+    if (!playerSelectorUIs || playerSelectorUIs.length === 0) {
+        console.error("Player selector UIs (.dq-player-selection-ui) not found on init!");
         return;
     }
+    if (!playerSelectModal) {
+        console.error("Player selection modal (#player-select-modal) not found on init! Player selection will not work.");
+        // La page peut quand même fonctionner sans modale, mais la sélection sera impossible
+    }
 
-
-    playerSelectors.forEach(select => {
-        select.addEventListener('change', (event) => {
-            const index = parseInt(event.target.dataset.index, 10);
-            const selectedId = event.target.value ? parseInt(event.target.value, 10) : null;
-            // console.log(`Player selected at index ${index}: ID ${selectedId}`); // Existing log
-
-            // Check if the ID is already selected in *another* slot
-            const alreadySelected = selectedPlayerIds.some((id, i) => id !== null && id === selectedId && i !== index);
-            if (alreadySelected) {
-                alert("This player is already selected in another slot.");
-                // Revert the dropdown to its previous value for this slot
-                event.target.value = selectedPlayerIds[index] !== null ? selectedPlayerIds[index].toString() : "";
-                return; // Stop processing this change event
-            }
-
-            // Stop the timer for the player previously in this slot *if* the selection changed
-            if (selectedPlayerIds[index] !== selectedId) {
-                stopStaminaTimer(index);
-            }
-
-            // Update the selected ID for this slot
-            selectedPlayerIds[index] = selectedId;
-            // Fetch data for the new combination of selected players
-            fetchAndUpdatePlayerData();
-        });
+    // --- Écouteurs pour ouvrir la modale ---
+    playerSelectorUIs.forEach(ui => {
+        const button = ui.querySelector('.dq-open-modal-btn');
+        if (button) {
+            button.addEventListener('click', (event) => {
+                const index = parseInt(event.currentTarget.dataset.index, 10);
+                if (!isNaN(index)) {
+                    openPlayerSelectModal(index);
+                } else {
+                    console.error("Invalid or missing data-index on modal button.");
+                }
+            });
+        }
+        // Permettre de cliquer sur l'affichage pour ouvrir aussi (optionnel)
+        const display = ui.querySelector('.dq-player-name-display');
+        if(display && button) { // Ensure button exists too
+            display.style.cursor = 'pointer'; // Indicate clickable
+            display.addEventListener('click', () => button.click()); // Simulate button click
+        }
     });
 
-    // Perform initial data fetch (will render placeholder if no players are selected initially)
-    console.log("Performing initial data fetch (on init)..."); // Modified log
+    // --- Écouteurs pour la modale partagée (seulement si elle existe) ---
+    if(playerSelectModal) {
+        if (playerSelectCloseModalBtn) {
+            playerSelectCloseModalBtn.addEventListener('click', closePlayerSelectModal);
+        }
+        if (playerSelectBackdrop) {
+            playerSelectBackdrop.addEventListener('click', closePlayerSelectModal);
+        }
+        if (playerSelectFilterInput) {
+            playerSelectFilterInput.addEventListener('input', () => {
+                populatePlayerModalList(playerSelectFilterInput.value);
+                activeModalSuggestionIndex = -1; // Reset keyboard selection on filter change
+            });
+
+            // Gestion clavier pour la modale
+            playerSelectFilterInput.addEventListener('keydown', (e) => {
+                const items = playerSelectListContainer?.querySelectorAll('.suggestion-item'); // Add safe navigation
+                if (!items || (items.length === 0 && e.key !== 'Enter')) return; // Ne rien faire si liste vide (sauf Entrée)
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    activeModalSuggestionIndex = (activeModalSuggestionIndex + 1) % items.length;
+                    updateActiveModalSuggestion(items);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    activeModalSuggestionIndex = (activeModalSuggestionIndex - 1 + items.length) % items.length;
+                    updateActiveModalSuggestion(items);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const activeItem = playerSelectListContainer.querySelector('.suggestion-item.active');
+                    if (activeItem && activePlayerSelectorIndex !== null) {
+                        const playerId = parseInt(activeItem.dataset.playerId, 10);
+                        const playerName = activeItem.dataset.playerName;
+                        setSelectedPlayer(activePlayerSelectorIndex, playerId, playerName);
+                    } else if (items.length > 0 && activeModalSuggestionIndex === -1 && activePlayerSelectorIndex !== null) {
+                        // Si pas de sélection active mais liste non vide, sélectionner le premier
+                        const firstItem = items[0];
+                        const playerId = parseInt(firstItem.dataset.playerId, 10);
+                        const playerName = firstItem.dataset.playerName;
+                        setSelectedPlayer(activePlayerSelectorIndex, playerId, playerName);
+                    } else if (playerSelectFilterInput.value.trim() !== '' && activePlayerSelectorIndex !== null && playerSelectCreatePlayerBtn) {
+                        // Si on tape Entrée avec du texte (et pas de sélection), simuler clic "Create New"
+                        // ATTENTION: La création n'est pas implémentée côté backend/formulaire principal ici
+                        alert("Player creation via this modal is not supported in Daily Quests. Select an existing player or add them via the 'Add / Update' section.");
+                        // createPlayerBtn.click(); // Ne pas faire ça ici
+                    }
+                }
+            });
+
+        } // end if playerSelectFilterInput
+
+        if (playerSelectListContainer) {
+            // Gestion clic dans la liste de la modale
+            playerSelectListContainer.addEventListener('click', (e) => {
+                const selectedItem = e.target.closest('.suggestion-item');
+                if (selectedItem && activePlayerSelectorIndex !== null) {
+                    const playerId = parseInt(selectedItem.dataset.playerId, 10);
+                    const playerName = selectedItem.dataset.playerName;
+                    setSelectedPlayer(activePlayerSelectorIndex, playerId, playerName);
+                }
+            });
+        } // end if playerSelectListContainer
+
+        // Désactiver le bouton "Create New" spécifiquement pour ce contexte (si besoin)
+        if (playerSelectCreatePlayerBtn) {
+            // On pourrait le cacher/désactiver quand la modale est ouverte depuis Daily Quests,
+            // mais pour l'instant on gère juste le fait de ne pas l'utiliser via le 'Enter' keydown.
+            // Une approche plus propre serait d'ajouter une classe au body ou à la modale quand
+            // elle est ouverte par DQ, puis cibler le bouton en CSS:
+            // .daily-quest-modal-open #create-new-player-btn { display: none; }
+        }
+
+    } // end if playerSelectModal
+
+
+    // Charger les données initiales (si aucun joueur sélectionné par défaut)
+    console.log("Performing initial data fetch (on init)...");
     fetchAndUpdatePlayerData();
 }

@@ -4,20 +4,19 @@
 <div class="daily-quests-selectors">
     <% for (let i = 0; i < 3; i++) { %>
         <div class="player-selector-group">
-            <label for="dq-player-select-<%= i %>">Player <%= i + 1 %>:</label>
-            <select id="dq-player-select-<%= i %>" class="dq-player-select" data-index="<%= i %>">
-                <option value="">-- Select Player --</option>
-                <% if (typeof playerListForSelectors !== 'undefined') { %>
-                    <% playerListForSelectors.forEach(player => { %>
-                        <option value="<%= player.id %>"><%= player.name %></option>
-                    <% }); %>
-                <% } %>
-            </select>
+            <label>Player <%= i + 1 %>:</label>
+            <%# NOUVELLE STRUCTURE %>
+            <div class="dq-player-selection-ui" data-index="<%= i %>">
+                <div class="dq-player-name-display" id="dq-player-display-<%= i %>">-- Select Player --</div>
+                <input type="hidden" class="dq-player-id-hidden" id="dq-player-id-hidden-<%= i %>" data-index="<%= i %>">
+                 <%# On stocke aussi le nom pour l'affichage si besoin %>
+                <input type="hidden" class="dq-player-name-hidden" id="dq-player-name-hidden-<%= i %>">
+                <button type="button" class="dq-open-modal-btn action-btn-main" data-index="<%= i %>">Select</button>
+            </div>
         </div>
     <% } %>
 </div>
 
 <div id="daily-quests-container" class="daily-quests-container">
-    <%# Le contenu sera généré par JavaScript %>
     <div class="dq-placeholder">Select up to 3 players to track their daily quests.</div>
 </div>
