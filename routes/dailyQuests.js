@@ -4,7 +4,7 @@ const router = express.Router(); // Ensure router is created
 const db = require('../services/db');
 
 const STAMINA_REGEN_RATE_MINUTES = 24;
-const MAX_STAMINA = 99;
+const MAX_STAMINA = 60;
 
 // Liste des quêtes (clés et descriptions)
 const dailyQuestsList = [

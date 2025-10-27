@@ -1,7 +1,7 @@
 // public/js/modules/dailyQuests.js
 
 const STAMINA_REGEN_RATE_MINUTES = 24;
-const MAX_STAMINA = 99;
+const MAX_STAMINA = 60;
 const LOCAL_STORAGE_KEY = 'dailyQuestSelectedPlayers'; // Clé pour localStorage
 
 let questListDefinition = []; // Sera rempli par l'appel API
