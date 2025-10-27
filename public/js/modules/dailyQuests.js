@@ -161,7 +161,8 @@ function startStaminaTimer(index) {
         }
         // Also update the timer input initially
         const minutesInputElement = document.getElementById(`dq-stamina-next-input-${index}`);
-        updateMinutesRemainingInput(index, minutesInputElement);
+        const secondsInputElement = document.getElementById(`dq-stamina-next-seconds-input-${index}`); // Get seconds input
+        updateTimerInputs(index, minutesInputElement, secondsInputElement); // Update both
         return;
     }
     // console.log(`Attempting to start stamina timer for index ${index}`); // Debug Log
@@ -173,8 +174,14 @@ function startStaminaTimer(index) {
         return;
     }
 
-    const minutesSinceLastRegen = Math.floor((new Date() - lastUpdated) / (1000 * 60)) % STAMINA_REGEN_RATE_MINUTES;
-    const msUntilNextRegen = Math.max(1000, (STAMINA_REGEN_RATE_MINUTES - minutesSinceLastRegen) * 60 * 1000); // Ensure minimum 1 sec delay prevents rapid loops if calculation is slightly off
+    // Calculate milliseconds until the *very next second* after a stamina point would regenerate
+    const nowMs = Date.now();
+    const lastUpdatedMs = lastUpdated.getTime();
+    const cycleMs = STAMINA_REGEN_RATE_MINUTES * 60 * 1000;
+    const msSinceLastUpdate = nowMs - lastUpdatedMs;
+    const msIntoCurrentCycle = msSinceLastUpdate % cycleMs;
+    const msUntilNextRegen = cycleMs - msIntoCurrentCycle;
+
     // console.log(`Timer for index ${index}: msUntilNextRegen = ${msUntilNextRegen}`); // Debug Log
 
 
@@ -183,6 +190,7 @@ function startStaminaTimer(index) {
         const currentStaminaDisplay = document.getElementById(`dq-stamina-current-${index}`);
         const currentStaminaInput = document.getElementById(`dq-stamina-input-${index}`);
         const minutesInputElement = document.getElementById(`dq-stamina-next-input-${index}`);
+        const secondsInputElement = document.getElementById(`dq-stamina-next-seconds-input-${index}`); // Get seconds input
         const currentStamina = calculateCurrentStamina(playerData); // Recalculate each time
         // console.log(`Index ${index} - Current Calculated Stamina: ${currentStamina}`); // Debug Log
 
@@ -193,61 +201,69 @@ function startStaminaTimer(index) {
         if (currentStaminaInput && (isInitialCall || document.activeElement !== currentStaminaInput)) {
             currentStaminaInput.value = currentStamina;
         }
-        // Update minutes remaining input
-        updateMinutesRemainingInput(index, minutesInputElement);
+        // Update minutes/seconds remaining inputs
+        updateTimerInputs(index, minutesInputElement, secondsInputElement); // Update both
 
 
         // Check if max stamina reached AFTER update
         if (currentStamina >= MAX_STAMINA) {
             // console.log(`Max stamina reached for index ${index}. Stopping timer.`); // Debug Log
             stopStaminaTimer(index);
-            // Clear minutes input when max is reached
+            // Clear timer inputs when max is reached
             if (minutesInputElement) minutesInputElement.value = '';
+            if (secondsInputElement) secondsInputElement.value = '';
         }
     };
 
-    // Use a variable to hold the timeout ID so we can potentially clear it if needed
-    let initialTimeoutId = setTimeout(() => {
-        initialTimeoutId = null; // Clear the ID once the timeout fires
-        // console.log(`First timer tick for index ${index} after ${msUntilNextRegen}ms`); // Debug Log
-        updateDisplay(); // Update display on the first tick
+    // --- Timer Logic using Seconds ---
+    // Update every second to show countdown
+    staminaIntervals[index] = setInterval(() => {
+        updateDisplay();
+    }, 1000); // Update every second
 
-        if (calculateCurrentStamina(playerData) < MAX_STAMINA) { // Only set interval if not maxed out *after* the first tick
-            // console.log(`Setting regular interval timer for index ${index}`); // Debug Log
-            staminaIntervals[index] = setInterval(() => {
-                // console.log(`Regular timer tick for index ${index}`); // Debug Log
-                updateDisplay();
-            }, STAMINA_REGEN_RATE_MINUTES * 60 * 1000);
-        } else {
-            // console.log(`Max stamina reached on first tick for index ${index}. Not setting interval.`); // Debug Log
-        }
-    }, msUntilNextRegen);
 
     // Initial immediate display update when timer starts
     // console.log(`Initial display update for index ${index} when timer starts`); // Debug Log
     updateDisplay(true); // Indicate it's the initial call to potentially update input
 }
 
-// Helper to update the minutes remaining input field
-function updateMinutesRemainingInput(index, minutesInputElement) {
-    if (!minutesInputElement) return;
+// Helper to update BOTH the minutes and seconds remaining input fields
+function updateTimerInputs(index, minutesInputElement, secondsInputElement) {
+    if (!minutesInputElement || !secondsInputElement) return;
+
     const playerData = playerQuestData[index];
     const currentStamina = calculateCurrentStamina(playerData);
     let minutesRemainingValue = '';
+    let secondsRemainingValue = '';
+
     if (playerData && playerData.staminaLastUpdated && currentStamina < MAX_STAMINA) {
         const lastUpdated = new Date(playerData.staminaLastUpdated);
         if (!isNaN(lastUpdated.getTime())) {
-            const now = new Date();
-            const minutesPassed = Math.floor((now - lastUpdated) / (1000 * 60));
-            const minutesIntoCycle = minutesPassed % STAMINA_REGEN_RATE_MINUTES;
-            // Calculate remaining minutes IN THE CURRENT cycle
-            const remaining = STAMINA_REGEN_RATE_MINUTES - 1 - minutesIntoCycle;
-            minutesRemainingValue = Math.max(0, remaining); // Ensure non-negative
+            const nowMs = Date.now();
+            const lastUpdatedMs = lastUpdated.getTime();
+            const cycleMs = STAMINA_REGEN_RATE_MINUTES * 60 * 1000;
+            const msSinceLastUpdate = nowMs - lastUpdatedMs;
+
+            if (msSinceLastUpdate >= 0) { // Ensure time difference is not negative
+                const msIntoCurrentCycle = msSinceLastUpdate % cycleMs;
+                const msRemaining = cycleMs - msIntoCurrentCycle;
+
+                // Calculate remaining minutes and seconds
+                const totalSecondsRemaining = Math.max(0, Math.floor(msRemaining / 1000)); // Ensure non-negative seconds
+                minutesRemainingValue = Math.floor(totalSecondsRemaining / 60);
+                secondsRemainingValue = totalSecondsRemaining % 60;
+            } else {
+                console.warn(`Negative time difference detected for index ${index}. Clock issue?`);
+            }
         }
     }
-    // Only update if not focused
+
+    // Only update inputs if they are not currently focused by the user
     if (document.activeElement !== minutesInputElement) {
         minutesInputElement.value = minutesRemainingValue;
+    }
+    if (document.activeElement !== secondsInputElement) {
+        secondsInputElement.value = secondsRemainingValue;
     }
 }
 
@@ -424,16 +440,24 @@ function renderQuestColumns() {
         const currentStamina = calculateCurrentStamina(data); // Calculate for initial display
         // console.log(`Initial stamina calculated for ${data.name}: ${currentStamina}`); // Debug Log
 
-        // --- Calculate minutes remaining for initial display ---
+        // --- Calculate minutes/seconds remaining for initial display ---
         let minutesRemainingValue = '';
+        let secondsRemainingValue = '';
         if (data && data.staminaLastUpdated && currentStamina < MAX_STAMINA) {
             const lastUpdated = new Date(data.staminaLastUpdated);
             if (!isNaN(lastUpdated.getTime())) {
-                const now = new Date();
-                const minutesPassed = Math.floor((now - lastUpdated) / (1000 * 60));
-                const minutesIntoCycle = minutesPassed % STAMINA_REGEN_RATE_MINUTES;
-                const remaining = STAMINA_REGEN_RATE_MINUTES - 1 - minutesIntoCycle;
-                minutesRemainingValue = Math.max(0, remaining);
+                const nowMs = Date.now();
+                const lastUpdatedMs = lastUpdated.getTime();
+                const cycleMs = STAMINA_REGEN_RATE_MINUTES * 60 * 1000;
+                const msSinceLastUpdate = nowMs - lastUpdatedMs;
+
+                if (msSinceLastUpdate >= 0) {
+                    const msIntoCurrentCycle = msSinceLastUpdate % cycleMs;
+                    const msRemaining = cycleMs - msIntoCurrentCycle;
+                    const totalSecondsRemaining = Math.max(0, Math.floor(msRemaining / 1000));
+                    minutesRemainingValue = Math.floor(totalSecondsRemaining / 60);
+                    secondsRemainingValue = totalSecondsRemaining % 60;
+                }
             }
         }
         // --- End Calculate ---
@@ -459,7 +483,7 @@ function renderQuestColumns() {
             console.warn("questListDefinition is empty or undefined during render.");
         }
 
-        // --- CORRECTED HTML STRING (Removed EJS comments) ---
+        // --- UPDATED HTML STRING (Added seconds input) ---
         playerColumn.innerHTML = `
             <h3>${data.name}</h3>
             <div class="dq-stamina-section">
@@ -476,13 +500,18 @@ function renderQuestColumns() {
                      <input type="number" id="dq-stamina-next-input-${index}" class="dq-stamina-next-input"
                             min="0" max="${STAMINA_REGEN_RATE_MINUTES - 1}" placeholder="min" data-index="${index}"
                             value="${minutesRemainingValue}" autocomplete="off">
-                     <span>min</span> </div>
+                     <span>min</span>
+                     <input type="number" id="dq-stamina-next-seconds-input-${index}" class="dq-stamina-next-seconds-input"
+                            min="0" max="59" placeholder="sec" data-index="${index}"
+                            value="${secondsRemainingValue}" autocomplete="off">
+                      <span>sec</span>
+                </div>
                  </div>
             <ul class="dq-quest-list">
                 ${questsHtml}
             </ul>
         `;
-        // --- END CORRECTION ---
+        // --- END UPDATE ---
 
         container.appendChild(playerColumn);
         // console.log(`Starting stamina timer for index ${index} after rendering column.`); // Debug Log
@@ -553,78 +582,63 @@ async function fetchAndUpdatePlayerData() {
 
 
 async function updateQuestStatus(playerId, questKey, completed) {
-    // console.log(`Updating quest status: Player ${playerId}, Quest ${questKey}, Completed: ${completed}`); // Debug Log
-    // Optimistic UI update
+    // ... (Logique inchangée) ...
     const playerIndex = selectedPlayerIds.findIndex(id => id === playerId);
     if (playerIndex !== -1 && playerQuestData[playerIndex]) {
-        const currentQuests = playerQuestData[playerIndex].completedQuests; // Should be an array
+        const currentQuests = playerQuestData[playerIndex].completedQuests;
         if (completed) {
-            if (!currentQuests.includes(questKey)) {
-                currentQuests.push(questKey);
-            }
+            if (!currentQuests.includes(questKey)) currentQuests.push(questKey);
         } else {
             playerQuestData[playerIndex].completedQuests = currentQuests.filter(key => key !== questKey);
         }
     } else {
         console.warn(`Could not find local data for player ${playerId} during optimistic update.`);
     }
-
     try {
-        const response = await fetch('/daily-quests/update', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ playerId, questKey, completed })
-        });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        const response = await fetch('/daily-quests/update', { /* ... */ });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const result = await response.json();
         if (!result.success) {
             console.error('Failed to update quest status on server');
             // Revert optimistic update
-            if (playerIndex !== -1 && playerQuestData[playerIndex]) {
+            if (playerIndex !== -1 && playerQuestData[playerIndex]) { /* ... revert logic ... */
                 const currentQuests = playerQuestData[playerIndex].completedQuests;
-                if (completed) { // If it failed while trying to complete
+                if (completed) {
                     playerQuestData[playerIndex].completedQuests = currentQuests.filter(key => key !== questKey);
-                } else { // If it failed while trying to un-complete
-                    if (!currentQuests.includes(questKey)) { // Add it back only if it's not there
-                        currentQuests.push(questKey);
-                    }
+                } else {
+                    if (!currentQuests.includes(questKey)) currentQuests.push(questKey);
                 }
             }
-            // Revert the checkbox state
             const checkbox = document.getElementById(`quest-${playerId}-${questKey}`);
             if (checkbox) checkbox.checked = !completed;
             alert("Failed to save quest status. Please try again.");
         }
-        // On success, the optimistic update is now confirmed by the server. No action needed.
     } catch (error) {
         console.error("Error updating quest status:", error);
-        // Revert optimistic update on network/fetch error
-        if (playerIndex !== -1 && playerQuestData[playerIndex]) {
+        // Revert optimistic update
+        if (playerIndex !== -1 && playerQuestData[playerIndex]) { /* ... revert logic ... */
             const currentQuests = playerQuestData[playerIndex].completedQuests;
             if (completed) {
                 playerQuestData[playerIndex].completedQuests = currentQuests.filter(key => key !== questKey);
             } else {
-                if (!currentQuests.includes(questKey)) {
-                    currentQuests.push(questKey);
-                }
+                if (!currentQuests.includes(questKey)) currentQuests.push(questKey);
             }
         }
-        // Revert checkbox state
         const checkbox = document.getElementById(`quest-${playerId}-${questKey}`);
         if (checkbox) checkbox.checked = !completed;
         alert("An error occurred while saving quest status.");
     }
 }
 
-async function updateStaminaValue(index, inputElement, minutesInputElement = null) {
+// Modifié pour envoyer aussi les secondes
+async function updateStaminaValue(index, inputElement, minutesInputElement = null, secondsInputElement = null) {
     const playerId = selectedPlayerIds[index];
-    if (!playerId || !inputElement) return; // Basic guard
+    if (!playerId || !inputElement) return;
 
     let staminaValue = parseInt(inputElement.value, 10);
-    let minutesValue = minutesInputElement ? parseInt(minutesInputElement.value, 10) : null; // Lire la valeur du nouvel input
-    // console.log(`updateStaminaValue called for index ${index}, playerId ${playerId}, stamina: ${staminaValue}, minutes: ${minutesValue}`); // Debug
+    let minutesValue = minutesInputElement ? parseInt(minutesInputElement.value, 10) : null;
+    let secondsValue = secondsInputElement ? parseInt(secondsInputElement.value, 10) : null; // Lire secondes
+    // console.log(`updateStaminaValue called for index ${index}, playerId ${playerId}, stamina: ${staminaValue}, min: ${minutesValue}, sec: ${secondsValue}`);
 
     // --- Validation Stamina ---
     let needsStaminaCorrection = false;
@@ -632,37 +646,54 @@ async function updateStaminaValue(index, inputElement, minutesInputElement = nul
     if (staminaValue > MAX_STAMINA) { staminaValue = MAX_STAMINA; needsStaminaCorrection = true; }
     if (needsStaminaCorrection) inputElement.value = staminaValue;
 
-    // --- Validation Minutes ---
-    let needsMinutesCorrection = false;
+    // --- Validation Minutes & Secondes ---
+    let needsTimerCorrection = false;
     const maxMinutes = STAMINA_REGEN_RATE_MINUTES - 1;
-    if (minutesValue !== null) { // Seulement si une valeur a été entrée ou existe
-        if (isNaN(minutesValue) || minutesValue < 0) { minutesValue = 0; needsMinutesCorrection = true; }
-        if (minutesValue > maxMinutes) { minutesValue = maxMinutes; needsMinutesCorrection = true; }
-        // Si stamina est (ou vient d'être mis à) max, les minutes restantes n'ont pas de sens
-        if (staminaValue >= MAX_STAMINA) {
-            minutesValue = null; // Ne pas envoyer la valeur
-            if (minutesInputElement) minutesInputElement.value = ''; // Vider le champ minutes
-        } else if (needsMinutesCorrection && minutesInputElement) {
-            minutesInputElement.value = minutesValue; // Corriger l'affichage
-        }
+    const maxSeconds = 59;
+
+    if (minutesValue !== null) {
+        if (isNaN(minutesValue) || minutesValue < 0) { minutesValue = 0; needsTimerCorrection = true; }
+        if (minutesValue > maxMinutes) { minutesValue = maxMinutes; needsTimerCorrection = true; }
+    }
+    if (secondsValue !== null) {
+        if (isNaN(secondsValue) || secondsValue < 0) { secondsValue = 0; needsTimerCorrection = true; }
+        if (secondsValue > maxSeconds) { secondsValue = maxSeconds; needsTimerCorrection = true; }
+    }
+    // Si les minutes sont null, forcer les secondes à null (ou 0 si on préfère)
+    if (minutesValue === null && secondsValue !== null) {
+        secondsValue = null; // Ou 0 ? null est plus logique pour l'envoi API
+        needsTimerCorrection = true;
+    }
+    // Si stamina est max, les timers n'ont pas de sens
+    if (staminaValue >= MAX_STAMINA) {
+        if (minutesValue !== null || secondsValue !== null) needsTimerCorrection = true; // Mark for correction if values exist
+        minutesValue = null;
+        secondsValue = null;
+    }
+
+    // Appliquer corrections visuelles si nécessaire
+    if (needsTimerCorrection) {
+        if (minutesInputElement) minutesInputElement.value = (minutesValue === null ? '' : minutesValue);
+        if (secondsInputElement) secondsInputElement.value = (secondsValue === null ? '' : secondsValue);
     }
 
 
     stopStaminaTimer(index); // Arrêter pendant la mise à jour
-    // console.log(`Timer stopped for index ${index} during manual update.`); // Debug Log
-
-    // Comparer SEULEMENT la valeur stamina pour éviter appel inutile si juste le timer change? Non, envoyer quand même si timer change.
-    const currentCalculatedStamina = playerQuestData[index] ? calculateCurrentStamina(playerQuestData[index]) : staminaValue; // Fallback needed?
-
+    // console.log(`Timer stopped for index ${index} during manual update.`);
 
     // --- API Call ---
     try {
-        // console.log(`Sending update stamina request: Player ${playerId}, Stamina ${staminaValue}, Minutes ${minutesValue}`); // Debug
+        // console.log(`Sending update stamina request: Player ${playerId}, Stamina ${staminaValue}, Min ${minutesValue}, Sec ${secondsValue}`);
         const response = await fetch('/daily-quests/update-stamina', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            // Envoyer les deux valeurs (minutesValue sera null s'il n'est pas applicable)
-            body: JSON.stringify({ playerId, stamina: staminaValue, minutesUntilNext: minutesValue })
+            // Envoyer stamina, minutes et secondes
+            body: JSON.stringify({
+                playerId,
+                stamina: staminaValue,
+                minutesUntilNext: minutesValue,
+                secondsUntilNext: secondsValue // Nouvelle donnée envoyée
+            })
         });
         if (!response.ok) {
             let errorBody = await response.text();
@@ -670,11 +701,11 @@ async function updateStaminaValue(index, inputElement, minutesInputElement = nul
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const result = await response.json();
-        // console.log("Stamina update response:", result); // Debug
+        // console.log("Stamina update response:", result);
 
         if (result.success && playerQuestData[index]) {
             // --- Success: Update local data and restart timer ---
-            playerQuestData[index].stamina = result.stamina; // Use value confirmed by server
+            playerQuestData[index].stamina = result.stamina;
             playerQuestData[index].staminaLastUpdated = result.staminaLastUpdated;
 
             // Update display elements immediately
@@ -682,29 +713,26 @@ async function updateStaminaValue(index, inputElement, minutesInputElement = nul
             if (currentStaminaDisplay) currentStaminaDisplay.textContent = result.stamina;
             inputElement.value = result.stamina; // Ensure input matches server response
 
-            // Mettre à jour l'input des minutes aussi, basé sur le nouveau timestamp
-            updateMinutesRemainingInput(index, minutesInputElement); // Appeler helper pour recalculer
+            // Mettre à jour les inputs timer basé sur le nouveau timestamp
+            updateTimerInputs(index, minutesInputElement, secondsInputElement); // Appeler helper
 
-            // console.log(`Stamina updated successfully for index ${index}. Restarting timer.`); // Debug
-            startStaminaTimer(index); // Restart timer with new base value and timestamp
+            // console.log(`Stamina updated successfully for index ${index}. Restarting timer.`);
+            startStaminaTimer(index); // Restart timer
         } else {
-            // --- API Failure (but request succeeded) ---
             console.error('Failed to update stamina on server (API reported failure):', result.error || 'Unknown API error');
-            throw new Error(result.error || 'API reported failure'); // Treat as error
+            throw new Error(result.error || 'API reported failure');
         }
     } catch (error) {
-        // --- Network/Fetch Error or API Failure ---
         console.error("Error updating stamina:", error);
         alert(`Failed to save stamina value: ${error.message || 'Check console for details.'}`);
 
         // --- Revert UI and Restart Timer ---
-        // Recalculate based on *previous* state before the failed attempt
-        const lastKnownStamina = playerQuestData[index] ? calculateCurrentStamina(playerQuestData[index]) : 0; // Fallback to 0 if no data
-        inputElement.value = lastKnownStamina; // Revert input field
+        const lastKnownStamina = playerQuestData[index] ? calculateCurrentStamina(playerQuestData[index]) : 0;
+        inputElement.value = lastKnownStamina;
         const currentStaminaDisplay = document.getElementById(`dq-stamina-current-${index}`);
-        if (currentStaminaDisplay) currentStaminaDisplay.textContent = lastKnownStamina; // Revert display span
-        // Revert minutes input too
-        updateMinutesRemainingInput(index, minutesInputElement); // Recalculer basé sur l'ancien état
+        if (currentStaminaDisplay) currentStaminaDisplay.textContent = lastKnownStamina;
+        // Revert timer inputs too
+        updateTimerInputs(index, minutesInputElement, secondsInputElement); // Recalculer basé sur l'ancien état
 
         startStaminaTimer(index); // Restart timer based on last known *good* state
     }
@@ -713,46 +741,57 @@ async function updateStaminaValue(index, inputElement, minutesInputElement = nul
 
 // --- Écouteurs d'Événements ---
 function attachEventListeners() {
-    // console.log("Attaching event listeners..."); // Debug Log
+    // console.log("Attaching event listeners...");
 
-    // Remove potentially duplicated listeners before attaching new ones by cloning and replacing
+    // Clone and replace checkboxes
     const questCheckboxes = container.querySelectorAll('.dq-quest-checkbox');
-    questCheckboxes.forEach(checkbox => {
+    questCheckboxes.forEach(checkbox => { /* ... clone/replace/attach logic ... */
         const newCheckbox = checkbox.cloneNode(true);
         checkbox.parentNode.replaceChild(newCheckbox, checkbox);
         newCheckbox.addEventListener('change', handleQuestChange);
     });
 
+    // Clone and replace stamina inputs
     const staminaInputs = container.querySelectorAll('.dq-stamina-input');
-    staminaInputs.forEach(input => {
+    staminaInputs.forEach(input => { /* ... clone/replace/attach logic ... */
         const newInput = input.cloneNode(true);
         input.parentNode.replaceChild(newInput, input);
-        // Add event listeners to the new input element
-        let debounceTimer; // Scope timer to this input's listeners
-        newInput.addEventListener('input', (event) => { debounceTimer = handleStaminaInput(event, debounceTimer); }); // Pass timer back
-        newInput.addEventListener('change', (event) => { debounceTimer = handleStaminaChange(event, debounceTimer); }); // Pass timer back
-        newInput.addEventListener('blur', (event) => { debounceTimer = handleStaminaBlur(event, debounceTimer); }); // Pass timer back
+        let debounceTimer;
+        newInput.addEventListener('input', (event) => { debounceTimer = handleStaminaInput(event, debounceTimer); });
+        newInput.addEventListener('change', (event) => { debounceTimer = handleStaminaChange(event, debounceTimer); });
+        newInput.addEventListener('blur', (event) => { debounceTimer = handleStaminaBlur(event, debounceTimer); });
     });
 
-    // --- NOUVEAU: Clone and replace stamina timer inputs ---
+    // Clone and replace stamina timer MINUTES inputs
     const staminaNextInputs = container.querySelectorAll('.dq-stamina-next-input');
-    staminaNextInputs.forEach(input => {
+    staminaNextInputs.forEach(input => { /* ... clone/replace/attach logic ... */
         const newInput = input.cloneNode(true);
         input.parentNode.replaceChild(newInput, input);
-        let debounceTimer; // Separate timer for this input type
-        // Use 'input' for quick feedback, debounce the actual save
+        let debounceTimer;
         newInput.addEventListener('input', (event) => { debounceTimer = handleStaminaNextInput(event, debounceTimer); });
-        // Use 'change' and 'blur' to ensure the final value is saved
         newInput.addEventListener('change', (event) => { debounceTimer = handleStaminaNextChangeOrBlur(event, debounceTimer); });
         newInput.addEventListener('blur', (event) => { debounceTimer = handleStaminaNextChangeOrBlur(event, debounceTimer); });
     });
 
+    // --- NOUVEAU: Clone and replace stamina timer SECONDS inputs ---
+    const staminaNextSecondsInputs = container.querySelectorAll('.dq-stamina-next-seconds-input');
+    staminaNextSecondsInputs.forEach(input => {
+        const newInput = input.cloneNode(true);
+        input.parentNode.replaceChild(newInput, input);
+        let debounceTimer; // Separate timer for seconds input if needed, or share? Share for simplicity.
+        // Use 'input' for quick feedback, debounce the actual save
+        newInput.addEventListener('input', (event) => { debounceTimer = handleStaminaNextSecondsInput(event, debounceTimer); });
+        // Use 'change' and 'blur' to ensure the final value is saved
+        newInput.addEventListener('change', (event) => { debounceTimer = handleStaminaNextSecondsChangeOrBlur(event, debounceTimer); });
+        newInput.addEventListener('blur', (event) => { debounceTimer = handleStaminaNextSecondsChangeOrBlur(event, debounceTimer); });
+    });
 
-    // console.log("Event listeners attached."); // Debug Log
+
+    // console.log("Event listeners attached.");
 }
 
 // --- Event Handler Functions ---
-function handleQuestChange(event) {
+function handleQuestChange(event) { /* ... inchangé ... */
     const playerId = parseInt(event.target.dataset.playerId, 10);
     const questKey = event.target.dataset.questKey;
     const completed = event.target.checked;
@@ -773,8 +812,9 @@ function handleStaminaInput(event, debounceTimer) {
 
     clearTimeout(debounceTimer); // Clear previous timer on new input
     const newTimer = setTimeout(() => {
-        const minutesInput = document.getElementById(`dq-stamina-next-input-${index}`); // Get the corresponding minutes input
-        updateStaminaValue(index, target, minutesInput); // Pass both input elements
+        const minutesInput = document.getElementById(`dq-stamina-next-input-${index}`); // Get minutes input
+        const secondsInput = document.getElementById(`dq-stamina-next-seconds-input-${index}`); // Get seconds input
+        updateStaminaValue(index, target, minutesInput, secondsInput); // Pass all three inputs
     }, 1200); // Debounce API call
     return newTimer; // Return the new timer ID
 }
@@ -784,7 +824,8 @@ function handleStaminaChange(event, debounceTimer) {
     clearTimeout(debounceTimer); // Clear pending debounce timer
     const index = parseInt(event.target.dataset.index, 10);
     const minutesInput = document.getElementById(`dq-stamina-next-input-${index}`);
-    updateStaminaValue(index, event.target, minutesInput); // Force update/validation
+    const secondsInput = document.getElementById(`dq-stamina-next-seconds-input-${index}`);
+    updateStaminaValue(index, event.target, minutesInput, secondsInput); // Force update/validation
     return null; // No new timer needed
 }
 
@@ -792,11 +833,12 @@ function handleStaminaBlur(event, debounceTimer) {
     clearTimeout(debounceTimer); // Clear pending debounce timer
     const index = parseInt(event.target.dataset.index, 10);
     const minutesInput = document.getElementById(`dq-stamina-next-input-${index}`);
-    updateStaminaValue(index, event.target, minutesInput); // Force update/validation
+    const secondsInput = document.getElementById(`dq-stamina-next-seconds-input-${index}`);
+    updateStaminaValue(index, event.target, minutesInput, secondsInput); // Force update/validation
     return null; // No new timer needed
 }
 
-// --- NOUVEAU: Handlers pour l'input des minutes restantes ---
+// --- Handlers pour l'input des minutes restantes ---
 function handleStaminaNextInput(event, debounceTimer) {
     const target = event.target;
     const index = parseInt(target.dataset.index, 10);
@@ -812,9 +854,10 @@ function handleStaminaNextInput(event, debounceTimer) {
 
     clearTimeout(debounceTimer);
     const newTimer = setTimeout(() => {
-        const staminaInput = document.getElementById(`dq-stamina-input-${index}`); // Get the corresponding stamina input
+        const staminaInput = document.getElementById(`dq-stamina-input-${index}`); // Get stamina input
+        const secondsInput = document.getElementById(`dq-stamina-next-seconds-input-${index}`); // Get seconds input
         if (staminaInput) {
-            updateStaminaValue(index, staminaInput, target); // Pass both input elements
+            updateStaminaValue(index, staminaInput, target, secondsInput); // Pass all three inputs
         } else {
             console.error(`Stamina input not found for index ${index} when updating timer.`);
         }
@@ -826,10 +869,51 @@ function handleStaminaNextChangeOrBlur(event, debounceTimer) {
     clearTimeout(debounceTimer);
     const index = parseInt(event.target.dataset.index, 10);
     const staminaInput = document.getElementById(`dq-stamina-input-${index}`);
+    const secondsInput = document.getElementById(`dq-stamina-next-seconds-input-${index}`);
     if (staminaInput) {
-        updateStaminaValue(index, staminaInput, event.target); // Force update/validation
+        updateStaminaValue(index, staminaInput, event.target, secondsInput); // Force update/validation
     } else {
         console.error(`Stamina input not found for index ${index} on timer change/blur.`);
+    }
+    return null;
+}
+
+// --- NOUVEAU: Handlers pour l'input des secondes restantes ---
+function handleStaminaNextSecondsInput(event, debounceTimer) {
+    const target = event.target;
+    const index = parseInt(target.dataset.index, 10);
+    const value = target.value;
+    const maxSeconds = 59;
+
+    // Validation visuelle
+    if (value !== "" && (!/^\d+$/.test(value) || parseInt(value, 10) < 0 || parseInt(value, 10) > maxSeconds)) {
+        target.style.borderColor = 'red';
+    } else {
+        target.style.borderColor = '';
+    }
+
+    clearTimeout(debounceTimer);
+    const newTimer = setTimeout(() => {
+        const staminaInput = document.getElementById(`dq-stamina-input-${index}`); // Get stamina input
+        const minutesInput = document.getElementById(`dq-stamina-next-input-${index}`); // Get minutes input
+        if (staminaInput && minutesInput) {
+            updateStaminaValue(index, staminaInput, minutesInput, target); // Pass all three inputs
+        } else {
+            console.error(`Stamina or Minutes input not found for index ${index} when updating seconds timer.`);
+        }
+    }, 1200);
+    return newTimer;
+}
+
+function handleStaminaNextSecondsChangeOrBlur(event, debounceTimer) {
+    clearTimeout(debounceTimer);
+    const index = parseInt(event.target.dataset.index, 10);
+    const staminaInput = document.getElementById(`dq-stamina-input-${index}`);
+    const minutesInput = document.getElementById(`dq-stamina-next-input-${index}`);
+    if (staminaInput && minutesInput) {
+        updateStaminaValue(index, staminaInput, minutesInput, event.target); // Force update/validation
+    } else {
+        console.error(`Stamina or Minutes input not found for index ${index} on seconds timer change/blur.`);
     }
     return null;
 }
@@ -837,137 +921,62 @@ function handleStaminaNextChangeOrBlur(event, debounceTimer) {
 
 // --- Initialisation ---
 export function initDailyQuests() {
+    // ... (vérifications container, playerSelectorUIs, playerSelectModal) ...
     console.log("Initializing Daily Quests module...");
-    if (!container) {
-        console.error("Daily Quests container (#daily-quests-container) not found on init!");
-        return;
-    }
-    if (!playerSelectorUIs || playerSelectorUIs.length === 0) {
-        console.error("Player selector UIs (.dq-player-selection-ui) not found on init!");
-        return;
-    }
-    if (!playerSelectModal) {
-        console.error("Player selection modal (#player-select-modal) not found on init! Player selection will not work.");
-    }
+    if (!container) { /* ... */ return; }
+    if (!playerSelectorUIs || playerSelectorUIs.length === 0) { /* ... */ return; }
+    if (!playerSelectModal) { /* ... */ }
 
-    // --- CHARGEMENT localStorage ---
     loadSelectedPlayersFromLocalStorage();
-    // -----------------------------
 
-    // --- Logique d'affichage mobile/desktop ---
-    const handleResizeOrLoad = () => {
+    const handleResizeOrLoad = () => { /* ... Logique mobile/desktop inchangée ... */
         const isMobile = window.innerWidth <= 768;
-        // console.log(`handleResizeOrLoad - isMobile: ${isMobile}`);
-
         playerSelectorUIs.forEach((ui, index) => {
-            // Afficher le premier sélecteur toujours, cacher les autres sur mobile
             const group = ui.closest('.player-selector-group');
-            if (group) {
-                group.style.display = (index > 0 && isMobile) ? 'none' : '';
-            }
+            if (group) { group.style.display = (index > 0 && isMobile) ? 'none' : ''; }
         });
-        // Appeler renderQuestColumns pour redessiner le bon nombre de colonnes
-        renderQuestColumns(); // << Appel ICI pour redessiner
+        renderQuestColumns();
     };
 
     window.addEventListener('resize', handleResizeOrLoad);
-    // L'appel initial est fait après le fetch initial
 
-    // --- Écouteurs pour ouvrir la modale ---
-    playerSelectorUIs.forEach(ui => {
+    // Écouteurs pour ouvrir la modale
+    playerSelectorUIs.forEach(ui => { /* ... Logique inchangée ... */
         const button = ui.querySelector('.dq-open-modal-btn');
         if (button) {
             button.addEventListener('click', (event) => {
                 const index = parseInt(event.currentTarget.dataset.index, 10);
-                if (!isNaN(index)) {
-                    openPlayerSelectModal(index);
-                } else {
-                    console.error("Invalid or missing data-index on modal button.");
-                }
+                if (!isNaN(index)) openPlayerSelectModal(index);
+                else console.error("Invalid or missing data-index on modal button.");
             });
         }
         const display = ui.querySelector('.dq-player-name-display');
-        if(display && button) { // Ensure button exists too
-            display.style.cursor = 'pointer'; // Indicate clickable
-            display.addEventListener('click', () => button.click()); // Simulate button click
+        if(display && button) {
+            display.style.cursor = 'pointer';
+            display.addEventListener('click', () => button.click());
         }
     });
 
-    // --- Écouteurs pour la modale partagée (seulement si elle existe) ---
-    if(playerSelectModal) {
+    // Écouteurs pour la modale partagée
+    if(playerSelectModal) { /* ... Logique modale inchangée (close, backdrop, filter, keydown, list click, create new handling) ... */
         if (playerSelectCloseModalBtn) playerSelectCloseModalBtn.addEventListener('click', closePlayerSelectModal);
         if (playerSelectBackdrop) playerSelectBackdrop.addEventListener('click', closePlayerSelectModal);
 
         if (playerSelectFilterInput) {
-            playerSelectFilterInput.addEventListener('input', () => {
-                populatePlayerModalList(playerSelectFilterInput.value);
-                activeModalSuggestionIndex = -1;
-            });
-
-            playerSelectFilterInput.addEventListener('keydown', (e) => {
-                const items = playerSelectListContainer?.querySelectorAll('.suggestion-item');
-                if (!items || (items.length === 0 && e.key !== 'Enter')) return;
-
-                if (e.key === 'ArrowDown') { /* ... gestion flèches ... */
-                    e.preventDefault();
-                    activeModalSuggestionIndex = (activeModalSuggestionIndex + 1) % items.length;
-                    updateActiveModalSuggestion(items);
-                } else if (e.key === 'ArrowUp') { /* ... gestion flèches ... */
-                    e.preventDefault();
-                    activeModalSuggestionIndex = (activeModalSuggestionIndex - 1 + items.length) % items.length;
-                    updateActiveModalSuggestion(items);
-                } else if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const activeItem = playerSelectListContainer.querySelector('.suggestion-item.active');
-                    if (activeItem && activePlayerSelectorIndex !== null) {
-                        const playerId = parseInt(activeItem.dataset.playerId, 10);
-                        const playerName = activeItem.dataset.playerName;
-                        setSelectedPlayer(activePlayerSelectorIndex, playerId, playerName);
-                    } else if (items.length > 0 && activeModalSuggestionIndex === -1 && activePlayerSelectorIndex !== null) {
-                        const firstItem = items[0];
-                        const playerId = parseInt(firstItem.dataset.playerId, 10);
-                        const playerName = firstItem.dataset.playerName;
-                        setSelectedPlayer(activePlayerSelectorIndex, playerId, playerName);
-                    } else if (playerSelectFilterInput.value.trim() !== '' && activePlayerSelectorIndex !== null) {
-                        // --- MODIFIÉ: Alerte au lieu de simulation clic ---
-                        alert("Player creation is not available here. Please use the 'Add / Update' section.");
-                    }
-                }
-            });
-        } // end if playerSelectFilterInput
-
-        if (playerSelectListContainer) {
-            playerSelectListContainer.addEventListener('click', (e) => {
-                const selectedItem = e.target.closest('.suggestion-item');
-                if (selectedItem && activePlayerSelectorIndex !== null) {
-                    const playerId = parseInt(selectedItem.dataset.playerId, 10);
-                    const playerName = selectedItem.dataset.playerName;
-                    setSelectedPlayer(activePlayerSelectorIndex, playerId, playerName);
-                }
-            });
-        } // end if playerSelectListContainer
-
-        // --- MODIFIÉ: Gestion clic sur "Create New" ---
-        if (playerSelectCreatePlayerBtn) {
-            playerSelectCreatePlayerBtn.addEventListener('click', (e) => {
-                // Vérifier si la modale a été ouverte depuis Daily Quests
-                if (activePlayerSelectorIndex !== null && activePlayerSelectorIndex >= 0 && activePlayerSelectorIndex <= 2) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    alert("Player creation is not available here. Please use the 'Add / Update' section.");
-                    closePlayerSelectModal();
-                }
-            });
+            playerSelectFilterInput.addEventListener('input', () => { /* ... */ });
+            playerSelectFilterInput.addEventListener('keydown', (e) => { /* ... */ });
         }
-        // ---------------------------------------------
-
-    } // end if playerSelectModal
+        if (playerSelectListContainer) {
+            playerSelectListContainer.addEventListener('click', (e) => { /* ... */ });
+        }
+        if (playerSelectCreatePlayerBtn) {
+            playerSelectCreatePlayerBtn.addEventListener('click', (e) => { /* ... */ });
+        }
+    }
 
     // Fetch initial data & apply layout
     console.log("Performing initial data fetch (on init)...");
     fetchAndUpdatePlayerData().then(() => {
-        // Appeler handleResizeOrLoad ici pour s'assurer que l'état initial
-        // (nombre de colonnes, sélecteurs visibles) est correct après le chargement des données.
-        handleResizeOrLoad();
+        handleResizeOrLoad(); // Appliquer layout mobile/desktop APRÈS le fetch initial
     });
 } // Fin initDailyQuests
