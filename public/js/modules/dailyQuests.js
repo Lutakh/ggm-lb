@@ -2,6 +2,8 @@
 
 const STAMINA_REGEN_RATE_MINUTES = 24;
 const MAX_STAMINA = 99;
+const LOCAL_STORAGE_KEY = 'dailyQuestSelectedPlayers'; // Clé pour localStorage
+
 let questListDefinition = []; // Sera rempli par l'appel API
 let selectedPlayerIds = [null, null, null]; // Contient les IDs
 let selectedPlayerNames = [null, null, null]; // Contient les Noms pour l'affichage
@@ -36,6 +38,75 @@ if (playersSelectorDataElement) {
     console.error("Element #player-selector-data not found!");
 }
 
+// --- NOUVELLES FONCTIONS localStorage ---
+function saveSelectedPlayersToLocalStorage() {
+    try {
+        // Sauvegarde un tableau d'IDs (ou null)
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(selectedPlayerIds));
+        // console.log("Saved player IDs to localStorage:", selectedPlayerIds); // Debug Log
+    } catch (e) {
+        console.error("Error saving selected players to localStorage:", e);
+    }
+}
+
+function loadSelectedPlayersFromLocalStorage() {
+    try {
+        const storedValue = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (storedValue) {
+            const parsedIds = JSON.parse(storedValue);
+            // Vérifier que c'est un tableau de la bonne taille avec des nombres ou null
+            if (Array.isArray(parsedIds) && parsedIds.length === 3 && parsedIds.every(id => typeof id === 'number' || id === null)) {
+                selectedPlayerIds = parsedIds;
+                // console.log("Loaded player IDs from localStorage:", selectedPlayerIds); // Debug Log
+
+                // --- NOUVEAU: Mettre à jour l'affichage initial des sélecteurs ---
+                selectedPlayerIds.forEach((playerId, index) => {
+                    if (playerId !== null) {
+                        const player = allPlayersForModal.find(p => p.id === playerId);
+                        if (player) {
+                            selectedPlayerNames[index] = player.name; // Mettre à jour le nom aussi
+                            const displayDiv = document.getElementById(`dq-player-display-${index}`);
+                            const idInput = document.getElementById(`dq-player-id-hidden-${index}`);
+                            const nameInput = document.getElementById(`dq-player-name-hidden-${index}`);
+                            if (displayDiv && idInput && nameInput) {
+                                displayDiv.textContent = player.name;
+                                displayDiv.classList.add('player-selected');
+                                idInput.value = playerId;
+                                nameInput.value = player.name;
+                            }
+                        } else {
+                            // Si le joueur stocké n'existe plus, réinitialiser
+                            console.warn(`Player ID ${playerId} from localStorage not found in current player list.`);
+                            selectedPlayerIds[index] = null;
+                            selectedPlayerNames[index] = null;
+                        }
+                    } else {
+                        // Assurer la réinitialisation si l'ID stocké est null
+                        selectedPlayerNames[index] = null;
+                        const displayDiv = document.getElementById(`dq-player-display-${index}`);
+                        const idInput = document.getElementById(`dq-player-id-hidden-${index}`);
+                        const nameInput = document.getElementById(`dq-player-name-hidden-${index}`);
+                        if (displayDiv && idInput && nameInput) {
+                            displayDiv.textContent = '-- Select Player --';
+                            displayDiv.classList.remove('player-selected');
+                            idInput.value = '';
+                            nameInput.value = '';
+                        }
+                    }
+                });
+
+            } else {
+                console.warn("Invalid data found in localStorage for daily quests players.");
+                localStorage.removeItem(LOCAL_STORAGE_KEY); // Nettoyer les données invalides
+            }
+        } else {
+            // console.log("No player IDs found in localStorage."); // Debug Log
+        }
+    } catch (e) {
+        console.error("Error loading selected players from localStorage:", e);
+        localStorage.removeItem(LOCAL_STORAGE_KEY); // Nettoyer en cas d'erreur de parsing
+    }
+}
 
 // --- Fonctions Utilitaires : calculateCurrentStamina, stopStaminaTimer, startStaminaTimer ---
 function calculateCurrentStamina(playerData) {
@@ -174,6 +245,7 @@ function populatePlayerModalList(filter = '') {
             p.name.toLowerCase().includes(query) &&
             !currentlySelectedIdsInOtherSlots.includes(p.id)
         )
+        .sort((a, b) => a.name.localeCompare(b.name)) // Sort alphabetically
         .forEach(player => {
             const item = document.createElement('div');
             item.className = 'suggestion-item';
@@ -197,11 +269,14 @@ function openPlayerSelectModal(index) {
     playerSelectBackdrop.style.display = 'block';
     playerSelectFilterInput.focus(); // Focus the input
     activeModalSuggestionIndex = -1;
+    // Add a class to body maybe, to hide the "Create New" button via CSS if desired
+    // document.body.classList.add('daily-quest-modal-open');
 }
 
 function closePlayerSelectModal() {
     if (playerSelectModal) playerSelectModal.style.display = 'none';
     if (playerSelectBackdrop) playerSelectBackdrop.style.display = 'none';
+    // document.body.classList.remove('daily-quest-modal-open'); // Clean up class
     // Don't reset activePlayerSelectorIndex here, needed in setSelectedPlayer
 }
 
@@ -232,6 +307,10 @@ function setSelectedPlayer(index, playerId, playerName) {
     // Update the global arrays tracking selections
     selectedPlayerIds[index] = playerId;
     selectedPlayerNames[index] = playerName; // Also store the name
+
+    // --- SAUVEGARDE localStorage ---
+    saveSelectedPlayersToLocalStorage();
+    // ----------------------------
 
     // Update the UI elements for the specific slot
     const displayDiv = document.getElementById(`dq-player-display-${index}`);
@@ -270,19 +349,26 @@ function renderQuestColumns() {
         return;
     }
 
+    // Determine active players based on current state
     const activePlayersIndices = selectedPlayerIds.map((id, index) => id ? index : -1).filter(index => index !== -1);
-    // console.log("Active player indices:", activePlayersIndices); // Debug Log
+    const isMobile = window.innerWidth <= 768;
+    // On mobile, only consider the first selected player (if any)
+    const indicesToRender = isMobile ? activePlayersIndices.slice(0, 1) : activePlayersIndices;
+    const columnsToShow = indicesToRender.length;
 
-    if (activePlayersIndices.length === 0) {
-        container.innerHTML = '<div class="dq-placeholder">Select up to 3 players to track their daily quests.</div>';
+    // console.log("Indices to render:", indicesToRender, "Is Mobile:", isMobile); // Debug Log
+
+
+    if (columnsToShow === 0) {
+        container.innerHTML = '<div class="dq-placeholder">Select up to 3 players (1 on mobile) to track their daily quests.</div>';
         container.className = 'daily-quests-container'; // Reset class
         return;
     }
 
     container.innerHTML = ''; // Clear container before rendering
-    container.className = `daily-quests-container columns-${activePlayersIndices.length}`; // Adjust column layout class
+    container.className = `daily-quests-container columns-${columnsToShow}`; // Adjust column layout class
 
-    activePlayersIndices.forEach(index => {
+    indicesToRender.forEach(index => { // Use the filtered indices
         const playerId = selectedPlayerIds[index];
         const data = playerQuestData[index];
         // console.log(`Rendering column for index ${index}, playerId ${playerId}, data:`, data); // Debug Log
@@ -290,7 +376,7 @@ function renderQuestColumns() {
         const playerColumn = document.createElement('div');
         playerColumn.className = 'dq-player-column';
         playerColumn.dataset.playerId = playerId;
-        playerColumn.dataset.index = index; // Store index for event listeners
+        playerColumn.dataset.index = index; // Store original index (0, 1, or 2)
 
         if (!playerId || !data) {
             console.warn(`Skipping render for index ${index} due to missing data.`);
@@ -341,11 +427,12 @@ function renderQuestColumns() {
         `;
         container.appendChild(playerColumn);
         // console.log(`Starting stamina timer for index ${index} after rendering column.`); // Debug Log
-        startStaminaTimer(index); // Start timer after element is in DOM
+        startStaminaTimer(index); // Start timer after element is in DOM, using original index
     });
 
     attachEventListeners(); // Attach listeners after all columns are rendered
 }
+
 
 // --- Logique de Récupération et Mise à jour ---
 async function fetchAndUpdatePlayerData() {
@@ -364,42 +451,35 @@ async function fetchAndUpdatePlayerData() {
 
     try {
         const apiUrl = `/daily-quests/status?playerIds=${idsToFetch.join(',')}`;
-        // --- ADD THIS LOG ---
-        console.log("Attempting to fetch data from:", apiUrl); // Log before fetch
-        // --------------------
+        // console.log("Attempting to fetch data from:", apiUrl); // Log before fetch
         const response = await fetch(apiUrl);
 
         if (!response.ok) {
-            // Log the error response if possible
             let errorBody = 'Could not read error response body.';
-            try {
-                errorBody = await response.text();
-            } catch (e) { /* ignore */ }
-            console.error(`API Error Response: ${response.status} ${response.statusText}`, errorBody); // Log error details
+            try { errorBody = await response.text(); } catch (e) { /* ignore */ }
+            console.error(`API Error Response: ${response.status} ${response.statusText}`, errorBody);
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
-        console.log("Data received from API:", data); // Log received data
+        // console.log("Data received from API:", data); // Log received data
 
         // Update quest list definition
         if(data.questsList && Array.isArray(data.questsList) && data.questsList.length > 0) {
             questListDefinition = data.questsList;
         } else {
             console.warn("Received empty or invalid questsList from API. Using previous definition if available.");
-            questListDefinition = questListDefinition || []; // Keep old list if new one is invalid/missing
+            questListDefinition = questListDefinition || [];
         }
 
         // Update playerQuestData based on the response, maintaining the order of selectedPlayerIds
         playerQuestData = selectedPlayerIds.map(selectedId => {
-            if (!selectedId) return null; // Keep null slots as null
-            // Find the corresponding player data in the API response
+            if (!selectedId) return null;
             const foundPlayerData = data.players?.find(p => p.playerId === selectedId);
             if (!foundPlayerData) {
                 console.warn(`Data for selected player ID ${selectedId} not found in API response.`);
-                return null; // Return null if data for a selected player wasn't returned
+                return null;
             }
-            // Ensure completedQuests is always an array, even if API returns null/undefined
             foundPlayerData.completedQuests = Array.isArray(foundPlayerData.completedQuests) ? foundPlayerData.completedQuests : [];
             return foundPlayerData;
         });
@@ -409,7 +489,7 @@ async function fetchAndUpdatePlayerData() {
 
     } catch (error) {
         console.error("Failed to fetch daily quest status:", error);
-        container.innerHTML = '<div class="dq-error">Could not load quest data. Please check the console and try again later.</div>'; // More informative error
+        container.innerHTML = '<div class="dq-error">Could not load quest data. Please check the console and try again later.</div>';
     }
 }
 
@@ -507,8 +587,9 @@ async function updateStaminaValue(index, inputElement) {
     // console.log(`Timer stopped for index ${index} during manual update.`); // Debug Log
 
     // --- Check if value actually changed compared to *current calculated* state ---
-    const currentCalculatedStamina = calculateCurrentStamina(playerQuestData[index]);
-    if (staminaValue === currentCalculatedStamina && !needsCorrection) { // Only skip if value hasn't been corrected
+    // Make sure playerQuestData[index] exists before accessing it
+    const currentCalculatedStamina = playerQuestData[index] ? calculateCurrentStamina(playerQuestData[index]) : staminaValue; // Fallback needed?
+    if (staminaValue === currentCalculatedStamina && !needsCorrection) {
         // console.log(`Stamina value (${staminaValue}) matches current calculated value. Restarting timer without API call.`);
         startStaminaTimer(index); // Just restart the timer
         // Update display just in case it was slightly off
@@ -559,7 +640,7 @@ async function updateStaminaValue(index, inputElement) {
 
         // --- Revert UI and Restart Timer ---
         // Recalculate based on *previous* state before the failed attempt
-        const lastKnownStamina = calculateCurrentStamina(playerQuestData[index]);
+        const lastKnownStamina = playerQuestData[index] ? calculateCurrentStamina(playerQuestData[index]) : 0; // Fallback to 0 if no data
         inputElement.value = lastKnownStamina; // Revert input field
         const currentStaminaDisplay = document.getElementById(`dq-stamina-current-${index}`);
         if (currentStaminaDisplay) currentStaminaDisplay.textContent = lastKnownStamina; // Revert display span
@@ -567,6 +648,7 @@ async function updateStaminaValue(index, inputElement) {
         startStaminaTimer(index); // Restart timer based on last known *good* state
     }
 }
+
 
 // --- Écouteurs d'Événements ---
 function attachEventListeners() {
@@ -603,19 +685,20 @@ function handleQuestChange(event) {
 }
 
 function handleStaminaInput(event, debounceTimer) {
-    const index = parseInt(event.target.dataset.index, 10);
-    const value = event.target.value;
+    const target = event.target;
+    const index = parseInt(target.dataset.index, 10);
+    const value = target.value;
     // Basic visual validation during typing (optional - e.g., add red border)
     if (value !== "" && (!/^\d+$/.test(value) || parseInt(value, 10) < 0 || parseInt(value, 10) > MAX_STAMINA)) {
-        event.target.style.borderColor = 'red'; // Example visual feedback
+        target.style.borderColor = 'red'; // Example visual feedback
     } else {
-        event.target.style.borderColor = ''; // Reset border
+        target.style.borderColor = ''; // Reset border
     }
 
     clearTimeout(debounceTimer); // Clear previous timer on new input
     const newTimer = setTimeout(() => {
         // console.log("Debounced stamina update triggered."); // Debug Log
-        updateStaminaValue(index, event.target);
+        updateStaminaValue(index, target);
     }, 1200); // Debounce API call by 1.2 seconds after last input
     return newTimer; // Return the new timer ID
 }
@@ -651,8 +734,31 @@ export function initDailyQuests() {
     }
     if (!playerSelectModal) {
         console.error("Player selection modal (#player-select-modal) not found on init! Player selection will not work.");
-        // La page peut quand même fonctionner sans modale, mais la sélection sera impossible
     }
+
+    // --- CHARGEMENT localStorage ---
+    loadSelectedPlayersFromLocalStorage();
+    // -----------------------------
+
+    // --- Logique d'affichage mobile/desktop ---
+    const handleResizeOrLoad = () => {
+        const isMobile = window.innerWidth <= 768;
+        // console.log(`handleResizeOrLoad - isMobile: ${isMobile}`); // Debug Log
+
+        playerSelectorUIs.forEach((ui, index) => {
+            // Afficher le premier sélecteur toujours, cacher les autres sur mobile
+            const group = ui.closest('.player-selector-group');
+            if (group) {
+                group.style.display = (index > 0 && isMobile) ? 'none' : '';
+            }
+        });
+
+        // Appeler renderQuestColumns pour redessiner le bon nombre de colonnes
+        renderQuestColumns();
+    };
+
+    window.addEventListener('resize', handleResizeOrLoad);
+    // handleResizeOrLoad(); // Appel initial déplacé APRÈS le premier fetch
 
     // --- Écouteurs pour ouvrir la modale ---
     playerSelectorUIs.forEach(ui => {
@@ -667,7 +773,6 @@ export function initDailyQuests() {
                 }
             });
         }
-        // Permettre de cliquer sur l'affichage pour ouvrir aussi (optionnel)
         const display = ui.querySelector('.dq-player-name-display');
         if(display && button) { // Ensure button exists too
             display.style.cursor = 'pointer'; // Indicate clickable
@@ -716,10 +821,7 @@ export function initDailyQuests() {
                         const playerName = firstItem.dataset.playerName;
                         setSelectedPlayer(activePlayerSelectorIndex, playerId, playerName);
                     } else if (playerSelectFilterInput.value.trim() !== '' && activePlayerSelectorIndex !== null && playerSelectCreatePlayerBtn) {
-                        // Si on tape Entrée avec du texte (et pas de sélection), simuler clic "Create New"
-                        // ATTENTION: La création n'est pas implémentée côté backend/formulaire principal ici
                         alert("Player creation via this modal is not supported in Daily Quests. Select an existing player or add them via the 'Add / Update' section.");
-                        // createPlayerBtn.click(); // Ne pas faire ça ici
                     }
                 }
             });
@@ -738,19 +840,15 @@ export function initDailyQuests() {
             });
         } // end if playerSelectListContainer
 
-        // Désactiver le bouton "Create New" spécifiquement pour ce contexte (si besoin)
-        if (playerSelectCreatePlayerBtn) {
-            // On pourrait le cacher/désactiver quand la modale est ouverte depuis Daily Quests,
-            // mais pour l'instant on gère juste le fait de ne pas l'utiliser via le 'Enter' keydown.
-            // Une approche plus propre serait d'ajouter une classe au body ou à la modale quand
-            // elle est ouverte par DQ, puis cibler le bouton en CSS:
-            // .daily-quest-modal-open #create-new-player-btn { display: none; }
-        }
-
     } // end if playerSelectModal
 
 
-    // Charger les données initiales (si aucun joueur sélectionné par défaut)
+    // Charger les données pour les joueurs potentiellement chargés depuis localStorage
+    // ET appliquer la logique mobile/desktop initiale APRÈS le premier fetch
     console.log("Performing initial data fetch (on init)...");
-    fetchAndUpdatePlayerData();
+    fetchAndUpdatePlayerData().then(() => {
+        // Appeler handleResizeOrLoad ici pour s'assurer que l'état initial
+        // (nombre de colonnes, sélecteurs visibles) est correct après le chargement des données.
+        handleResizeOrLoad();
+    });
 }
