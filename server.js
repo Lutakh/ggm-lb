@@ -21,14 +21,15 @@ const playerRoutes = require('./routes/players');
 const guildRoutes = require('./routes/guilds');
 const ptRoutes = require('./routes/perilousTrials');
 const adminRoutes = require('./routes/admin');
+const dailyQuestsRoutes = require('./routes/dailyQuests'); // <-- Nouvelle route
 
-// Montage des routes (Note: on utilise '/' pour garder les chemins des formulaires simples)
+// Montage des routes
 app.use('/', mainRoutes);
 app.use('/', playerRoutes);
 app.use('/', guildRoutes);
 app.use('/', ptRoutes);
 app.use('/', adminRoutes);
-
+app.use('/', dailyQuestsRoutes); // <-- Enregistrer la nouvelle route
 
 app.listen(PORT, () => {
     console.log(`Server started on http://localhost:${PORT}`);

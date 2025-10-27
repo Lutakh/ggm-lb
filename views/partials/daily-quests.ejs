@@ -1,0 +1,23 @@
+<%# views/partials/daily-quests.ejs %>
+<div class="view-tabs"><h2>Daily Quests Tracker</h2></div>
+
+<div class="daily-quests-selectors">
+    <% for (let i = 0; i < 3; i++) { %>
+        <div class="player-selector-group">
+            <label for="dq-player-select-<%= i %>">Player <%= i + 1 %>:</label>
+            <select id="dq-player-select-<%= i %>" class="dq-player-select" data-index="<%= i %>">
+                <option value="">-- Select Player --</option>
+                <% if (typeof playerListForSelectors !== 'undefined') { %>
+                    <% playerListForSelectors.forEach(player => { %>
+                        <option value="<%= player.id %>"><%= player.name %></option>
+                    <% }); %>
+                <% } %>
+            </select>
+        </div>
+    <% } %>
+</div>
+
+<div id="daily-quests-container" class="daily-quests-container">
+    <%# Le contenu sera généré par JavaScript %>
+    <div class="dq-placeholder">Select up to 3 players to track their daily quests.</div>
+</div>

@@ -1,22 +1,4 @@
-<%- include('partials/header') %>
-
-<nav id="desktop-sidebar">
-    <a href="/" class="sidebar-btn" data-target="home">
-        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-        <span>Home</span>
-    </a>
-    <a href="#" class="sidebar-btn" data-target="add-update-section">
-        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-        <span>Add / Update</span>
-    </a>
-    <a href="#" class="sidebar-btn" data-target="players-leaderboard-section">
-        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-        <span>Players</span>
-    </a>
-    <a href="#" class="sidebar-btn" data-target="teams-leaderboard-section">
-        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-9h4v-2h-4v2zm0 4h4v-2h-4v2z"/></svg>
-        <span>Teams</span>
-    </a>
+</a>
     <a href="#" class="sidebar-btn" data-target="guilds-leaderboard-section">
         <svg viewBox="0 0 24 24"><path d="M12 3L4 9v12h16V9l-8-6zm0 2.62L17.19 9H6.81L12 5.62zM6 19v-8.45l6 4.5 6-4.5V19H6z"/></svg>
         <span>Guilds</span>
@@ -25,12 +7,17 @@
         <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
         <span>Perilous Trials</span>
     </a>
+    <a href="#" class="sidebar-btn" data-target="daily-quests-section">
+         <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+         <span>Daily Quests</span>
+    </a>
 </nav>
 
 <main>
     <%- include('partials/top-bar') %>
 
-    <div id="add-update-section" class="main-section card">
+    <div
+id="add-update-section" class="main-section card">
         <h2>Add / Update a Character</h2>
         <form id="player-form" action="/add-player" method="POST">
             <div id="player-image-container"></div>
@@ -38,19 +25,22 @@
                 <div id="player-selection-ui">
                      <div id="player-name-display">No player selected</div>
 
-     <input type="hidden" name="name" id="name-input-hidden">
+     <input type="hidden" name="name"
+id="name-input-hidden">
                 </div>
                 <button type="button" id="open-player-select-btn" class="action-btn-main">Select Player</button>
             </div>
             <div id="form-details">
                 <select id="class-select" name="pClass">
-                    <option value="" disabled selected>Class</option>
+                    <option
+value="" disabled selected>Class</option>
 
                   <option value="Swordbearer">Swordbearer</option>
                     <option value="Acolyte">Acolyte</option>
                     <option value="Wayfarer">Wayfarer</option>
                     <option value="Scholar">Scholar</option>
-                    <option value="Shadowlash">Shadowlash</option>
+
+    <option value="Shadowlash">Shadowlash</option>
 
            </select>
                 <input id="cp-input" type="text" name="cp" placeholder="Combat Power (e.g., 554k)" required>
@@ -66,7 +56,9 @@
                 <button type="button" id="add-slot-btn">+ Add Time Slot</button>
 
 
-        <input id="notes-input" type="text" name="notes" placeholder="Personal Notes">
+
+
+    <input id="notes-input" type="text" name="notes" placeholder="Personal Notes">
                 <button id="submit-btn" type="submit" disabled>Submit Character</button>
             </div>
         </form>
@@ -79,13 +71,17 @@
 
    <div id="teams-leaderboard-section"
 class="main-section card">
-        <%- include('partials/teams-leaderboard') %>
+
+    <%- include('partials/teams-leaderboard') %>
     </div>
     <div id="guilds-leaderboard-section" class="main-section card">
         <%- include('partials/guilds-leaderboard') %>
     </div>
     <div id="perilous-trials-section" class="main-section card">
         <%- include('partials/perilous-trials') %>
+    </div>
+    <div id="daily-quests-section" class="main-section card">
+        <%- include('partials/daily-quests') %>
     </div>
 </main>
 
@@ -97,7 +93,8 @@ class="main-section card">
     </div>
      <div class="player-select-controls">
 
-  <input type="text" id="player-filter-input" placeholder="Filter or type new name..." autocomplete="off">
+  <input type="text" id="player-filter-input" placeholder="Filter or
+type new name..." autocomplete="off">
         <button type="button" id="create-new-player-btn" class="action-btn-main">Create New</button>
     </div>
     <div id="player-select-list" class="player-select-list">
@@ -106,6 +103,9 @@ class="main-section card">
 
 <script id="players-data" type="application/json">
     <%- JSON.stringify(players.map(p => ({...p, id: p.id, name: p.name, class: p.class}))) %>
+</script>
+<script id="player-selector-data" type="application/json">
+    <%- JSON.stringify(playerListForSelectors) %>
 </script>
 
 <%- include('partials/admin-modal') %>
@@ -143,7 +143,8 @@ white-space: pre-wrap; line-height: 1.6;">
 
 <div id="guild-detail-modal-backdrop" class="player-select-modal-backdrop"></div>
 <div
-id="guild-detail-modal" class="player-select-modal">
+id="guild-detail-modal"
+class="player-select-modal">
     <div class="player-select-modal-header">
         <h3 id="guild-detail-modal-title">Guild Details</h3>
         <button type="button" id="guild-detail-close-btn" class="player-select-close-btn">&times;</button>
@@ -168,7 +169,8 @@ id="guild-detail-modal" class="player-select-modal">
   <div class="player-select-modal-header">
 
 <h3>Player Filters</h3>
-        <button type="button" id="filters-modal-close-btn" class="player-select-close-btn">&times;</button>
+
+    <button type="button" id="filters-modal-close-btn" class="player-select-close-btn">&times;</button>
     </div>
     <div class="filters-modal-body">
         <div class="filter-group-modal filters-modal-class-filter">
@@ -178,12 +180,14 @@ id="guild-detail-modal" class="player-select-modal">
                  <div class="filter-modal-dropdown-panel">
 
     <label><input type="checkbox" data-class="Swordbearer"> Swordbearer</label>
-                    <label><input type="checkbox" data-class="Acolyte"> Acolyte</label>
+
+                  <label><input type="checkbox" data-class="Acolyte"> Acolyte</label>
                     <label><input type="checkbox" data-class="Wayfarer"> Wayfarer</label>
                     <label><input type="checkbox" data-class="Scholar"> Scholar</label>
                     <label><input type="checkbox" data-class="Shadowlash"> Shadowlash</label>
 
-             </div>
+
+   </div>
             </div>
         </div>
         <div class="filter-group-modal">
@@ -192,7 +196,8 @@ id="guild-detail-modal" class="player-select-modal">
                  <input type="text" id="filters-modal-cp-min" placeholder="Min CP (e.g., 500k)">
 
 <input type="text" id="filters-modal-cp-max" placeholder="Max CP (e.g., 1.5m)">
-            </div>
+
+</div>
         </div>
         <div class="filter-group-modal">
             <h4>Guild</h4>
@@ -200,7 +205,8 @@ id="guild-detail-modal" class="player-select-modal">
                  <button type="button" class="filter-modal-dropdown-btn" data-default-text="All Guilds">All Guilds</button>
                 <div class="filter-modal-dropdown-panel">
 
-             <% guilds.forEach(name => { %>
+             <% guilds.forEach(name => {
+%>
                         <label><input type="checkbox" data-guild="<%= name %>"> <%= name %></label>
                       <% });
 %>
@@ -212,7 +218,8 @@ id="guild-detail-modal" class="player-select-modal">
             <div class="filter-modal-dropdown" data-filter-type="team">
                 <button type="button" class="filter-modal-dropdown-btn" data-default-text="All Teams">All Teams</button>
 
-       <div class="filter-modal-dropdown-panel">
+       <div
+class="filter-modal-dropdown-panel">
                      <% allTeamNames.forEach(name => { %>
                         <label><input type="checkbox" data-team="<%= name %>"> <%= name %></label>
                     <% });
@@ -225,12 +232,14 @@ id="guild-detail-modal" class="player-select-modal">
             <h4>PT Progress</h4>
             <div class="filters-modal-panel-grid two-cols">
 
-            <select id="filters-modal-pt-tag-filter">
+
+          <select id="filters-modal-pt-tag-filter">
                     <option value="">All PT Progress</option>
                      <% perilousTrials.forEach(pt => { %>
                         <option value="<%= pt.name %>"><%= pt.name %></option>
 
-  <% }); %>
+  <% });
+%>
                 </select>
                 <select id="filters-modal-pt-tag-mode">
                     <option value="has">Has Tag</option>
@@ -239,7 +248,8 @@ id="guild-detail-modal" class="player-select-modal">
 
 
   </div>
-        </div>
+
+   </div>
     </div>
 </div>
 
@@ -253,21 +263,27 @@ id="guild-detail-modal" class="player-select-modal">
         <p>This section provides leaderboards for Perilous Trial (PT) events.</p>
         <strong>Global PT Ranking</strong>
         <p>This is a server-wide ranking based on points earned from all PTs.</p>
-        <ul>
+
+<ul>
             <li><strong>Points System:</strong> Points are awarded based on rank (50 for 1st, 49 for 2nd, ..., 1 for 50th).</li>
             <li><strong>All Ranks (Default):</strong> Sums up points from *all* your ranked entries across all PTs.</li>
-            <li><strong>Best Rank/PT:</strong> Only your *single highest-scoring* entry for each PT is counted. This mode favors players who rank high across many different PTs, rather than ranking multiple times in the same PT.</li>
+            <li><strong>Best Rank/PT:</strong> Only your *single highest-scoring* entry for each PT is counted.
+This mode favors players who rank high across many different PTs, rather than ranking multiple times in the same PT.</li>
         </ul>
         <strong>Individual PTs (e.g., PT1, PT2)</strong>
         <p>This shows the specific team rankings for that single Perilous Trial.</p>
         <strong>Admin: Submitting a Team</strong>
         <ul>
             <li>Select the correct PT from the dropdown.</li>
-            <li>The next available rank will be suggested automatically. You can overwrite it if needed (e.g., to fix a mistake).</li>
+
+      <li>The next available rank will be suggested automatically.
+You can overwrite it if needed (e.g., to fix a mistake).</li>
             <li>When selecting players:
                 <ul>
-                    <li>If the player exists, their name will appear. You only need to fill in their new CP if it has changed.</li>
-                    <li>If the player is new, you *must* provide their Class and CP. You can also assign a Guild (or create one by typing a new name).</li>
+                    <li>If the player exists, their name will appear.
+You only need to fill in their new CP if it has changed.</li>
+                    <li>If the player is new, you *must* provide their Class and CP.
+You can also assign a Guild (or create one by typing a new name).</li>
                 </ul>
             </li>
         </ul>
@@ -281,13 +297,16 @@ id="guild-detail-modal" class="player-select-modal">
         <button type="button" id="pt-filters-modal-close-btn" class="player-select-close-btn">&times;</button>
     </div>
     <div class="filters-modal-body">
-        <div class="filter-group-modal">
+        <div
+class="filter-group-modal">
             <h4>Select a Trial to View</h4>
             <select id="pt-filters-modal-select" style="width: 100%;">
                 <option value="global" selected>Global PT Ranking</option>
                 <% perilousTrials.forEach(pt => { %>
                 <option value="<%= pt.id %>"><%= pt.name %></option>
-                <% }); %>
+
+        <% });
+%>
             </select>
         </div>
         <div class="filter-group-modal" id="pt-filters-modal-mode-selector">
@@ -295,7 +314,8 @@ id="guild-detail-modal" class="player-select-modal">
             <select id="pt-filters-modal-mode" style="width: 100%;">
                 <option value="all">All Ranks</option>
                 <option value="best">Best Rank/PT</option>
-            </select>
+
+       </select>
         </div>
     </div>
 </div>

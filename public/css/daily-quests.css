@@ -1,0 +1,138 @@
+/* public/css/daily-quests.css */
+
+.daily-quests-selectors {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.player-selector-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.player-selector-group label {
+    font-weight: bold;
+    font-size: 0.9em;
+    color: var(--primary-color);
+}
+
+.daily-quests-container {
+    display: grid;
+    gap: 30px;
+}
+
+/* Styles pour 1, 2 ou 3 colonnes */
+.daily-quests-container.columns-1 { grid-template-columns: 1fr; }
+.daily-quests-container.columns-2 { grid-template-columns: 1fr 1fr; }
+.daily-quests-container.columns-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+.dq-player-column {
+    background-color: #fdfaf5;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+
+.dq-player-column h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    text-align: center;
+    color: var(--accent-color);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+.dq-stamina-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    background-color: #fff;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.dq-stamina-section label {
+    font-weight: bold;
+}
+
+.dq-stamina-input {
+    width: 60px;
+    text-align: center;
+    padding: 5px 8px;
+    font-size: 1em;
+}
+/* Cacher les flèches sur l'input number */
+.dq-stamina-input::-webkit-outer-spin-button,
+.dq-stamina-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.dq-stamina-input[type=number] {
+    -moz-appearance: textfield; /* Firefox */
+}
+
+
+.dq-stamina-current {
+    font-weight: bold;
+    color: var(--primary-color);
+    font-size: 1.1em;
+}
+
+.dq-quest-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.dq-quest-list li {
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--border-color);
+    display: flex;
+    align-items: center;
+}
+.dq-quest-list li:last-child {
+    border-bottom: none;
+}
+
+.dq-quest-list input[type="checkbox"] {
+    margin-right: 10px;
+    flex-shrink: 0;
+    width: 18px; /* Taille personnalisée si besoin */
+    height: 18px;
+    cursor: pointer;
+}
+
+.dq-quest-list label {
+    cursor: pointer;
+    flex-grow: 1;
+}
+
+.dq-placeholder, .dq-error {
+    text-align: center;
+    padding: 40px 20px;
+    color: #888;
+    font-style: italic;
+    grid-column: 1 / -1; /* S'assurer qu'il prend toute la largeur */
+}
+.dq-error {
+    color: var(--accent-color);
+    font-weight: bold;
+    font-style: normal;
+}
+
+
+/* Responsive pour mobile */
+@media (max-width: 900px) {
+    .daily-quests-container.columns-3 { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+    .daily-quests-container.columns-2,
+    .daily-quests-container.columns-3 { grid-template-columns: 1fr; }
+    .daily-quests-selectors { grid-template-columns: 1fr; }
+}

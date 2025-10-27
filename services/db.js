@@ -24,13 +24,13 @@ const initializeDb = async () => {
         await client.query(`CREATE TABLE IF NOT EXISTS class_change_timers (id SERIAL PRIMARY KEY, label TEXT NOT NULL, weeks_after_start INTEGER NOT NULL, is_active BOOLEAN DEFAULT true);`);
         await client.query(`CREATE TABLE IF NOT EXISTS player_pt_tags (
                                                                           player_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
-                                                                          pt_id INTEGER NOT NULL REFERENCES perilous_trials(id) ON DELETE CASCADE,
-                                                                          PRIMARY KEY (player_id, pt_id)
-                            );`);
+            pt_id INTEGER NOT NULL REFERENCES perilous_trials(id) ON DELETE CASCADE,
+            PRIMARY KEY (player_id, pt_id)
+            );`);
 
         // --- CORRECTION : Logique de migration intelligente pour pt_leaderboard ---
         const checkColumn = await client.query(`
-            SELECT 1 FROM information_schema.columns 
+            SELECT 1 FROM information_schema.columns
             WHERE table_name='pt_leaderboard' AND column_name='player1_id'
         `);
 
@@ -38,22 +38,22 @@ const initializeDb = async () => {
             console.log('⚠️ Old "pt_leaderboard" structure detected. Recreating table...');
             await client.query(`DROP TABLE IF EXISTS pt_leaderboard CASCADE;`);
             await client.query(`CREATE TABLE pt_leaderboard (
-                id SERIAL PRIMARY KEY,
-                pt_id INTEGER NOT NULL REFERENCES perilous_trials(id) ON DELETE CASCADE,
-                rank INTEGER NOT NULL,
-                player1_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
-                player2_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
-                player3_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
-                player4_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
-                player1_name TEXT, player2_name TEXT, player3_name TEXT, player4_name TEXT,
-                UNIQUE(pt_id, rank)
-            );`);
+                                                                id SERIAL PRIMARY KEY,
+                                                                pt_id INTEGER NOT NULL REFERENCES perilous_trials(id) ON DELETE CASCADE,
+                                                                rank INTEGER NOT NULL,
+                                                                player1_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
+                                                                player2_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
+                                                                player3_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
+                                                                player4_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
+                                                                player1_name TEXT, player2_name TEXT, player3_name TEXT, player4_name TEXT,
+                                                                UNIQUE(pt_id, rank)
+                                );`);
             console.log('✅ Table "pt_leaderboard" recreated with new structure.');
         } else {
             // Si la table a déjà la bonne structure, on s'assure qu'elle existe (pour le tout premier lancement)
             await client.query(`CREATE TABLE IF NOT EXISTS pt_leaderboard (
-                id SERIAL PRIMARY KEY,
-                pt_id INTEGER NOT NULL REFERENCES perilous_trials(id) ON DELETE CASCADE,
+                                                                              id SERIAL PRIMARY KEY,
+                                                                              pt_id INTEGER NOT NULL REFERENCES perilous_trials(id) ON DELETE CASCADE,
                 rank INTEGER NOT NULL,
                 player1_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
                 player2_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
@@ -61,7 +61,7 @@ const initializeDb = async () => {
                 player4_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
                 player1_name TEXT, player2_name TEXT, player3_name TEXT, player4_name TEXT,
                 UNIQUE(pt_id, rank)
-            );`);
+                );`);
         }
 
         // Trigger pour 'updated_at'
