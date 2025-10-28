@@ -192,12 +192,37 @@
     -moz-appearance: textfield;
     flex-shrink: 0;
 }
+
 .dq-stamina-next-seconds-input::-webkit-outer-spin-button,
 .dq-stamina-next-seconds-input::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
+.dq-stamina-full-in-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 5px; /* Espacement avec la ligne précédente */
+    padding-top: 5px;
+    border-top: 1px dashed var(--border-color); /* Séparateur visuel léger */
+    width: 100%; /* Prendre toute la largeur */
+}
 
+.dq-stamina-full-in-group label {
+    font-size: 0.85em;
+    color: #555;
+    font-weight: normal;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.dq-stamina-full-in-value {
+    font-size: 0.9em;
+    color: var(--primary-color);
+    font-weight: bold;
+    flex-grow: 1;
+    text-align: left;
+}
 
 .dq-stamina-timer-group span { /* Pour les labels "min" et "sec" */
     font-size: 0.85em;

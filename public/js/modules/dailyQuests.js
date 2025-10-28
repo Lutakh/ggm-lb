@@ -151,6 +151,7 @@ function updateStaminaDisplay(index, currentStaminaValue) {
     const currentStaminaInput = document.getElementById(`dq-stamina-input-${index}`);
     const minutesInputElement = document.getElementById(`dq-stamina-next-input-${index}`);
     const secondsInputElement = document.getElementById(`dq-stamina-next-seconds-input-${index}`);
+    const fullInValueElement = document.getElementById(`dq-stamina-full-in-value-${index}`);
     const playerData = playerQuestData[index]; // Besoin des données pour le timer
 
     if (currentStaminaDisplay) currentStaminaDisplay.textContent = currentStaminaValue;
@@ -160,9 +161,11 @@ function updateStaminaDisplay(index, currentStaminaValue) {
         currentStaminaInput.value = currentStaminaValue;
     }
 
-    // Calculer et mettre à jour le temps restant
+    // Calculer et mettre à jour le temps restant jusqu'au prochain point
     let minutesRemainingValue = '';
     let secondsRemainingValue = '';
+    let fullInText = '-';
+
     if (playerData && playerData.staminaLastUpdated && currentStaminaValue < MAX_STAMINA) {
         const lastUpdated = new Date(playerData.staminaLastUpdated);
         if (!isNaN(lastUpdated.getTime())) {
@@ -172,6 +175,7 @@ function updateStaminaDisplay(index, currentStaminaValue) {
             const msSinceLastUpdate = nowMs - lastUpdatedMs;
 
             if (msSinceLastUpdate >= 0) {
+                // Temps restant jusqu'au prochain point
                 const msIntoCurrentCycle = msSinceLastUpdate % cycleMs;
                 const msRemaining = cycleMs - msIntoCurrentCycle;
                 const totalSecondsRemaining = Math.max(0, Math.floor(msRemaining / 1000));
@@ -179,14 +183,36 @@ function updateStaminaDisplay(index, currentStaminaValue) {
                 secondsRemainingValue = totalSecondsRemaining % 60;
                 secondsRemainingValue = (secondsRemainingValue < 10) ? `0${secondsRemainingValue}` : secondsRemainingValue.toString();
                 if (minutesRemainingValue === 0 && secondsRemainingValue === '00' && msRemaining > 0 && totalSecondsRemaining === 0) {
-                    secondsRemainingValue = '00'; // Keep 00 if exactly at the turn
+                    secondsRemainingValue = '00';
                 }
                 else if (msRemaining <= 0) {
                     secondsRemainingValue = '';
                     minutesRemainingValue = '';
                 }
+
+                // Calculer le temps jusqu'à stamina pleine (60/60)
+                const staminaToGain = MAX_STAMINA - currentStaminaValue;
+                if (staminaToGain > 0) {
+                    // Temps pour le cycle actuel + temps pour les cycles restants
+                    const msUntilFull = msRemaining + (staminaToGain - 1) * cycleMs;
+                    const totalSecondsUntilFull = Math.floor(msUntilFull / 1000);
+                    const hoursUntilFull = Math.floor(totalSecondsUntilFull / 3600);
+                    const minutesUntilFull = Math.floor((totalSecondsUntilFull % 3600) / 60);
+                    const secondsUntilFull = totalSecondsUntilFull % 60;
+
+                    // Formater l'affichage
+                    if (hoursUntilFull > 0) {
+                        fullInText = `${hoursUntilFull}h ${minutesUntilFull}m`;
+                    } else if (minutesUntilFull > 0) {
+                        fullInText = `${minutesUntilFull}m ${secondsUntilFull}s`;
+                    } else {
+                        fullInText = `${secondsUntilFull}s`;
+                    }
+                }
             }
         }
+    } else if (currentStaminaValue >= MAX_STAMINA) {
+        fullInText = 'Full!';
     }
 
     // Mettre à jour les inputs de temps QUE s'ils n'ont pas le focus
@@ -196,9 +222,12 @@ function updateStaminaDisplay(index, currentStaminaValue) {
     if (secondsInputElement && document.activeElement !== secondsInputElement) {
         secondsInputElement.value = secondsRemainingValue;
     }
+
+    // Mettre à jour l'affichage "Full in"
+    if (fullInValueElement) {
+        fullInValueElement.textContent = fullInText;
+    }
 }
-
-
 // --- Sélection de Joueur (Callback pour la modale) ---
 // Fonction appelée par le module de modale lorsqu'un joueur est sélectionné
 function setSelectedPlayer(playerId, playerName, triggerContext) {
@@ -311,6 +340,10 @@ function renderQuestColumns() {
                         <label for="dq-stamina-next-input-${index}">Next in:</label>
                         <input type="number" id="dq-stamina-next-input-${index}" class="dq-stamina-next-input" min="0" max="${STAMINA_REGEN_RATE_MINUTES - 1}" placeholder="min" data-index="${index}" value="" autocomplete="off"><span>min</span>
                         <input type="number" id="dq-stamina-next-seconds-input-${index}" class="dq-stamina-next-seconds-input" min="0" max="59" placeholder="sec" data-index="${index}" value="" autocomplete="off"><span>sec</span>
+                    </div>
+                    <div class="dq-stamina-full-in-group">
+                        <label>Full in:</label>
+                        <span class="dq-stamina-full-in-value" id="dq-stamina-full-in-value-${index}">-</span>
                     </div>
                 </div>
                 <ul class="dq-quest-list">${questsHtml}</ul>`;
