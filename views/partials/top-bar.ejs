@@ -76,9 +76,9 @@ timers.daily %>" data-type="daily"></span>
             <% if (timers.levelCapTimers && timers.levelCapTimers.currentLevelCap) { %>
             <li class="timer-entry">
                  <span class="timer-label">
-                     Lv.<%= timers.levelCapTimers.currentLevelCap.level %> Cap
+                     Lv.<%= timers.levelCapTimers.currentLevelCap.level %> Cap.
                      <% if (timers.levelCapTimers.nextLevelCap) { %>
-                        (Next: Lv.<%= timers.levelCapTimers.nextLevelCap.level %> in)
+                       Lv.<%= timers.levelCapTimers.nextLevelCap.level %> in:
                      <% } else { %>
                         (Final Cap)
                      <% } %>
