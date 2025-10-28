@@ -33,6 +33,7 @@ services:
       DB_NAME: ${POSTGRES_DB}
       DB_PORT: 5432
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      BOT_TOKEN: ${BOT_TOKEN}
 
 volumes:
   postgres_data:
