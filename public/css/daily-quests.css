@@ -297,3 +297,14 @@
         margin-top: 8px;
     }
 }
+#daily-quests-section .view-tabs {
+    justify-content: flex-start; /* Aligne les éléments au début */
+    align-items: center; /* Garde l'alignement vertical centré */
+    gap: 15px; /* Ajoute un espace entre le titre et le bouton */
+}
+
+#daily-quests-section .view-tabs .help-button {
+    margin-left: 0; /* Annule la marge gauche par défaut du bouton si 'gap' est suffisant */
+    /* Vous pouvez ajuster margin-bottom si l'alignement vertical n'est pas parfait */
+    /* margin-bottom: 2px; */
+}
