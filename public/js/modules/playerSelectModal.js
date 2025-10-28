@@ -45,6 +45,7 @@ function populatePlayerList(filter = '') {
         .forEach(player => {
             const item = document.createElement('div');
             item.className = 'suggestion-item';
+            // **Important**: Stocker l'ID et le nom dans les data attributes
             item.dataset.playerId = player.id;
             item.dataset.playerName = player.name;
             // Afficher la classe si disponible (peut être utile)
@@ -65,8 +66,15 @@ function closeModal() {
 
 // Appelle le callback lorsqu'un joueur existant est sélectionné
 function selectExistingPlayer(playerId, playerName) {
+    // Vérification ajoutée
+    if (playerId === undefined || playerId === null || !playerName) {
+        console.error("selectExistingPlayer called with invalid data:", { playerId, playerName });
+        closeModal(); // Fermer la modale pour éviter un état incohérent
+        return;
+    }
     if (currentSelectCallback) {
-        currentSelectCallback(playerId, playerName, currentTriggerContext);
+        // Assurer que l'ID est bien un nombre
+        currentSelectCallback(Number(playerId), playerName, currentTriggerContext);
     }
     closeModal();
 }
@@ -85,8 +93,6 @@ function handleCreatePlayer() {
         return;
     }
 
-    // Appelle le callback avec un ID null pour indiquer un nouveau joueur
-    // Seulement si le contexte l'autorise (ex: playerForm le permet, dailyQuests non)
     if (currentTriggerContext && currentTriggerContext.allowCreation && currentSelectCallback) {
         currentSelectCallback(null, newName, currentTriggerContext);
         closeModal();
@@ -96,8 +102,6 @@ function handleCreatePlayer() {
 }
 
 // Fonction exportée pour ouvrir la modale depuis d'autres modules
-// triggerContext: { type: string, index?: number, allowCreation?: boolean, allSelectedIds?: array }
-// selectCallback: function(playerId, playerName, triggerContext)
 export function openModal(triggerContext, selectCallback) {
     if (!modal || !backdrop || !filterInput) {
         console.error("Cannot open player select modal, elements not initialized.");
@@ -106,13 +110,12 @@ export function openModal(triggerContext, selectCallback) {
     currentTriggerContext = triggerContext;
     currentSelectCallback = selectCallback;
 
-    // Activer/désactiver le bouton "Create New" selon le contexte
     if (createPlayerBtn) {
         createPlayerBtn.style.display = triggerContext.allowCreation ? '' : 'none';
     }
 
     filterInput.value = '';
-    populatePlayerList(); // Populate with potential exclusions based on context
+    populatePlayerList();
     modal.style.display = 'flex';
     backdrop.style.display = 'block';
     filterInput.focus();
@@ -132,7 +135,7 @@ export function initPlayerSelectModal(playersData) {
 
     if (!modal || !backdrop || !filterInput || !playerListContainer || !closeModalBtn || !createPlayerBtn) {
         console.error("One or more player select modal elements are missing! Modal functionality will be limited.");
-        return; // Ne pas attacher les listeners si les éléments manquent
+        return;
     }
 
     // Attacher les listeners internes à la modale
@@ -158,14 +161,11 @@ export function initPlayerSelectModal(playersData) {
         } else if (e.key === 'Enter') {
             e.preventDefault();
             const activeItem = playerListContainer.querySelector('.suggestion-item.active');
-            if (activeItem) {
-                // Sélection via Entrée sur un item en surbrillance
-                selectExistingPlayer(parseInt(activeItem.dataset.playerId, 10), activeItem.dataset.playerName);
-            } else if (items.length > 0 && activeSuggestionIndex === -1) {
-                // Sélection via Entrée sans surbrillance (prend le premier item)
-                selectExistingPlayer(parseInt(items[0].dataset.playerId, 10), items[0].dataset.playerName);
+            if (activeItem && activeItem.dataset.playerId && activeItem.dataset.playerName) {
+                selectExistingPlayer(activeItem.dataset.playerId, activeItem.dataset.playerName);
+            } else if (items.length > 0 && activeSuggestionIndex === -1 && items[0].dataset.playerId && items[0].dataset.playerName) {
+                selectExistingPlayer(items[0].dataset.playerId, items[0].dataset.playerName);
             } else if (filterInput.value.trim() !== '' && currentTriggerContext && currentTriggerContext.allowCreation) {
-                // Création via Entrée si autorisé
                 handleCreatePlayer();
             }
         }
@@ -173,9 +173,11 @@ export function initPlayerSelectModal(playersData) {
 
     playerListContainer.addEventListener('click', (e) => {
         const selectedItem = e.target.closest('.suggestion-item');
-        if (selectedItem) {
-            // Sélection via clic
-            selectExistingPlayer(parseInt(selectedItem.dataset.playerId, 10), selectedItem.dataset.playerName);
+        // **Vérification ajoutée**
+        if (selectedItem && selectedItem.dataset.playerId && selectedItem.dataset.playerName) {
+            selectExistingPlayer(selectedItem.dataset.playerId, selectedItem.dataset.playerName);
+        } else if (selectedItem) {
+            console.error("Clicked item is missing player data:", selectedItem);
         }
     });
 
