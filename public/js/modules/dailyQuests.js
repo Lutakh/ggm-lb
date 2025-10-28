@@ -90,20 +90,27 @@ function loadSelectedPlayersFromLocalStorage() {
 
 
 // --- Fonctions Stamina (calcul, timers) ---
-// Calcule la stamina actuelle côté client (similaire au backend)
+// Calcule la stamina actuelle côté client (similaire au backend MAIS utilisé seulement par le timer)
 function calculateCurrentStamina(playerData) {
+    // console.log(`[calculateCurrentStamina] Called with:`, playerData); // DEBUG
     if (!playerData || typeof playerData.stamina !== 'number') return 0; // Guard clause
-    if (!playerData.staminaLastUpdated) return playerData.stamina; // Si pas de date, retourne la valeur brute
+    // *** ATTENTION: Utiliser la stamina de BASE (celle au moment du timestamp) pour le calcul du timer ***
+    const baseStamina = playerData.stamina;
+    const timestamp = playerData.staminaLastUpdated;
 
-    const lastUpdated = new Date(playerData.staminaLastUpdated);
+    if (!timestamp) return baseStamina; // Si pas de date, retourne la valeur de base
+
+    const lastUpdated = new Date(timestamp);
     const now = new Date();
-    if (isNaN(lastUpdated.getTime())) return playerData.stamina; // Date invalide
+    if (isNaN(lastUpdated.getTime())) return baseStamina; // Date invalide
 
     const minutesPassed = Math.floor((now.getTime() - lastUpdated.getTime()) / (1000 * 60));
-    if (minutesPassed < 0) return Math.min(MAX_STAMINA, playerData.stamina); // Horloge désynchronisée
+    // console.log(`[calculateCurrentStamina] Mins passed: ${minutesPassed}`); // DEBUG
+    if (minutesPassed < 0) return Math.min(MAX_STAMINA, baseStamina); // Horloge désynchronisée
 
     const regeneratedStamina = Math.floor(minutesPassed / STAMINA_REGEN_RATE_MINUTES);
-    return Math.min(MAX_STAMINA, playerData.stamina + regeneratedStamina);
+    // console.log(`[calculateCurrentStamina] Regen: ${regeneratedStamina}`); // DEBUG
+    return Math.min(MAX_STAMINA, baseStamina + regeneratedStamina);
 }
 
 // Arrête le timer d'un slot
@@ -119,19 +126,29 @@ function startStaminaTimer(index) {
     stopStaminaTimer(index); // Arrêter l'ancien timer s'il existe
 
     const playerData = playerQuestData[index];
-    // Ne pas démarrer si pas de données valides ou si stamina max
+
+    // *** MODIFICATION: Utiliser la valeur calculée pour vérifier si max ***
+    // (Utilise le calculateCurrentStamina qui est maintenant correct pour le timer)
     if (!playerData || !playerData.staminaLastUpdated || calculateCurrentStamina(playerData) >= MAX_STAMINA) {
-        updateStaminaDisplay(index); // Mettre à jour une dernière fois (pour afficher max ou 0 si pas de data)
+        // Mettre à jour l'affichage une dernière fois
+        // Si max, on utilise MAX_STAMINA directement, sinon on recalcule pour être sûr
+        const finalDisplayValue = (playerData && calculateCurrentStamina(playerData) >= MAX_STAMINA)
+            ? MAX_STAMINA
+            : calculateCurrentStamina(playerData); // Recalcule si pas max ou pas de data
+        updateStaminaDisplay(index, finalDisplayValue);
+        // console.log(`[Timer Start ${index}] Timer not started or stopped (Max Stamina or No Data). Final display: ${finalDisplayValue}`); // DEBUG
         return;
     }
+    // console.log(`[Timer Start ${index}] Starting timer with data:`, JSON.parse(JSON.stringify(playerData))); // DEBUG
 
     const updateDisplay = () => {
+        // Le calcul ici est correct pour le timer live
         const currentStamina = calculateCurrentStamina(playerData);
-        // *** DEBUG LOG AJOUTÉ ***
-        // console.log(`[Timer Tick ${index}] Calculated Stamina: ${currentStamina} (Base: ${playerData.stamina}, TS: ${playerData.staminaLastUpdated})`);
+        // console.log(`[Timer Tick ${index}] Calculated Stamina: ${currentStamina}`); // DEBUG Log précédent
         updateStaminaDisplay(index, currentStamina);
 
         if (currentStamina >= MAX_STAMINA) {
+            // console.log(`[Timer Tick ${index}] Max stamina reached, stopping timer.`); // DEBUG
             stopStaminaTimer(index); // Arrêter quand max atteint
         }
     };
@@ -141,26 +158,26 @@ function startStaminaTimer(index) {
 }
 
 // Met à jour les éléments d'affichage de la stamina et du timer
-function updateStaminaDisplay(index, currentStaminaOverride = null) {
-    const playerData = playerQuestData[index];
-    const currentStamina = currentStaminaOverride !== null ? currentStaminaOverride : calculateCurrentStamina(playerData);
+function updateStaminaDisplay(index, currentStaminaValue) {
+    // console.log(`[Update Display ${index}] Updating display elements with stamina: ${currentStaminaValue}`); // DEBUG
 
     const currentStaminaDisplay = document.getElementById(`dq-stamina-current-${index}`);
     const currentStaminaInput = document.getElementById(`dq-stamina-input-${index}`);
     const minutesInputElement = document.getElementById(`dq-stamina-next-input-${index}`);
     const secondsInputElement = document.getElementById(`dq-stamina-next-seconds-input-${index}`);
+    const playerData = playerQuestData[index]; // Besoin des données pour le timer
 
-    if (currentStaminaDisplay) currentStaminaDisplay.textContent = currentStamina;
+    if (currentStaminaDisplay) currentStaminaDisplay.textContent = currentStaminaValue;
 
     // Mettre à jour l'input QUE s'il n'a pas le focus
     if (currentStaminaInput && document.activeElement !== currentStaminaInput) {
-        currentStaminaInput.value = currentStamina;
+        currentStaminaInput.value = currentStaminaValue;
     }
 
-    // Calculer et mettre à jour le temps restant
+    // Calculer et mettre à jour le temps restant (basé sur playerData, pas sur currentStaminaValue directement)
     let minutesRemainingValue = '';
     let secondsRemainingValue = '';
-    if (playerData && playerData.staminaLastUpdated && currentStamina < MAX_STAMINA) {
+    if (playerData && playerData.staminaLastUpdated && currentStaminaValue < MAX_STAMINA) { // Vérifier avec la valeur actuelle
         const lastUpdated = new Date(playerData.staminaLastUpdated);
         if (!isNaN(lastUpdated.getTime())) {
             const nowMs = Date.now();
@@ -177,14 +194,17 @@ function updateStaminaDisplay(index, currentStaminaOverride = null) {
                 secondsRemainingValue = (secondsRemainingValue < 10) ? `0${secondsRemainingValue}` : secondsRemainingValue.toString();
                 if (minutesRemainingValue === 0 && secondsRemainingValue === '00' && msRemaining > 0 && totalSecondsRemaining === 0) {
                     secondsRemainingValue = '00'; // Keep 00 if exactly at the turn
-                } else if (minutesRemainingValue === 0 && secondsRemainingValue === '0' && msRemaining <= 0) {
-                    secondsRemainingValue = ''; // Clear if time passed
+                }
+                // Correction: S'assurer que si msRemaining <=0 on vide bien les champs
+                else if (msRemaining <= 0) {
+                    secondsRemainingValue = '';
                     minutesRemainingValue = '';
                 }
 
             }
         }
     }
+    // console.log(`[Update Display ${index}] Timer values calculated: M=${minutesRemainingValue}, S=${secondsRemainingValue}`); // DEBUG
 
     // Mettre à jour les inputs de temps QUE s'ils n'ont pas le focus
     if (minutesInputElement && document.activeElement !== minutesInputElement) {
@@ -304,10 +324,10 @@ function renderQuestColumns() {
         }
         // Si data existe
         else if (data) {
-            const currentStamina = calculateCurrentStamina(data);
+            // *** CORRECTION: Utiliser directement data.stamina pour l'affichage initial ***
+            const initialStaminaToDisplay = data.stamina;
 
-            // *** DEBUG LOG AJOUTÉ ***
-            console.log(`[Render ${index}] Rendering column. Data used:`, JSON.parse(JSON.stringify(data)), `Calculated Stamina for display: ${currentStamina}`);
+            console.log(`[Render ${index}] Rendering column. Data received:`, JSON.parse(JSON.stringify(data)), `Stamina for initial display: ${initialStaminaToDisplay}`); // Utilise initialStaminaToDisplay
 
             let questsHtml = questListDefinition.map(quest => {
                 const isCompleted = Array.isArray(data.completedQuests) && data.completedQuests.includes(quest.key);
@@ -319,9 +339,9 @@ function renderQuestColumns() {
                 <h3>${data.name}</h3>
                 <div class="dq-stamina-section">
                     <label for="dq-stamina-input-${index}">Stamina:</label>
-                    <input type="number" id="dq-stamina-input-${index}" class="dq-stamina-input" min="0" max="${MAX_STAMINA}" value="${currentStamina}" data-index="${index}" autocomplete="off">
+                    <input type="number" id="dq-stamina-input-${index}" class="dq-stamina-input" min="0" max="${MAX_STAMINA}" value="${initialStaminaToDisplay}" data-index="${index}" autocomplete="off">
                     <div class="dq-stamina-display-group">
-                        <span class="dq-stamina-current" id="dq-stamina-current-${index}">${currentStamina}</span><span class="dq-stamina-separator">/</span><span class="dq-stamina-max">${MAX_STAMINA}</span>
+                        <span class="dq-stamina-current" id="dq-stamina-current-${index}">${initialStaminaToDisplay}</span><span class="dq-stamina-separator">/</span><span class="dq-stamina-max">${MAX_STAMINA}</span>
                     </div>
                     <div class="dq-stamina-timer-group">
                         <label for="dq-stamina-next-input-${index}">Next in:</label>
@@ -332,7 +352,8 @@ function renderQuestColumns() {
                 <ul class="dq-quest-list">${questsHtml}</ul>`;
 
             // Démarrer le timer SEULEMENT si la colonne est entièrement rendue avec succès
-            setTimeout(() => startStaminaTimer(index), 0); // léger délai pour s'assurer que le DOM est prêt
+            // Le timer utilisera calculateCurrentStamina pour les MAJ suivantes
+            setTimeout(() => startStaminaTimer(index), 0);
         }
 
         container.appendChild(playerColumn); // Ajouter la colonne (même si c'est "Loading...")
@@ -365,26 +386,24 @@ async function fetchAndUpdatePlayerData() {
             if (playerId !== null) {
                 const playerResult = data.players.find(p => p.playerId === playerId);
 
-                // *** DEBUG LOG AJOUTÉ ***
+                // *** DEBUG LOG ***
                 console.log(`[Fetch ${index}] Received data for player ${playerId}:`, playerResult ? JSON.parse(JSON.stringify(playerResult)) : 'Not Found');
 
-                const previousData = playerQuestData[index]; // Garder une trace de l'ancienne donnée si besoin de comparer
-                playerQuestData[index] = playerResult ? { ...playerResult } : null; // Garder null si non trouvé
+                const previousData = playerQuestData[index];
+                playerQuestData[index] = playerResult ? { ...playerResult } : null;
 
-                // *** DEBUG LOG AJOUTÉ ***
+                // *** DEBUG LOG ***
                 console.log(`[Fetch ${index}] Stored data for index ${index}:`, playerQuestData[index] ? JSON.parse(JSON.stringify(playerQuestData[index])) : 'null');
 
                 if (!playerResult) {
                     console.warn(`[DQ Fetch] Data for player ID ${playerId} not found in API response.`);
-                    // Mettre à jour le nom si jamais il avait changé entretemps (peu probable mais possible)
                     const updatedPlayerInfo = allPlayersForModal.find(p => p.id === playerId);
                     if (updatedPlayerInfo) selectedPlayerNames[index] = updatedPlayerInfo.name;
                 } else {
-                    // Assurer la cohérence du nom affiché avec les données reçues
                     selectedPlayerNames[index] = playerResult.name;
                 }
             } else {
-                playerQuestData[index] = null; // Réinitialiser si l'ID est null
+                playerQuestData[index] = null;
             }
         });
 
@@ -392,11 +411,11 @@ async function fetchAndUpdatePlayerData() {
         console.error('Error fetching daily quest status:', error);
         selectedPlayerIds.forEach((playerId, index) => {
             if (playerId !== null && idsToFetch.includes(playerId)) {
-                playerQuestData[index] = null; // Marquer comme échec
+                playerQuestData[index] = null;
             }
         });
     } finally {
-        renderQuestColumns(); // Redessiner avec les nouvelles données ou l'état d'erreur/chargement
+        renderQuestColumns(); // Redessiner avec les nouvelles données
     }
 }
 
@@ -409,7 +428,6 @@ async function updateQuestStatus(playerId, questKey, completed) {
             body: JSON.stringify({ playerId, questKey, completed }),
         });
         if (!response.ok) throw new Error('Failed to update quest status');
-        // Optionnel: Mettre à jour localement pour réactivité ?
         const playerIndex = selectedPlayerIds.indexOf(playerId);
         if (playerIndex !== -1 && playerQuestData[playerIndex]) {
             if (completed) {
@@ -419,7 +437,6 @@ async function updateQuestStatus(playerId, questKey, completed) {
             } else {
                 playerQuestData[playerIndex].completedQuests = playerQuestData[playerIndex].completedQuests.filter(q => q !== questKey);
             }
-            // Pas besoin de re-render juste pour ça, le checkbox est déjà visuellement à jour.
         }
 
     } catch (error) {
@@ -439,24 +456,11 @@ async function updateStaminaValue(index, staminaInputElement, minutesInputElemen
     const minutesValue = (minutesInputElement && minutesInputElement.value !== '') ? parseInt(minutesInputElement.value, 10) : null;
     const secondsValue = (secondsInputElement && secondsInputElement.value !== '') ? parseInt(secondsInputElement.value, 10) : null;
 
-    // --- Validation ---
-    if (isNaN(staminaValue) || staminaValue < 0 || staminaValue > MAX_STAMINA) {
-        alert(`Invalid stamina value (${staminaValue}). Must be between 0 and ${MAX_STAMINA}.`);
-        fetchAndUpdatePlayerData();
-        return;
-    }
-    if (minutesValue !== null && (isNaN(minutesValue) || minutesValue < 0 || minutesValue >= STAMINA_REGEN_RATE_MINUTES)) {
-        alert(`Invalid minutes value (${minutesValue}). Must be between 0 and ${STAMINA_REGEN_RATE_MINUTES - 1}.`);
-        fetchAndUpdatePlayerData(); return;
-    }
-    if (secondsValue !== null && (isNaN(secondsValue) || secondsValue < 0 || secondsValue > 59)) {
-        alert(`Invalid seconds value (${secondsValue}). Must be between 0 and 59.`);
-        fetchAndUpdatePlayerData(); return;
-    }
-    if (minutesValue === null && secondsValue !== null && secondsValue !== 0) {
-        alert(`Cannot set only seconds remaining (unless it's 0). Please also specify minutes or clear seconds.`);
-        fetchAndUpdatePlayerData(); return;
-    }
+    // --- Validation --- (inchangée)
+    if (isNaN(staminaValue) || staminaValue < 0 || staminaValue > MAX_STAMINA) { alert(`Invalid stamina value...`); fetchAndUpdatePlayerData(); return; }
+    if (minutesValue !== null && (isNaN(minutesValue) || minutesValue < 0 || minutesValue >= STAMINA_REGEN_RATE_MINUTES)) { alert(`Invalid minutes value...`); fetchAndUpdatePlayerData(); return; }
+    if (secondsValue !== null && (isNaN(secondsValue) || secondsValue < 0 || secondsValue > 59)) { alert(`Invalid seconds value...`); fetchAndUpdatePlayerData(); return; }
+    if (minutesValue === null && secondsValue !== null && secondsValue !== 0) { alert(`Cannot set only seconds...`); fetchAndUpdatePlayerData(); return; }
     // --- Fin Validation ---
 
     stopStaminaTimer(index); // Arrêter le timer local pendant la mise à jour serveur
@@ -465,12 +469,7 @@ async function updateStaminaValue(index, staminaInputElement, minutesInputElemen
         const response = await fetch('/daily-quests/update-stamina', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                playerId,
-                stamina: staminaValue,
-                minutesUntilNext: minutesValue,
-                secondsUntilNext: secondsValue
-            }),
+            body: JSON.stringify({ playerId, stamina: staminaValue, minutesUntilNext: minutesValue, secondsUntilNext: secondsValue }),
         });
         if (!response.ok) {
             const errorData = await response.json();
@@ -480,15 +479,19 @@ async function updateStaminaValue(index, staminaInputElement, minutesInputElemen
 
         // Mettre à jour les données locales avec la réponse du serveur
         if (playerQuestData[index]) {
+            // *** CORRECTION: Utiliser updatedData.stamina et updatedData.staminaLastUpdated ***
+            // Ces valeurs sont celles calculées et *enregistrées* par le serveur
             playerQuestData[index].stamina = updatedData.stamina;
             playerQuestData[index].staminaLastUpdated = updatedData.staminaLastUpdated;
-            // *** DEBUG LOG AJOUTÉ ***
             console.log(`[Update Success ${index}] Stamina updated locally after server confirm:`, JSON.parse(JSON.stringify(playerQuestData[index])));
         } else {
-            // Si les données locales n'existaient pas, on doit refetch
-            fetchAndUpdatePlayerData();
+            fetchAndUpdatePlayerData(); // Re-fetch si les données locales manquaient
             return;
         }
+
+        // *** CORRECTION: Mettre à jour l'affichage immédiatement après la réponse serveur ***
+        // Utiliser la valeur de stamina confirmée par le serveur pour l'affichage
+        updateStaminaDisplay(index, updatedData.stamina);
 
         // Redémarrer le timer local avec les nouvelles données confirmées
         startStaminaTimer(index);
@@ -553,7 +556,7 @@ function attachEventListeners() {
 }
 
 
-// --- Gestionnaires d'Événements ---
+// --- Gestionnaires d'Événements --- (inchangés, mais leur impact est corrigé par les modifs précédentes)
 function handleQuestChange(event) {
     const checkbox = event.target;
     const playerId = parseInt(checkbox.dataset.playerId, 10);
