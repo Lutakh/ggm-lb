@@ -62,14 +62,16 @@ export function updateTimers() {
         const oneDay = 86400000;
 
         // Add 'urgent' class based on type and remaining time
+        // *** MODIFICATION ICI ***
         if ((type === 'daily' && ms < oneHour) || // Daily reset within 1 hour
-            (type === 'levelCap' && ms < oneHour) || // Level cap within 1 hour
+            (type === 'levelCap' && ms < oneDay) || // Level cap within 24 hours
             (['weekly', 'event', 'classChange'].includes(type) && ms < oneDay)) // Others within 24 hours
         {
             el.classList.add('urgent');
         } else {
             el.classList.remove('urgent');
         }
+        // *** FIN MODIFICATION ***
     });
 }
 
