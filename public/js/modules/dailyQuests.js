@@ -127,6 +127,8 @@ function startStaminaTimer(index) {
 
     const updateDisplay = () => {
         const currentStamina = calculateCurrentStamina(playerData);
+        // *** DEBUG LOG AJOUTÉ ***
+        // console.log(`[Timer Tick ${index}] Calculated Stamina: ${currentStamina} (Base: ${playerData.stamina}, TS: ${playerData.staminaLastUpdated})`);
         updateStaminaDisplay(index, currentStamina);
 
         if (currentStamina >= MAX_STAMINA) {
@@ -303,6 +305,10 @@ function renderQuestColumns() {
         // Si data existe
         else if (data) {
             const currentStamina = calculateCurrentStamina(data);
+
+            // *** DEBUG LOG AJOUTÉ ***
+            console.log(`[Render ${index}] Rendering column. Data used:`, JSON.parse(JSON.stringify(data)), `Calculated Stamina for display: ${currentStamina}`);
+
             let questsHtml = questListDefinition.map(quest => {
                 const isCompleted = Array.isArray(data.completedQuests) && data.completedQuests.includes(quest.key);
                 return `<li><input type="checkbox" id="quest-${playerId}-${quest.key}" class="dq-quest-checkbox" data-player-id="${playerId}" data-quest-key="${quest.key}" ${isCompleted ? 'checked' : ''}><label for="quest-${playerId}-${quest.key}">${quest.label}</label></li>`;
@@ -358,7 +364,16 @@ async function fetchAndUpdatePlayerData() {
         selectedPlayerIds.forEach((playerId, index) => {
             if (playerId !== null) {
                 const playerResult = data.players.find(p => p.playerId === playerId);
+
+                // *** DEBUG LOG AJOUTÉ ***
+                console.log(`[Fetch ${index}] Received data for player ${playerId}:`, playerResult ? JSON.parse(JSON.stringify(playerResult)) : 'Not Found');
+
+                const previousData = playerQuestData[index]; // Garder une trace de l'ancienne donnée si besoin de comparer
                 playerQuestData[index] = playerResult ? { ...playerResult } : null; // Garder null si non trouvé
+
+                // *** DEBUG LOG AJOUTÉ ***
+                console.log(`[Fetch ${index}] Stored data for index ${index}:`, playerQuestData[index] ? JSON.parse(JSON.stringify(playerQuestData[index])) : 'null');
+
                 if (!playerResult) {
                     console.warn(`[DQ Fetch] Data for player ID ${playerId} not found in API response.`);
                     // Mettre à jour le nom si jamais il avait changé entretemps (peu probable mais possible)
@@ -467,6 +482,8 @@ async function updateStaminaValue(index, staminaInputElement, minutesInputElemen
         if (playerQuestData[index]) {
             playerQuestData[index].stamina = updatedData.stamina;
             playerQuestData[index].staminaLastUpdated = updatedData.staminaLastUpdated;
+            // *** DEBUG LOG AJOUTÉ ***
+            console.log(`[Update Success ${index}] Stamina updated locally after server confirm:`, JSON.parse(JSON.stringify(playerQuestData[index])));
         } else {
             // Si les données locales n'existaient pas, on doit refetch
             fetchAndUpdatePlayerData();
