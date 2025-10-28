@@ -1,6 +1,10 @@
 <%# views/partials/daily-quests.ejs %>
-<div class="view-tabs"><h2>Daily Quests Tracker</h2></div>
-
+<div class="view-tabs">
+    <h2>Daily Quests Tracker</h2>
+    <%# --- NOUVEAU BOUTON HELP --- %>
+    <button id="dq-help-btn" class="help-button">Help</button>
+    <%# --- FIN NOUVEAU BOUTON HELP --- %>
+</div>
 <div class="daily-quests-selectors">
     <% for (let i = 0; i < 3; i++) { %>
         <div class="player-selector-group">

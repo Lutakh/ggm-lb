@@ -210,5 +210,55 @@
 <%# --- SCRIPTS JSON DATA --- %>
 <script id="players-data" type="application/json"><%- JSON.stringify(players.map(p => ({id: p.id, name: p.name, class: p.class}))) %></script>
 <script id="player-selector-data" type="application/json"><%- JSON.stringify(playerListForSelectors) %></script>
+<%# --- NOUVELLE MODALE DQ HELP --- %>
+<div id="dq-help-modal-backdrop" class="player-select-modal-backdrop"></div>
+<div id="dq-help-modal" class="player-select-modal">
+    <div class="player-select-modal-header">
+        <h3>Daily Quests & Stamina - Help</h3>
+        <button type="button" id="dq-help-close-btn" class="player-select-close-btn">&times;</button>
+    </div>
+    <div id="dq-help-modal-body">
+        <strong>Daily Quests</strong>
+        <p>This section allows you to track the completion of your daily quests for up to 3 characters. Simply check the box next to a quest when you complete it in-game. The status is saved per player for the current day (resets at 09:00 UTC).</p>
 
+        <strong>Stamina</strong>
+        <p>Stamina is required for various in-game activities. It regenerates over time.</p>
+        <ul>
+            <li><strong>Max Stamina:</strong> You can hold a maximum of 60 Stamina.</li>
+            <li><strong>Regeneration:</strong> You gain +1 Stamina every 24 minutes. Regeneration stops when you reach the maximum.</li>
+            <li><strong>Tracking:</strong> The tracker shows your current Stamina (calculated based on the last update) and allows you to manually input the current value if needed.</li>
+        </ul>
+
+        <strong>"Next in" Timer</strong>
+        <p>This timer shows the approximate time remaining (minutes and seconds) until you gain your next Stamina point. You can manually adjust this timer along with the current Stamina value for accurate tracking, especially after spending Stamina in-game.</p>
+        <ul>
+            <li>Enter the current Stamina value displayed in-game.</li>
+            <li>Enter the remaining minutes and seconds shown on the in-game timer until the next point.</li>
+            <li>The tracker will automatically calculate and display the current stamina and time remaining based on your inputs.</li>
+        </ul>
+
+        <strong>Discord Notifications</strong>
+        <p>You can receive Discord Direct Messages (DMs) when your Stamina reaches 55/60 and 60/60. This helps you avoid wasting regenerated Stamina.</p>
+        <p>To enable notifications:</p>
+        <ol>
+            <li>Add or Update your character using the "Add / Update" section.</li>
+            <li>Find your Discord User ID (see below).</li>
+            <li>Enter your Discord User ID into the corresponding field in the form and submit.</li>
+            <li>Ensure you allow Direct Messages from server members or the bot itself in your Discord privacy settings.</li>
+        </ol>
+
+        <strong>How to find your Discord User ID:</strong>
+        <ol>
+            <li>Open Discord.</li>
+            <li>Go to User Settings (gear icon near your username).</li>
+            <li>Go to the "Advanced" section.</li>
+            <li>Enable "Developer Mode".</li>
+            <li>Close settings.</li>
+            <li>Right-click (or tap and hold on mobile) on your own username in any chat or server list.</li>
+            <li>Select "Copy User ID".</li>
+            <li>Paste this ID (it's a long number) into the character form.</li>
+        </ol>
+    </div>
+</div>
+<%# --- FIN NOUVELLE MODALE DQ HELP --- %>
 <%- include('partials/footer') %>

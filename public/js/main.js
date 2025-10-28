@@ -264,7 +264,22 @@ function closeFiltersModal() {
     if (filtersBackdrop) filtersBackdrop.style.display = 'none';
 }
 
+// --- NOUVEAU: MODALE D'AIDE DAILY QUESTS ---
+const dqHelpModal = document.getElementById('dq-help-modal');
+const dqHelpBackdrop = document.getElementById('dq-help-modal-backdrop');
+const dqHelpBtn = document.getElementById('dq-help-btn');
+const dqHelpCloseBtn = document.getElementById('dq-help-close-btn');
 
+function openDqHelpModal() {
+    if (dqHelpModal) dqHelpModal.style.display = 'flex';
+    if (dqHelpBackdrop) dqHelpBackdrop.style.display = 'block';
+}
+
+function closeDqHelpModal() {
+    if (dqHelpModal) dqHelpModal.style.display = 'none';
+    if (dqHelpBackdrop) dqHelpBackdrop.style.display = 'none';
+}
+// --- FIN NOUVEAU ---
 // --- DOMContentLoaded ---
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -413,7 +428,11 @@ document.addEventListener('DOMContentLoaded', function() {
             showGuildDetails(guildRow);
         });
     }
-
+    // --- NOUVEAU: Daily Quests Help Modal ---
+    if (dqHelpBtn) dqHelpBtn.addEventListener('click', openDqHelpModal);
+    if (dqHelpCloseBtn) dqHelpCloseBtn.addEventListener('click', closeDqHelpModal);
+    if (dqHelpBackdrop) dqHelpBackdrop.addEventListener('click', closeDqHelpModal);
+    // --- FIN NOUVEAU ---
     // Filtre mobile pour les équipes (ne change pas)
     const teamMobileFilter = document.getElementById('team-guild-filter-mobile');
     const allTeamRows = document.querySelectorAll('#teams-leaderboard-table tbody tr.team-data-row');
