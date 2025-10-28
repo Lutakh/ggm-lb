@@ -121,7 +121,10 @@ router.get('/', async (req, res) => {
         const paperPlaneNumber = Math.floor(serverAgeInDays / 7);
 
         // Obtenir le timer du prochain reset (via la fonction corrigée)
-        const nextPaperPlaneReset = getNextReset(3); // Mercredi = 3
+        const nextPaperPlaneReset = getNextReset(3); // Mercredi = 3 (09:00 UTC)
+
+        // *** CORRECTION: Calculer l'heure de FIN de l'événement actuel ***
+        const paperPlaneEndTime = new Date(nextPaperPlaneReset.getTime() - (60 * 60 * 1000)); // Soustrait 1 heure (08:00 UTC)
 
 
         // Calcul des prochains resets pour le tooltip Paper Plane
@@ -149,13 +152,14 @@ router.get('/', async (req, res) => {
             timers: {
                 daily: getNextReset() - now,
                 weekly: getNextReset(1) - now, // Monday reset
-                event: nextPaperPlaneReset - now, // Next Wednesday 9 UTC (start of plane)
+                // *** MODIFIÉ: Utiliser l'heure de FIN pour le timer principal ***
+                event: paperPlaneEndTime - now, // Temps jusqu'à la FIN du PP actuel (Mercredi 08:00 UTC)
                 classChange: activeClassChangeTimer,
                 allClassChanges: allClassChangeTimers,
                 serverDay: serverAgeInDays,
                 paperPlaneNumber: paperPlaneNumber,
                 isPaperPlaneImportant: importantPaperPlanes.includes(paperPlaneNumber),
-                futurePaperPlanes: tooltipPaperPlanes,
+                futurePaperPlanes: tooltipPaperPlanes, // Le tooltip montre toujours le début des suivants (09:00 UTC)
                 // *** NEW: Pass level cap data ***
                 levelCapTimers: levelCapTimers
             },
