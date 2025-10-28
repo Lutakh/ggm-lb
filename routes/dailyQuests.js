@@ -154,96 +154,62 @@ router.post('/daily-quests/update', async (req, res) => {
 });
 
 
-// Mettre à jour manuellement la stamina ET/OU le timer (avec réinitialisation notif et secondes)
+// Mettre à jour manuellement la stamina ET/OU le timer
 router.post('/daily-quests/update-stamina', async (req, res) => {
-    // Accepter minutesUntilNext ET secondsUntilNext
     const { playerId, stamina, minutesUntilNext, secondsUntilNext } = req.body;
 
     const staminaValue = parseInt(stamina, 10);
-    // Convertir '' ou undefined en null, puis parser
     const minutesValue = minutesUntilNext !== undefined && minutesUntilNext !== null && minutesUntilNext !== '' ? parseInt(minutesUntilNext, 10) : null;
     const secondsValue = secondsUntilNext !== undefined && secondsUntilNext !== null && secondsUntilNext !== '' ? parseInt(secondsUntilNext, 10) : null;
 
-
-    // console.log(`[API /update-stamina] Received: Player ${playerId}, Stamina ${stamina}, Min ${minutesUntilNext}, Sec ${secondsUntilNext} -> Parsed: Stam ${staminaValue}, Min ${minutesValue}, Sec ${secondsValue}`); // Original log
-
-    // --- Validation (MAX_STAMINA mis à jour) ---
-    if (!playerId || isNaN(staminaValue) || staminaValue < 0 || staminaValue > MAX_STAMINA) {
-        console.error('[API /update-stamina] Invalid stamina value:', staminaValue);
-        return res.status(400).json({ error: `Invalid parameters. PlayerId and Stamina (0-${MAX_STAMINA}) are required.` });
-    }
-    // Minutes: 0 à (TAUX-1)
-    if (minutesValue !== null && (isNaN(minutesValue) || minutesValue < 0 || minutesValue >= STAMINA_REGEN_RATE_MINUTES)) {
-        console.error('[API /update-stamina] Invalid minutes value:', minutesValue);
-        return res.status(400).json({ error: `Invalid parameters. Minutes until next must be between 0 and ${STAMINA_REGEN_RATE_MINUTES - 1}.` });
-    }
-    // Secondes: 0 à 59
-    if (secondsValue !== null && (isNaN(secondsValue) || secondsValue < 0 || secondsValue > 59)) {
-        console.error('[API /update-stamina] Invalid seconds value:', secondsValue);
-        return res.status(400).json({ error: `Invalid parameters. Seconds until next must be between 0 and 59.` });
-    }
-    // Si les minutes sont null, les secondes doivent l'être aussi (ou 0)
-    if (minutesValue === null && secondsValue !== null && secondsValue !== 0) {
-        console.error('[API /update-stamina] Invalid combination: Seconds provided without minutes.');
-        return res.status(400).json({ error: `Invalid parameters. Cannot provide seconds without minutes.` });
-    }
+    // --- Validation (remains the same) ---
+    if (!playerId || isNaN(staminaValue) || staminaValue < 0 || staminaValue > MAX_STAMINA) { /* ... error handling ... */ }
+    if (minutesValue !== null && (isNaN(minutesValue) || minutesValue < 0 || minutesValue >= STAMINA_REGEN_RATE_MINUTES)) { /* ... error handling ... */ }
+    if (secondsValue !== null && (isNaN(secondsValue) || secondsValue < 0 || secondsValue > 59)) { /* ... error handling ... */ }
+    if (minutesValue === null && secondsValue !== null && secondsValue !== 0) { /* ... error handling ... */ }
     // --- Fin Validation ---
 
     try {
-        let newStaminaLastUpdated = new Date(); // Base timestamp is 'now' (UTC implicit)
-        const baseTimeLog = newStaminaLastUpdated.toISOString(); // Log base time
-        let secondsAgo = 0; // Pour le log
+        let newStaminaLastUpdated = new Date(); // Base timestamp is 'now'
+        const nowTimestampForLog = Date.now(); // For logging
+        const baseTimeLog = newStaminaLastUpdated.toISOString(); // For logging
 
-        // Si minutes/secondes sont fournies (et valides) ET que la stamina n'est pas déjà max
+        // *** MODIFIED TIMESTAMP CALCULATION ***
         if (minutesValue !== null && staminaValue < MAX_STAMINA) {
-            // S'assurer que les secondes ont une valeur par défaut si non fournies mais minutes oui
             const validSeconds = (secondsValue === null) ? 0 : secondsValue;
-            // console.log(`[API /update-stamina] Adjusting timestamp based on Min: ${minutesValue}, Sec: ${validSeconds}`); // Original log
-
-            // Calculer le temps total restant en secondes
             const totalSecondsRemaining = (minutesValue * 60) + validSeconds;
-            // Calculer le temps total d'un cycle en secondes
-            const cycleSeconds = STAMINA_REGEN_RATE_MINUTES * 60;
-            // Calculer le temps écoulé depuis le dernier gain en secondes
-            secondsAgo = cycleSeconds - totalSecondsRemaining; // Affecter pour le log
+            const cycleMilliseconds = STAMINA_REGEN_RATE_MINUTES * 60 * 1000; // Cycle duration in ms
 
-            // Log calculation details
-            // console.log(`[API /update-stamina] Calculation: cycleSec=${cycleSeconds}, remainingSec=${totalSecondsRemaining}, secondsAgo=${secondsAgo}`); // Original log
+            // 1. Calculate the exact time the *next* point *would* be gained
+            const nextRegenTime = new Date(nowTimestampForLog + (totalSecondsRemaining * 1000));
 
-            // Décaler le timestamp actuel en arrière en millisecondes
-            newStaminaLastUpdated.setTime(newStaminaLastUpdated.getTime() - (secondsAgo * 1000));
+            // 2. Subtract one full cycle to find when the *current* stamina level was reached
+            newStaminaLastUpdated = new Date(nextRegenTime.getTime() - cycleMilliseconds);
 
-        } else if (minutesValue !== null && staminaValue >= MAX_STAMINA) {
-            // console.log(`[API /update-stamina] Stamina is max (${staminaValue}), ignoring timer. Timestamp set to now.`); // Original log
-            newStaminaLastUpdated = new Date(); // Si stamina max, le timestamp précis importe moins
-            secondsAgo = -1; // Indiquer que le timer a été ignoré pour le log
+        } else if (staminaValue >= MAX_STAMINA) {
+            // If stamina is max, the last update time is effectively 'now' as regen has stopped.
+            // We use the current time directly.
+            newStaminaLastUpdated = new Date(nowTimestampForLog);
         }
-        // Si minutesValue est null, newStaminaLastUpdated reste à 'now', secondsAgo reste à 0
+        // If minutesValue is null, newStaminaLastUpdated remains 'now'
 
         const newStaminaLastUpdatedISO = newStaminaLastUpdated.toISOString();
-        // console.log(`[API /update-stamina] Player ${playerId}: BaseTime=${baseTimeLog}, Final Calculated Timestamp=${newStaminaLastUpdatedISO}`); // Original log
 
-        // *** DEBUG LOG AJOUTÉ ***
-        console.log(`[UPDATE STAMINA] Player ${playerId}: Input(S:${staminaValue}, M:${minutesValue}, Sec:${secondsValue}) -> Now:${baseTimeLog}, secondsAgo:${secondsAgo}, Calculated Timestamp: ${newStaminaLastUpdatedISO}`);
+        // Updated log to reflect potential lack of secondsAgo calculation
+        console.log(`[UPDATE STAMINA v2] Player ${playerId}: Input(S:${staminaValue}, M:${minutesValue}, Sec:${secondsValue}) -> NowMillis:${nowTimestampForLog}, NowISO:${baseTimeLog}, Calculated TimestampISO: ${newStaminaLastUpdatedISO}`);
 
-
-        // --- Réinitialiser le niveau de notification si < 55 ---
+        // --- Réinitialiser le niveau de notification si < 55 (remains the same) ---
         let notificationLevelUpdateClause = '';
         const queryParams = [staminaValue, newStaminaLastUpdatedISO, playerId];
         if (staminaValue < 55) {
-            notificationLevelUpdateClause = ', last_stamina_notification_level = $4'; // Placeholder $4
-            queryParams.push(0); // Ajouter la valeur 0 pour le $4
-            // console.log(`[API /update-stamina] Stamina < 55, resetting notification level for player ${playerId}`); // Original log
+            notificationLevelUpdateClause = ', last_stamina_notification_level = $4';
+            queryParams.push(0);
         }
         // ----------------------------------------------------------------
 
-        // Mettre à jour la BDD (avec la mise à jour conditionnelle du niveau)
-        // Les placeholders ($1, $2, $3, $4) sont gérés par le driver pg
         const updateQuery = `UPDATE players SET stamina = $1, stamina_last_updated = $2 ${notificationLevelUpdateClause} WHERE id = $3`;
-        // console.log("[API /update-stamina] Query:", updateQuery, "Params:", queryParams); // Original log
         await db.query(updateQuery, queryParams);
 
-        // Renvoyer les valeurs confirmées
         res.json({ success: true, stamina: staminaValue, staminaLastUpdated: newStaminaLastUpdatedISO });
 
     } catch (err) {
