@@ -1,7 +1,9 @@
+// routes/index.js
 const express = require('express');
 const router = express.Router();
 const db = require('../services/db');
-const { calculateClassChangeTimers } = require('../utils/timers');
+// Import BOTH timer functions
+const { calculateClassChangeTimers, calculateLevelCapTimers } = require('../utils/timers'); // Updated import
 
 router.get('/', async (req, res) => {
     try {
@@ -21,20 +23,21 @@ router.get('/', async (req, res) => {
             guildsResult,
             trialsResult,
             settingsResult,
-            ccTimersResult
+            ccTimersResult // Keep this for class change
         ] = await Promise.all([
             db.query(playersSql),
             db.query('SELECT name FROM guilds ORDER BY name;'),
             db.query('SELECT id, name FROM perilous_trials ORDER BY id;'),
             db.query('SELECT key, value FROM server_settings;'),
-            db.query('SELECT id, label, weeks_after_start, is_active FROM class_change_timers ORDER BY id;')
+            db.query('SELECT id, label, weeks_after_start, is_active FROM class_change_timers ORDER BY id;') // Keep fetching CC timers
         ]);
         const serverSettings = settingsResult.rows.reduce((acc, row) => ({ ...acc, [row.key]: row.value }), {});
 
         // Add a fallback for server_open_date
         if (!serverSettings.server_open_date) {
-            serverSettings.server_open_date = new Date().toISOString();
+            serverSettings.server_open_date = new Date().toISOString().split('T')[0]; // Use YYYY-MM-DD format
         }
+
         const players = playersResult.rows.map(p => ({ ...p, play_slots: p.play_slots || [], pt_tags: p.pt_tags || [] }));
         const guilds = guildsResult.rows.map(g => g.name);
         const perilousTrials = trialsResult.rows;
@@ -73,7 +76,7 @@ router.get('/', async (req, res) => {
         const playerListForSelectors = players.map(p => ({ id: p.id, name: p.name }));
 
 
-        // --- LOGIQUE DES TIMERS ---
+        // --- TIMERS LOGIC ---
         const now = new Date();
         const currentUTCDay = now.getUTCDay(); // 0=Dim, 1=Lun, 2=Mar, 3=Mer...
 
@@ -99,15 +102,16 @@ router.get('/', async (req, res) => {
         };
 
 
-        // Calcul des timers Class Change (utilise sa propre logique UTC dans utils/timers.js - 13h UTC)
+        // Calculate Class Change timers (existing)
         const allClassChangeTimers = calculateClassChangeTimers(serverSettings.server_open_date, ccTimersResult.rows);
         const activeClassChangeTimer = allClassChangeTimers.find(t => t.milliseconds > 0);
 
-        // --- [MODIFICATION] Définition des Paper Planes importants
-        const importantPaperPlanes = [2, 5, 9, 12, 14, 18, 21, 23, 24, 25, 28, 33];
+        // *** NEW: Calculate Level Cap timers ***
+        const levelCapTimers = calculateLevelCapTimers(serverSettings.server_open_date); // Call the new function
 
-        // Calcul des informations serveur et Paper Plane
-        const serverStartDate = new Date(serverSettings.server_open_date);
+        // --- Paper Plane Logic (existing) ---
+        const importantPaperPlanes = [2, 5, 9, 12, 14, 18, 21, 23, 24, 25, 28, 33];
+        const serverStartDate = new Date(serverSettings.server_open_date + 'T00:00:00Z');
         // Temps écoulé en millisecondes depuis le début du serveur
         const timeSinceStart = now.getTime() - serverStartDate.getTime();
         // Nombre de jours COMPLETS écoulés
@@ -135,23 +139,25 @@ router.get('/', async (req, res) => {
             });
         }
 
+
         res.render('index', {
             players, // Gardez la liste complète pour les classements
             playerListForSelectors, // Ajoutez la liste simplifiée pour les dropdowns
             rankedTeams, rankedGuilds, allTeamNames, guilds, perilousTrials, serverSettings,
-            classChangeTimers: ccTimersResult.rows,
+            classChangeTimers: ccTimersResult.rows, // Still needed for admin maybe?
             notification: req.query.notification || null,
             timers: {
                 daily: getNextReset() - now,
-                weekly: getNextReset(1) - now,
-                event: (nextPaperPlaneReset - now) - 3600000, // Ajusté pour 'end in' ? Vérifier si c'est correct
+                weekly: getNextReset(1) - now, // Monday reset
+                event: nextPaperPlaneReset - now, // Next Wednesday 9 UTC (start of plane)
                 classChange: activeClassChangeTimer,
                 allClassChanges: allClassChangeTimers,
                 serverDay: serverAgeInDays,
                 paperPlaneNumber: paperPlaneNumber,
-                // [MODIFICATION] Ajout de la vérification pour le compteur principal
                 isPaperPlaneImportant: importantPaperPlanes.includes(paperPlaneNumber),
-                futurePaperPlanes: tooltipPaperPlanes
+                futurePaperPlanes: tooltipPaperPlanes,
+                // *** NEW: Pass level cap data ***
+                levelCapTimers: levelCapTimers
             },
         });
     } catch (err) {

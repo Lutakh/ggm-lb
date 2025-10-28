@@ -1,73 +1,98 @@
 <div class="card top-bar">
     <a href="https://discord.gg/AMpJQ6YTtx" target="_blank" class="top-bar-section discord-section">
-        <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><title>Discord</title><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4464.8245-.6667 1.2482-2.6549-.6032-5.4682-.6032-8.1223 0-.2203-.4237-.4558-.873-.6667-1.2482a.0741.0741 0 00-.0785-.0371 19.7363 19.7363 0 00-4.8851 1.5152.0699.0699 0 00-.0321.0253C.3438 8.1764-1.229 14.041 1.0537 18.0613a.0745.0745 0 00.0817.0428c.348-.1354.698-.2903 1.0471-.4445a.0739.0739 0 00.0428-.0613c-.0352-.142-.0683-.284-.1013-.4259a.0739.0739 0 01.0253-.0785c.6764-.5267 1.3283-1.037 1.9429-1.5273a.0743.0743 0 00.0253-.0785c-.0112-.017-.0234-.033-.0352-.0502-1.153-1.025-2.23-2.18-3.12-3.4754a.069.069 0 01.002-.0817c.022-.018.043-.035.064-.052 6.02-3.18 11.64-3.18 17.66 0a.069.069 0 01.064.052.069.069 0 01.002.0817c-.89 1.29-1.967 2.45-3.12 3.4754-.01.017-.024.033-.035.05a.0743.0743 0 00.025.0785c.614.49 1.267.99 1.943 1.5273a.0739.0739 0 01.025.0785c-.033.14-.066.28-.101.4259a.0739.0739 0 00.043.0613c.349.15 1.047.44 1.047.44a.0745.0745 0 00.082-.0428c2.28-4.02 1.05-9.88.34-13.66a.069.069 0 00-.032-.025zm-5.0253 8.3242c-1.2118 0-2.1918-.99-2.1918-2.2062s.98-2.2062 2.1918-2.2062 2.1918.99 2.1918 2.2062c0 1.216-.98 2.2062-2.1918 2.2062zm-8.4322 0c-1.2118 0-2.1918-.99-2.1918-2.2062s.98-2.2062 2.1918-2.2062 2.1918.99 2.1918 2.2062c0 1.216-.98 2.2062-2.1918 2.2062z"/></svg>
-        <div class="discord-info">
-            <span>Join Discord</span>
-            <div class="discord-stats">
-                <span id="discord-online-count"></span>
-            </div>
-        </div>
-   </a>
+
+    </a>
+
     <div class="top-bar-section timers-section">
-       <ul class="timers-list">
-           <li class="timer-entry">
-               <span class="timer-label">Server Day</span>
-               <span class="timer-value server-day"><%= timers.serverDay %></span>
-           </li>
-           <li class="timer-entry">
-               <span class="timer-label">Daily Reset in</span>
-               <span class="timer-value" data-milliseconds="<%= timers.daily %>" data-type="daily"></span>
-           </li>
-           <li class="timer-entry">
-               <span class="timer-label">Weekly Reset in</span>
-               <span class="timer-value" data-milliseconds="<%= timers.weekly %>" data-type="weekly"></span>
-           </li>
-           <li class="timer-entry">
-               <span class="timer-label <%= timers.isPaperPlaneImportant ? 'important-event' : '' %>">Paper Plane #<%= timers.paperPlaneNumber %> end in</span>
-               <span class="timer-value" data-milliseconds="<%= timers.event %>" data-type="event"></span>
-               <% if (timers.futurePaperPlanes && timers.futurePaperPlanes.length > 0) { %>
-               <div class="timer-tooltip pp-tooltip">
-                   <div class="tooltip-title">Upcoming Paper Planes in</div>
+        <ul class="timers-list">
+            <li class="timer-entry">
+                <span class="timer-label">Server Day</span>
+                <span class="timer-value server-day"><%= timers.serverDay %></span>
+            </li>
+            <li class="timer-entry">
+                <span class="timer-label">Daily Reset in</span>
+                <span class="timer-value" data-milliseconds="<%= timers.daily %>" data-type="daily"></span>
+            </li>
+            <li class="timer-entry">
+                <span class="timer-label">Weekly Reset in</span>
+                <span class="timer-value" data-milliseconds="<%= timers.weekly %>" data-type="weekly"></span>
+            </li>
+
+            <li class="timer-entry">
+               <span class="timer-label <%= timers.isPaperPlaneImportant ? 'important-event' : '' %>">Paper Plane #<%= timers.paperPlaneNumber %> in</span>
+                <span class="timer-value" data-milliseconds="<%= timers.event %>" data-type="event"></span>
+                <% if (timers.futurePaperPlanes && timers.futurePaperPlanes.length > 0) { %>
+                <div class="timer-tooltip pp-tooltip">
+                    <div class="tooltip-title">Upcoming Paper Planes in</div>
                    <ul class="tooltip-list">
-                       <% timers.futurePaperPlanes.forEach(pp => { %>
-                           <li class="tooltip-item">
-                               <span class="timer-label <%= pp.isImportant ? 'important-event' : '' %>">Paper Plane #<%= pp.number %></span>
-                               <span class="timer-value" data-milliseconds="<%= pp.milliseconds %>" data-type="event"></span>
-                           </li>
-                       <% }); %>
-                   </ul>
-               </div>
-               <% } %>
-           </li>
-           <% if (timers.classChange) { %>
-           <li class="timer-entry">
-               <span class="timer-label"><%= timers.classChange.label %> in</span>
-               <span class="timer-value" data-milliseconds="<%= timers.classChange.milliseconds %>" data-type="classChange"></span>
-               <% if (timers.allClassChanges && timers.allClassChanges.length > 1) { %>
-               <div class="timer-tooltip cc-tooltip">
-                   <div class="tooltip-title">Upcoming Class Changes in</div>
-                   <ul class="tooltip-list">
-                       <% timers.allClassChanges.forEach(cc => { %>
-                           <% if (cc.milliseconds > 0) { %>
-                           <li class="tooltip-item">
-                               <span class="timer-label"><%= cc.label %></span>
-                               <span class="timer-value" data-milliseconds="<%= cc.milliseconds %>" data-type="classChange"></span>
-                           </li>
-                           <% } %>
-                       <% }); %>
-                   </ul>
-               </div>
-               <% } %>
-           </li>
-           <% } %>
-       </ul>
-   </div>
+                        <% timers.futurePaperPlanes.forEach(pp => { %>
+                            <li class="tooltip-item">
+                                <span class="timer-label <%= pp.isImportant ? 'important-event' : '' %>">PP#<%= pp.number %></span>
+                                <span class="timer-value" data-milliseconds="<%= pp.milliseconds %>" data-type="event"></span>
+                            </li>
+                    <% }); %>
+                    </ul>
+                </div>
+                <% } %>
+            </li>
+
+            <% if (timers.classChange) { %>
+            <li class="timer-entry">
+                <span class="timer-label"><%= timers.classChange.label %> in</span>
+                <span class="timer-value" data-milliseconds="<%= timers.classChange.milliseconds %>" data-type="classChange"></span>
+                <% if (timers.allClassChanges && timers.allClassChanges.length > 1) { %>
+                <div class="timer-tooltip cc-tooltip">
+                    <div class="tooltip-title">Upcoming Class Changes in</div>
+                    <ul class="tooltip-list">
+                        <% timers.allClassChanges.forEach(cc => { %>
+                            <% if (cc.milliseconds > 0) { %>
+                                <li class="tooltip-item">
+                                    <span class="timer-label"><%= cc.label %></span>
+                                    <span class="timer-value" data-milliseconds="<%= cc.milliseconds %>" data-type="classChange"></span>
+                                </li>
+                            <% } %>
+                        <% });
+%>
+                    </ul>
+                </div>
+                <% } %>
+            </li>
+            <% } %>
+
+            <% if (timers.levelCapTimers && timers.levelCapTimers.currentLevelCap) { %>
+            <li class="timer-entry">
+                 <span class="timer-label">
+                     Lv.<%= timers.levelCapTimers.currentLevelCap.level %> Cap
+                     <% if (timers.levelCapTimers.nextLevelCap) { %>
+                        (Next: Lv.<%= timers.levelCapTimers.nextLevelCap.level %> in)
+                     <% } else { %>
+                        (Final Cap)
+                     <% } %>
+                 </span>
+                 <% if (timers.levelCapTimers.nextLevelCap) { %>
+                    <span class="timer-value" data-milliseconds="<%= timers.levelCapTimers.nextLevelCap.milliseconds %>" data-type="levelCap"></span>
+                 <% } else { %>
+                    <span class="timer-value" data-milliseconds="0" data-type="levelCap">--</span>
+                 <% } %>
+
+                 <% if (timers.levelCapTimers.futureLevelCaps && timers.levelCapTimers.futureLevelCaps.length > 0) { %>
+                 <div class="timer-tooltip lc-tooltip">
+                     <div class="tooltip-title">Upcoming Level Caps in</div>
+                     <ul class="tooltip-list">
+                         <% timers.levelCapTimers.futureLevelCaps.forEach(lc => { %>
+                             <li class="tooltip-item">
+                                 <span class="timer-label">Lv.<%= lc.level %> (CC<%= lc.cc %>)</span>
+                                 <span class="timer-value" data-milliseconds="<%= lc.milliseconds %>" data-type="levelCap"></span>
+                             </li>
+                         <% }); %>
+                     </ul>
+                 </div>
+                 <% } %>
+            </li>
+            <% } %>
+            </ul>
+    </div>
+
     <a href="https://boarhat.gg/games/go-go-muffin/" target="_blank" class="top-bar-section guides-section">
-        <%# Ensure SVG tag is correctly formed %>
-        <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-            <title>Book</title>
-            <path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"></path>
-        </svg> <%# Make sure closing tag is present %>
-       <span>Game Guides</span>
-   </a>
+        </a>
 </div>

@@ -32,29 +32,47 @@ export function minutesToFormattedTime(minutes) {
 
 export function updateTimers() {
     document.querySelectorAll('.timer-value').forEach(el => {
-        let ms = parseInt(el.dataset.milliseconds, 10); if (isNaN(ms)) return;
-        ms -= 1000; if (ms < 0) ms = 0;
-        el.dataset.milliseconds = ms;
+        let ms = parseInt(el.dataset.milliseconds, 10);
+        if (isNaN(ms)) return;
+
+        ms -= 1000;
+        if (ms < 0) ms = 0;
+        el.dataset.milliseconds = ms; // Update the data attribute
+
         const s = Math.floor(ms / 1000);
         const d = Math.floor(s / 86400);
         const h = Math.floor((s % 86400) / 3600);
         const m = Math.floor((s % 3600) / 60);
         const sec = s % 60;
-        let text = '';
-        if (d > 0) text += `${d}d `;
-        text += `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m ${String(sec).padStart(2, '0')}s`;
-        el.textContent = text;
 
+        // *** MODIFICATION: Format without spaces ***
+        let text = '';
+        if (d > 0) text += `${d}d`; // No space
+        // Always show hours, minutes, seconds, padded with zero
+        text += `${String(h).padStart(2, '0')}h`; // No space
+        text += `${String(m).padStart(2, '0')}m`; // No space
+        text += `${String(sec).padStart(2, '0')}s`; // No space
+        // *** END MODIFICATION ***
+
+        el.textContent = text.trim(); // Use trim just in case
+
+        // Keep urgency logic
         const type = el.dataset.type;
-        if (type === 'daily' && ms < 3600000) { // Moins d'1 heure
-            el.classList.add('urgent');
-        } else if (type !== 'daily' && ms < 86400000) { // Moins de 24 heures
+        const oneHour = 3600000;
+        const oneDay = 86400000;
+
+        // Add 'urgent' class based on type and remaining time
+        if ((type === 'daily' && ms < oneHour) || // Daily reset within 1 hour
+            (type === 'levelCap' && ms < oneHour) || // Level cap within 1 hour
+            (['weekly', 'event', 'classChange'].includes(type) && ms < oneDay)) // Others within 24 hours
+        {
             el.classList.add('urgent');
         } else {
             el.classList.remove('urgent');
         }
     });
 }
+
 
 export function formatRelativeTime(isoString) {
     if (!isoString) return '-';
