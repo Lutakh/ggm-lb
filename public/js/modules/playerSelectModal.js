@@ -25,37 +25,39 @@ function updateActiveSuggestion(items) {
 // Remplit la liste des joueurs dans la modale en fonction du filtre
 function populatePlayerList(filter = '') {
     if (!playerListContainer) return;
-    playerListContainer.innerHTML = '';
-    const query = filter.toLowerCase();
+    // Utiliser requestAnimationFrame pour s'assurer que le DOM est prêt avant de manipuler
+    requestAnimationFrame(() => {
+        playerListContainer.innerHTML = ''; // Vider la liste actuelle
+        const query = filter.toLowerCase();
 
-    let excludedPlayerIds = [];
-    if (currentTriggerContext && currentTriggerContext.type === 'dailyQuest' && currentTriggerContext.allSelectedIds) {
-        excludedPlayerIds = currentTriggerContext.allSelectedIds.filter((id, i) => id !== null && i !== currentTriggerContext.index);
-    }
+        let excludedPlayerIds = [];
+        if (currentTriggerContext && currentTriggerContext.type === 'dailyQuest' && currentTriggerContext.allSelectedIds) {
+            excludedPlayerIds = currentTriggerContext.allSelectedIds.filter((id, i) => id !== null && i !== currentTriggerContext.index);
+        }
 
-    allPlayers
-        .filter(p =>
-            p.name.toLowerCase().includes(query) &&
-            !excludedPlayerIds.includes(p.id)
-        )
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .forEach(player => {
-            const item = document.createElement('div');
-            item.className = 'suggestion-item';
-            item.dataset.playerId = player.id;
-            item.dataset.playerName = player.name;
-            const playerClass = player.class ? `<span class="class-tag class-${player.class.toLowerCase()}">${player.class.substring(0, 3)}</span>` : '';
-            item.innerHTML = `<span>${player.name}</span> ${playerClass}`;
-            playerListContainer.appendChild(item);
-        });
-    activeSuggestionIndex = -1; // Réinitialiser l'index actif APRES avoir repeuplé la liste
+        allPlayers
+            .filter(p =>
+                p.name.toLowerCase().includes(query) &&
+                !excludedPlayerIds.includes(p.id)
+            )
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .forEach(player => {
+                const item = document.createElement('div');
+                item.className = 'suggestion-item';
+                item.dataset.playerId = player.id;
+                item.dataset.playerName = player.name;
+                const playerClass = player.class ? `<span class="class-tag class-${player.class.toLowerCase()}">${player.class.substring(0, 3)}</span>` : '';
+                item.innerHTML = `<span>${player.name}</span> ${playerClass}`;
+                playerListContainer.appendChild(item);
+            });
+        activeSuggestionIndex = -1; // Réinitialiser après avoir repeuplé
+    });
 }
 
 // Ferme la modale
 function closeModal() {
     if (modal) modal.style.display = 'none';
-    if (backdrop) backdrop.style.display = 'block'; // CORRECTION: Devrait être 'none'
-    if (backdrop) backdrop.style.display = 'none';   // Assurer la fermeture
+    if (backdrop) backdrop.style.display = 'none';
     currentTriggerContext = null;
     currentSelectCallback = null;
     activeSuggestionIndex = -1;
@@ -85,16 +87,20 @@ function selectExistingPlayer(playerId, playerName) {
 
 // Gère le clic sur le bouton "Create New"
 function handleCreatePlayer() {
-    if (!filterInput) return;
-    const newName = filterInput.value.trim();
+    // **CORRECTION**: Lire la valeur au moment du clic
+    const newName = filterInput ? filterInput.value.trim() : '';
+    console.log("[Modal] Create New clicked. Name entered:", newName); // DEBUG LOG
+
     if (!newName) {
+        // L'alerte s'affiche s'il n'y a VRAIMENT pas de nom
         alert("Please type a name before creating a new player.");
         return;
     }
+
     const exists = allPlayers.some(p => p.name.toLowerCase() === newName.toLowerCase());
     if (exists) {
         alert(`Player "${newName}" already exists. Please select them from the list or choose a different name.`);
-        filterInput.focus();
+        if (filterInput) filterInput.focus();
         return;
     }
 
@@ -126,7 +132,7 @@ export function openModal(triggerContext, selectCallback) {
     filterInput.value = '';
     populatePlayerList();
     modal.style.display = 'flex';
-    backdrop.style.display = 'block'; // CORRECTION: Afficher le fond
+    backdrop.style.display = 'block';
     filterInput.focus();
     activeSuggestionIndex = -1;
 }
@@ -156,6 +162,7 @@ export function initPlayerSelectModal(playersData) {
     });
 
     filterInput.addEventListener('keydown', (e) => {
+        // Obtenir la liste des items *actuellement affichés*
         const items = playerListContainer.querySelectorAll('.suggestion-item');
         if (items.length === 0 && e.key !== 'Enter') return;
 
@@ -173,38 +180,30 @@ export function initPlayerSelectModal(playersData) {
             case 'Enter':
                 e.preventDefault();
                 console.log("[Modal] Enter key pressed. Active index:", activeSuggestionIndex); // DEBUG LOG
-                // **CORRECTION**: Utiliser l'index pour trouver l'élément dans la liste ACTUELLE
+
                 if (activeSuggestionIndex >= 0 && activeSuggestionIndex < items.length) {
-                    const selectedItem = items[activeSuggestionIndex];
+                    const selectedItem = items[activeSuggestionIndex]; // Utiliser l'index sur la liste actuelle
                     console.log("[Modal] Item found via Enter index:", selectedItem, selectedItem.dataset); // DEBUG LOG
                     if (selectedItem && selectedItem.dataset.playerId && selectedItem.dataset.playerName) {
                         selectExistingPlayer(selectedItem.dataset.playerId, selectedItem.dataset.playerName);
-                    } else {
-                        console.error("[Modal] Item selected via Enter index is missing dataset!", selectedItem);
-                    }
+                    } else { console.error("[Modal] Item selected via Enter index is missing dataset!", selectedItem); }
                 }
-                // Si pas d'index actif (-1) mais la liste n'est pas vide, on prend le premier
                 else if (items.length > 0 && activeSuggestionIndex === -1) {
-                    const firstItem = items[0];
+                    const firstItem = items[0]; // Sélectionner le premier de la liste filtrée
                     console.log("[Modal] No active index, selecting first item via Enter:", firstItem, firstItem.dataset); // DEBUG LOG
                     if (firstItem && firstItem.dataset.playerId && firstItem.dataset.playerName) {
                         selectExistingPlayer(firstItem.dataset.playerId, firstItem.dataset.playerName);
-                    } else {
-                        console.error("[Modal] First item selected via Enter is missing dataset!", firstItem);
-                    }
+                    } else { console.error("[Modal] First item selected via Enter is missing dataset!", firstItem); }
                 }
-                // Gestion de la création si autorisée
                 else if (filterInput.value.trim() !== '' && currentTriggerContext && currentTriggerContext.allowCreation) {
                     console.log("[Modal] No items match/selected, attempting to create new player via Enter."); // DEBUG LOG
                     handleCreatePlayer();
-                } else {
-                    console.log("[Modal] Enter pressed, but no item to select or create."); // DEBUG LOG
-                }
+                } else { console.log("[Modal] Enter pressed, but no item to select or create."); }
                 break;
         }
     });
 
-    // **CORRECTION**: Utilisation de la délégation d'événements pour le clic
+    // **Délégation d'événements pour le clic (inchangée mais cruciale)**
     playerListContainer.addEventListener('click', (e) => {
         const selectedItem = e.target.closest('.suggestion-item');
         console.log("[Modal] Click detected in list container. Target:", e.target, "Closest item:", selectedItem); // DEBUG LOG
@@ -218,6 +217,7 @@ export function initPlayerSelectModal(playersData) {
         }
     });
 
+    // **CORRECTION**: Attacher le listener pour 'Create New' ici
     createPlayerBtn.addEventListener('click', handleCreatePlayer);
 
     console.log("[Modal Init] Player select modal initialized successfully.");
