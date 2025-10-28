@@ -45,13 +45,13 @@ export function updateTimers() {
         const m = Math.floor((s % 3600) / 60);
         const sec = s % 60;
 
-        // *** MODIFICATION: Format without spaces ***
+        // *** MODIFICATION: Format WITH spaces ***
         let text = '';
-        if (d > 0) text += `${d}d`; // No space
+        if (d > 0) text += `${d}d `; // Space added
         // Always show hours, minutes, seconds, padded with zero
-        text += `${String(h).padStart(2, '0')}h`; // No space
-        text += `${String(m).padStart(2, '0')}m`; // No space
-        text += `${String(sec).padStart(2, '0')}s`; // No space
+        text += `${String(h).padStart(2, '0')}h `; // Space added
+        text += `${String(m).padStart(2, '0')}m `; // Space added
+        text += `${String(sec).padStart(2, '0')}s`; // No space at the end
         // *** END MODIFICATION ***
 
         el.textContent = text.trim(); // Use trim just in case
