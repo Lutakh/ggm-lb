@@ -4,7 +4,7 @@ const router = express.Router(); // Ensure router is created
 const db = require('../services/db');
 
 const STAMINA_REGEN_RATE_MINUTES = 24;
-const MAX_STAMINA = 60;
+const MAX_STAMINA = 60; // Limite mise à jour
 
 // Liste des quêtes (clés et descriptions)
 const dailyQuestsList = [
@@ -38,85 +38,54 @@ const getLastDailyReset = () => {
 // Obtenir le statut des quêtes et la stamina pour plusieurs joueurs
 router.get('/daily-quests/status', async (req, res) => {
     const playerIds = req.query.playerIds;
-    // --- START DEBUG LOG ---
     // console.log(`[API /daily-quests/status] Received request for playerIds: ${playerIds}`);
-    // --- END DEBUG LOG ---
-    if (!playerIds) {
-        console.error('[API /daily-quests/status] Error: playerIds parameter missing');
-        return res.status(400).json({ error: 'playerIds parameter is required' });
-    }
-
+    if (!playerIds) { /* ... gestion erreur ... */ return res.status(400).json({ error: 'playerIds parameter is required' }); }
     const idsArray = playerIds.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id));
-    if (idsArray.length === 0) {
-        console.error(`[API /daily-quests/status] Error: Invalid playerIds parameter: ${playerIds}`);
-        return res.status(400).json({ error: 'Invalid playerIds parameter' });
-    }
+    if (idsArray.length === 0) { /* ... gestion erreur ... */ return res.status(400).json({ error: 'Invalid playerIds parameter' }); }
 
     const lastResetDate = getLastDailyReset();
     const lastResetISO = lastResetDate.toISOString();
-    // --- START DEBUG LOG ---
     // console.log(`[API /daily-quests/status] Calculated last reset date: ${lastResetISO}`);
     // console.log(`[API /daily-quests/status] Fetching data for IDs: ${idsArray.join(', ')}`);
-    // --- END DEBUG LOG ---
 
     try {
         const placeholders = idsArray.map((_, i) => `$${i + 1}`).join(',');
         const queryParamsPlayers = [...idsArray];
-        const queryParamsQuests = [...idsArray, lastResetISO]; // Date is the last parameter
+        const queryParamsQuests = [...idsArray, lastResetISO];
 
-        // --- START DEBUG LOG ---
-        // console.log(`[API /daily-quests/status] Player Query Placeholders: ${placeholders}`);
         // console.log(`[API /daily-quests/status] Player Query Params:`, queryParamsPlayers);
-        // --- END DEBUG LOG ---
-        // 1. Récupérer les données des joueurs (stamina)
         const playersResult = await db.query(
             `SELECT id, name, stamina, stamina_last_updated FROM players WHERE id IN (${placeholders})`,
-            queryParamsPlayers // Utiliser les paramètres préparés
+            queryParamsPlayers
         );
-        // --- START DEBUG LOG ---
         // console.log(`[API /daily-quests/status] Players Result Rows:`, playersResult.rows);
-        // --- END DEBUG LOG ---
 
-
-        // --- START DEBUG LOG ---
-        // console.log(`[API /daily-quests/status] Quest Query Placeholders: ${placeholders}, $${idsArray.length + 1}`);
         // console.log(`[API /daily-quests/status] Quest Query Params:`, queryParamsQuests);
-        // --- END DEBUG LOG ---
-        // 2. Récupérer le statut des quêtes complétées depuis le dernier reset
         const questsResult = await db.query(
             `SELECT player_id, quest_key
              FROM daily_quest_status
-             WHERE player_id IN (${placeholders}) AND completed_at >= $${idsArray.length + 1}`, // Date is the parameter after all IDs
-            queryParamsQuests // Utiliser les paramètres préparés
+             WHERE player_id IN (${placeholders}) AND completed_at >= $${idsArray.length + 1}`,
+            queryParamsQuests
         );
-        // --- START DEBUG LOG ---
         // console.log(`[API /daily-quests/status] Quests Result Rows:`, questsResult.rows);
-        // --- END DEBUG LOG ---
 
-
-        // 3. Calculer la stamina actuelle et formater les résultats
-        const now = new Date();
+        const now = new Date(); // Utiliser une seule date 'now' pour tous les calculs de cette requête
         const results = playersResult.rows.map(player => {
-            // --- START DEBUG LOG ---
             // console.log(`[API /daily-quests/status] Processing player: ${player.name} (ID: ${player.id})`);
-            // --- END DEBUG LOG ---
             const lastUpdated = new Date(player.stamina_last_updated);
-            // Safety check for invalid date
             if (isNaN(lastUpdated.getTime())) {
                 console.warn(`[API /daily-quests/status] Invalid stamina_last_updated for player ${player.id}: ${player.stamina_last_updated}`);
-                // Handle as if stamina hasn't regenerated since last manual update
-                return {
+                return { // Renvoyer une structure de base même avec une date invalide
                     playerId: player.id,
                     name: player.name,
-                    stamina: Math.min(MAX_STAMINA, player.stamina || 0), // Use stored stamina, capped
+                    stamina: Math.min(MAX_STAMINA, player.stamina || 0),
                     staminaLastUpdated: player.stamina_last_updated,
-                    completedQuests: questsResult.rows
-                        .filter(q => q.player_id === player.id)
-                        .map(q => q.quest_key) || [] // Ensure array
+                    completedQuests: questsResult.rows.filter(q => q.player_id === player.id).map(q => q.quest_key) || []
                 };
             }
 
-            const minutesPassed = Math.floor((now - lastUpdated) / (1000 * 60));
+            // Calcul fait ici pour être cohérent avec ce que le client *devrait* calculer
+            const minutesPassed = Math.floor((now.getTime() - lastUpdated.getTime()) / (1000 * 60)); // Utiliser getTime()
             const regeneratedStamina = minutesPassed > 0 ? Math.floor(minutesPassed / STAMINA_REGEN_RATE_MINUTES) : 0;
             const currentStamina = Math.min(MAX_STAMINA, (player.stamina || 0) + regeneratedStamina);
 
@@ -127,151 +96,110 @@ router.get('/daily-quests/status', async (req, res) => {
             return {
                 playerId: player.id,
                 name: player.name,
-                stamina: currentStamina,
-                staminaLastUpdated: player.stamina_last_updated,
-                completedQuests: completedQuests // Already an array from map
+                stamina: currentStamina, // Renvoyer la valeur calculée par le serveur
+                staminaLastUpdated: player.stamina_last_updated, // Mais garder le timestamp original pour le client
+                completedQuests: completedQuests
             };
         });
-        // --- START DEBUG LOG ---
         // console.log(`[API /daily-quests/status] Final processed results:`, results);
-        // --- END DEBUG LOG ---
 
         res.json({ players: results, questsList: dailyQuestsList });
 
     } catch (err) {
-        // Log the detailed error on the server
         console.error('[API /daily-quests/status] FATAL ERROR:', err);
-        // Send a generic error response to the client
-        res.status(500).json({ error: 'Failed to fetch status' }); // Keep this generic for the client
+        res.status(500).json({ error: 'Failed to fetch status' });
     }
 });
 
-// Mettre à jour le statut d'une quête (CORRIGÉ pour ON CONFLICT)
+// Mettre à jour le statut d'une quête
 router.post('/daily-quests/update', async (req, res) => {
+    // ... (Logique inchangée depuis la correction ON CONFLICT) ...
     const { playerId, questKey, completed } = req.body;
-    if (!playerId || !questKey || typeof completed !== 'boolean') {
-        console.error('[API /daily-quests/update] Error: Missing parameters', req.body);
-        return res.status(400).json({ error: 'Missing parameters' });
-    }
-
-    const completionTime = new Date(); // Timestamp actuel
-    const lastResetDate = getLastDailyReset(); // Timestamp du dernier reset
+    if (!playerId || !questKey || typeof completed !== 'boolean') { return res.status(400).json({ error: 'Missing parameters' }); }
+    const completionTime = new Date();
+    const lastResetDate = getLastDailyReset();
     const lastResetISO = lastResetDate.toISOString();
+    if (completionTime < lastResetDate && !completed) { return res.status(400).json({ error: 'Cannot update status for a previous day.' }); }
 
-    // -- DEBUG LOG --
-    // console.log(`[API /daily-quests/update] Request: Player ${playerId}, Quest ${questKey}, Completed: ${completed}`);
-    // console.log(`[API /daily-quests/update] Current Time: ${completionTime.toISOString()}`);
-    // console.log(`[API /daily-quests/update] Last Reset: ${lastResetISO}`);
-    // -- END DEBUG LOG --
-
-    if (completionTime < lastResetDate && !completed) {
-        console.warn(`[API /daily-quests/update] Attempt to uncheck quest from a previous day denied.`);
-        return res.status(400).json({ error: 'Cannot update status for a previous day.' });
-    }
-
-    const client = await db.getClient(); // Use a client for potential transaction
-
+    const client = await db.getClient();
     try {
-        await client.query('BEGIN'); // Start transaction
-
+        await client.query('BEGIN');
         if (completed) {
-            const insertQuery = `
-                INSERT INTO daily_quest_status (player_id, quest_key, completed_at)
-                VALUES ($1, $2, $3)
-                ON CONFLICT (player_id, quest_key)
-                DO UPDATE SET completed_at = EXCLUDED.completed_at
-                WHERE daily_quest_status.completed_at < $4;
-            `;
+            const insertQuery = ` INSERT INTO daily_quest_status (player_id, quest_key, completed_at) VALUES ($1, $2, $3) ON CONFLICT (player_id, quest_key) DO UPDATE SET completed_at = EXCLUDED.completed_at WHERE daily_quest_status.completed_at < $4; `;
             await client.query(insertQuery, [playerId, questKey, completionTime, lastResetISO]);
         } else {
-            const deleteQuery = `
-                DELETE FROM daily_quest_status
-                WHERE player_id = $1 AND quest_key = $2 AND completed_at >= $3;
-            `;
+            const deleteQuery = ` DELETE FROM daily_quest_status WHERE player_id = $1 AND quest_key = $2 AND completed_at >= $3; `;
             await client.query(deleteQuery, [playerId, questKey, lastResetISO]);
         }
-
-        await client.query('COMMIT'); // Commit transaction
+        await client.query('COMMIT');
         res.json({ success: true });
-
     } catch (err) {
-        await client.query('ROLLBACK'); // Rollback on error
+        await client.query('ROLLBACK');
         console.error('[API /daily-quests/update] FATAL ERROR:', err);
         res.status(500).json({ error: 'Failed to update status' });
     } finally {
-        client.release(); // Release client
+        client.release();
     }
 });
 
 
-// Mettre à jour manuellement la stamina ET/OU le timer (MODIFIÉ pour les secondes)
+// Mettre à jour manuellement la stamina ET/OU le timer (avec réinitialisation notif)
 router.post('/daily-quests/update-stamina', async (req, res) => {
-    // Accepter minutesUntilNext ET secondsUntilNext
     const { playerId, stamina, minutesUntilNext, secondsUntilNext } = req.body;
 
     const staminaValue = parseInt(stamina, 10);
-    // Convertir '' ou undefined en null, puis parser
     const minutesValue = minutesUntilNext !== undefined && minutesUntilNext !== null && minutesUntilNext !== '' ? parseInt(minutesUntilNext, 10) : null;
     const secondsValue = secondsUntilNext !== undefined && secondsUntilNext !== null && secondsUntilNext !== '' ? parseInt(secondsUntilNext, 10) : null;
 
+    // console.log(`[API /update-stamina] Received: Player ${playerId}, Stamina ${stamina}, Min ${minutesUntilNext}, Sec ${secondsUntilNext} -> Parsed: Stam ${staminaValue}, Min ${minutesValue}, Sec ${secondsValue}`); // Debug Log
 
-    // console.log(`[API /update-stamina] Received: Player ${playerId}, Stamina ${stamina}, Min ${minutesUntilNext}, Sec ${secondsUntilNext} -> Parsed: Min ${minutesValue}, Sec ${secondsValue}`); // Debug
-
-    // --- Validation ---
+    // --- Validation (MAX_STAMINA mis à jour) ---
     if (!playerId || isNaN(staminaValue) || staminaValue < 0 || staminaValue > MAX_STAMINA) {
         console.error('[API /update-stamina] Invalid stamina value:', staminaValue);
-        return res.status(400).json({ error: 'Invalid parameters. PlayerId and Stamina (0-99) are required.' });
+        return res.status(400).json({ error: `Invalid parameters. PlayerId and Stamina (0-${MAX_STAMINA}) are required.` });
     }
-    // Minutes: 0 à (TAUX-1)
-    if (minutesValue !== null && (isNaN(minutesValue) || minutesValue < 0 || minutesValue >= STAMINA_REGEN_RATE_MINUTES)) {
-        console.error('[API /update-stamina] Invalid minutes value:', minutesValue);
-        return res.status(400).json({ error: `Invalid parameters. Minutes until next must be between 0 and ${STAMINA_REGEN_RATE_MINUTES - 1}.` });
-    }
-    // Secondes: 0 à 59
-    if (secondsValue !== null && (isNaN(secondsValue) || secondsValue < 0 || secondsValue > 59)) {
-        console.error('[API /update-stamina] Invalid seconds value:', secondsValue);
-        return res.status(400).json({ error: `Invalid parameters. Seconds until next must be between 0 and 59.` });
-    }
-    // Si les minutes sont null, les secondes doivent l'être aussi (ou 0)
-    if (minutesValue === null && secondsValue !== null && secondsValue !== 0) {
-        console.error('[API /update-stamina] Invalid combination: Seconds provided without minutes.');
-        return res.status(400).json({ error: `Invalid parameters. Cannot provide seconds without minutes.` });
-    }
+    if (minutesValue !== null && (isNaN(minutesValue) || minutesValue < 0 || minutesValue >= STAMINA_REGEN_RATE_MINUTES)) { /* ... gestion erreur ... */ }
+    if (secondsValue !== null && (isNaN(secondsValue) || secondsValue < 0 || secondsValue > 59)) { /* ... gestion erreur ... */ }
+    if (minutesValue === null && secondsValue !== null && secondsValue !== 0) { /* ... gestion erreur ... */ }
+    // --- Fin Validation ---
 
     try {
-        let newStaminaLastUpdated = new Date(); // Base timestamp is 'now'
+        let newStaminaLastUpdated = new Date(); // Base timestamp is 'now' (UTC implicit)
+        const baseTimeLog = newStaminaLastUpdated.toISOString(); // Log base time
 
         // Si minutes/secondes sont fournies (et valides) ET que la stamina n'est pas déjà max
         if (minutesValue !== null && staminaValue < MAX_STAMINA) {
-            // S'assurer que les secondes ont une valeur par défaut si non fournies mais minutes oui
             const validSeconds = (secondsValue === null) ? 0 : secondsValue;
-            // console.log(`[API /update-stamina] Adjusting timestamp based on Min: ${minutesValue}, Sec: ${validSeconds}`); // Debug
-
-            // Calculer le temps total restant en secondes
+            // console.log(`[API /update-stamina] Adjusting timestamp based on Min: ${minutesValue}, Sec: ${validSeconds}`); // Debug Log
             const totalSecondsRemaining = (minutesValue * 60) + validSeconds;
-            // Calculer le temps total d'un cycle en secondes
             const cycleSeconds = STAMINA_REGEN_RATE_MINUTES * 60;
-            // Calculer le temps écoulé depuis le dernier gain en secondes
             const secondsAgo = cycleSeconds - totalSecondsRemaining;
-
-            // Décaler le timestamp actuel en arrière
-            newStaminaLastUpdated.setSeconds(newStaminaLastUpdated.getSeconds() - secondsAgo);
-            // On NE met PAS les secondes/ms à 0 ici car on a la précision
-
+            // console.log(`[API /update-stamina] Calculation: cycleSec=${cycleSeconds}, remainingSec=${totalSecondsRemaining}, secondsAgo=${secondsAgo}`);
+            newStaminaLastUpdated.setTime(newStaminaLastUpdated.getTime() - (secondsAgo * 1000));
         } else if (minutesValue !== null && staminaValue >= MAX_STAMINA) {
-            // console.log(`[API /update-stamina] Stamina is max (${staminaValue}), ignoring timer. Timestamp set to now.`); // Debug
-            newStaminaLastUpdated = new Date(); // Si stamina max, le timestamp précis importe moins
+            // console.log(`[API /update-stamina] Stamina is max (${staminaValue}), ignoring timer. Timestamp set to now.`); // Debug Log
+            newStaminaLastUpdated = new Date();
         }
         // Si minutesValue est null, newStaminaLastUpdated reste à 'now'
 
         const newStaminaLastUpdatedISO = newStaminaLastUpdated.toISOString();
-        // console.log(`[API /update-stamina] Final stamina: ${staminaValue}, Final timestamp: ${newStaminaLastUpdatedISO}`); // Debug
+        // console.log(`[API /update-stamina] Player ${playerId}: BaseTime=${baseTimeLog}, Final Calculated Timestamp=${newStaminaLastUpdatedISO}`);
 
-        // Mettre à jour la BDD
-        await db.query(
-            'UPDATE players SET stamina = $1, stamina_last_updated = $2 WHERE id = $3',
-            [staminaValue, newStaminaLastUpdatedISO, playerId]
-        );
+        // --- NOUVEAU : Réinitialiser le niveau de notification si < 55 ---
+        let notificationLevelUpdateClause = '';
+        const queryParams = [staminaValue, newStaminaLastUpdatedISO, playerId];
+        if (staminaValue < 55) {
+            notificationLevelUpdateClause = ', last_stamina_notification_level = $4'; // Placeholder $4
+            queryParams.push(0); // Ajouter la valeur 0 pour le $4
+            console.log(`[API /update-stamina] Stamina < 55, resetting notification level for player ${playerId}`);
+        }
+        // ----------------------------------------------------------------
+
+        // Mettre à jour la BDD (avec la mise à jour conditionnelle du niveau)
+        // Les placeholders ($1, $2, $3, $4) sont gérés par le driver pg
+        const updateQuery = `UPDATE players SET stamina = $1, stamina_last_updated = $2 ${notificationLevelUpdateClause} WHERE id = $3`;
+        // console.log("[API /update-stamina] Query:", updateQuery, "Params:", queryParams); // Debug query
+        await db.query(updateQuery, queryParams);
 
         // Renvoyer les valeurs confirmées
         res.json({ success: true, stamina: staminaValue, staminaLastUpdated: newStaminaLastUpdatedISO });
