@@ -62,8 +62,12 @@
            <% } %>
        </ul>
    </div>
-   <a href="https://boarhat.gg/games/go-go-muffin/" target="_blank" class="top-bar-section guides-section">
-        <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><title>Book</title><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"></path></svg>
+    <a href="https://boarhat.gg/games/go-go-muffin/" target="_blank" class="top-bar-section guides-section">
+        <%# Ensure SVG tag is correctly formed %>
+        <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+            <title>Book</title>
+            <path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"></path>
+        </svg> <%# Make sure closing tag is present %>
        <span>Game Guides</span>
    </a>
 </div>
