@@ -239,44 +239,41 @@ function renderQuestColumns() {
     if (!container) return;
     const activePlayersIndices = selectedPlayerIds.map((id, index) => id ? index : -1).filter(index => index !== -1);
     const isMobile = window.innerWidth <= 768;
-    // Sur mobile, on affiche seulement le premier joueur sélectionné, sinon tous les joueurs sélectionnés
     const indicesToRender = isMobile ? activePlayersIndices.slice(0, 1) : activePlayersIndices;
     const columnsToShow = indicesToRender.length;
 
-    // Afficher un placeholder si aucun joueur n'est sélectionné (ou visible sur mobile)
     if (columnsToShow === 0) {
         container.innerHTML = `<div class="dq-placeholder">Select ${isMobile ? 'a player' : 'up to 3 players'} to track daily quests.</div>`;
-        container.className = 'daily-quests-container'; // Classe par défaut
+        container.className = 'daily-quests-container';
         return;
     }
 
-    container.innerHTML = ''; // Vider le conteneur
-    // Appliquer la classe CSS pour le nombre de colonnes
+    container.innerHTML = '';
     container.className = `daily-quests-container columns-${columnsToShow}`;
 
-    // Créer une colonne pour chaque joueur à afficher
     indicesToRender.forEach(index => {
         const playerId = selectedPlayerIds[index];
-        const data = playerQuestData[index]; // Données fetchées pour ce joueur
+        const data = playerQuestData[index];
         const playerColumn = document.createElement('div');
         playerColumn.className = 'dq-player-column';
         playerColumn.dataset.playerId = playerId;
         playerColumn.dataset.index = index;
 
-        // Si pas de données pour ce joueur (fetch échoué ou en cours), afficher un message d'erreur/chargement
-        // CORRECTION: Utiliser selectedPlayerNames pour afficher le nom même si les données ne sont pas encore chargées
+        // **MODIFICATION ICI** : Afficher "Loading..." si sélectionné mais données pas encore là
         const playerName = selectedPlayerNames[index] || `Player ${index + 1}`;
-        if (!data) {
-            playerColumn.classList.add('dq-error-column'); // Style d'erreur
-            playerColumn.innerHTML = `<h3>${playerName}</h3><p>Could not load data for player.</p>`; // Message d'erreur
+        if (!data && playerId !== null) { // Joueur sélectionné mais données pas (encore) chargées
+            playerColumn.innerHTML = `<h3>${playerName}</h3><p style="text-align: center; font-style: italic;">Loading data...</p>`;
             container.appendChild(playerColumn);
             return; // Passer au joueur suivant
+        } else if (!data && playerId === null) { // Slot vide (ne devrait pas arriver avec indicesToRender mais par sécurité)
+            playerColumn.innerHTML = `<h3>Player ${index + 1}</h3><p style="text-align: center;">Select a player.</p>`;
+            container.appendChild(playerColumn);
+            return;
         }
+        // Si on arrive ici, 'data' existe
 
-        // Si les données sont là, construire la colonne
-        const currentStamina = calculateCurrentStamina(data); // Recalculer ici pour être sûr
+        const currentStamina = calculateCurrentStamina(data);
 
-        // Construire la liste des quêtes HTML
         let questsHtml = questListDefinition.map(quest => {
             const isCompleted = Array.isArray(data.completedQuests) && data.completedQuests.includes(quest.key);
             return `
@@ -287,8 +284,6 @@ function renderQuestColumns() {
         }).join('');
         if (!questsHtml) questsHtml = '<li>Quest list unavailable.</li>';
 
-
-        // Remplir le HTML de la colonne
         playerColumn.innerHTML = `
             <h3>${data.name}</h3>
             <div class="dq-stamina-section">
@@ -315,7 +310,7 @@ function renderQuestColumns() {
             </ul>
         `;
 
-        container.appendChild(playerColumn); // Ajouter la colonne au conteneur
+        container.appendChild(playerColumn);
         startStaminaTimer(index); // Démarrer le timer d'affichage pour cette colonne
     });
 
@@ -332,22 +327,19 @@ async function fetchAndUpdatePlayerData() {
         return;
     }
 
-    // console.log(`[DQ Fetch] Fetching data for IDs: ${idsToFetch.join(',')}`);
     try {
         const response = await fetch(`/daily-quests/status?playerIds=${idsToFetch.join(',')}`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
 
-        // console.log("[DQ Fetch] Received data:", data); // Debug Log
-
-        questListDefinition = data.questsList || []; // Mettre à jour la définition des quêtes
+        questListDefinition = data.questsList || [];
 
         // Mettre à jour les données locales pour chaque joueur
+        // On itère sur les slots pour s'assurer de bien remplir playerQuestData
         selectedPlayerIds.forEach((playerId, index) => {
             if (playerId !== null) {
                 const playerResult = data.players.find(p => p.playerId === playerId);
-                // CORRECTION: S'assurer que playerResult existe avant de l'assigner
-                playerQuestData[index] = playerResult ? { ...playerResult } : null; // Stocker null si non trouvé
+                playerQuestData[index] = playerResult ? { ...playerResult } : null; // Garder null si non trouvé
                 if (!playerResult) {
                     console.warn(`[DQ Fetch] Data for player ID ${playerId} not found in API response.`);
                 }
@@ -358,11 +350,16 @@ async function fetchAndUpdatePlayerData() {
 
     } catch (error) {
         console.error('Error fetching daily quest status:', error);
-        // En cas d'erreur, on pourrait réinitialiser toutes les données ?
-        // playerQuestData = [null, null, null];
-        container.innerHTML = '<div class="dq-error">Failed to load quest data. Please try refreshing.</div>';
+        // En cas d'erreur, marquer les données comme null pour les slots concernés
+        selectedPlayerIds.forEach((playerId, index) => {
+            if (playerId !== null && idsToFetch.includes(playerId)) { // Si ce joueur devait être fetché
+                playerQuestData[index] = null; // Marquer comme échec
+            }
+        });
+        // Optionnel : afficher une erreur globale ?
+        // container.innerHTML = '<div class="dq-error">Failed to load quest data. Please try refreshing.</div>';
     } finally {
-        renderQuestColumns(); // Redessiner avec les nouvelles données (ou l'erreur)
+        renderQuestColumns(); // Redessiner avec les nouvelles données (ou null pour indiquer échec/chargement)
     }
 }
 
@@ -398,8 +395,7 @@ async function updateStaminaValue(index, staminaInputElement, minutesInputElemen
     // --- Validation (plus stricte) ---
     if (isNaN(staminaValue) || staminaValue < 0 || staminaValue > MAX_STAMINA) {
         alert(`Invalid stamina value (${staminaValue}). Must be between 0 and ${MAX_STAMINA}.`);
-        // Revert input visuel ? Ou appeler fetchAndUpdatePlayerData() pour resynchroniser ?
-        fetchAndUpdatePlayerData();
+        fetchAndUpdatePlayerData(); // Re-fetch pour resynchroniser
         return;
     }
     if (minutesValue !== null && (isNaN(minutesValue) || minutesValue < 0 || minutesValue >= STAMINA_REGEN_RATE_MINUTES)) {
@@ -410,7 +406,6 @@ async function updateStaminaValue(index, staminaInputElement, minutesInputElemen
         alert(`Invalid seconds value (${secondsValue}). Must be between 0 and 59.`);
         fetchAndUpdatePlayerData(); return;
     }
-    // Si seule la seconde est entrée, elle doit être 0 si minutes est null
     if (minutesValue === null && secondsValue !== null && secondsValue !== 0) {
         alert(`Cannot set only seconds remaining (unless it's 0). Please also specify minutes or clear seconds.`);
         fetchAndUpdatePlayerData(); return;
@@ -420,15 +415,14 @@ async function updateStaminaValue(index, staminaInputElement, minutesInputElemen
     stopStaminaTimer(index); // Arrêter le timer local pendant la mise à jour serveur
 
     try {
-        // console.log(`[DQ Update Stamina] Sending update for player ${playerId}: Stamina=${staminaValue}, Min=${minutesValue}, Sec=${secondsValue}`);
         const response = await fetch('/daily-quests/update-stamina', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 playerId,
                 stamina: staminaValue,
-                minutesUntilNext: minutesValue, // Envoyer null si non défini
-                secondsUntilNext: secondsValue  // Envoyer null si non défini
+                minutesUntilNext: minutesValue,
+                secondsUntilNext: secondsValue
             }),
         });
         if (!response.ok) {
@@ -436,16 +430,15 @@ async function updateStaminaValue(index, staminaInputElement, minutesInputElemen
             throw new Error(errorData.error || 'Failed to update stamina on server');
         }
         const updatedData = await response.json();
-        // console.log("[DQ Update Stamina] Received confirmation:", updatedData);
 
         // Mettre à jour les données locales avec la réponse du serveur
         if (playerQuestData[index]) {
-            playerQuestData[index].stamina = updatedData.stamina; // Utiliser la stamina confirmée
-            playerQuestData[index].staminaLastUpdated = updatedData.staminaLastUpdated; // Utiliser le timestamp recalculé par le serveur
+            playerQuestData[index].stamina = updatedData.stamina;
+            playerQuestData[index].staminaLastUpdated = updatedData.staminaLastUpdated;
         } else {
-            // Si les données locales n'existaient pas, on doit refetch pour avoir le nom etc.
-            fetchAndUpdatePlayerData(); // Moins idéal mais assure la cohérence
-            return; // Sortir car fetchAndUpdatePlayerData redessinera et relancera le timer
+            // Si les données locales n'existaient pas, on doit refetch
+            fetchAndUpdatePlayerData();
+            return;
         }
 
         // Redémarrer le timer local avec les nouvelles données confirmées
@@ -462,38 +455,57 @@ async function updateStaminaValue(index, staminaInputElement, minutesInputElemen
 // --- Écouteurs d'Événements ---
 // Attache les listeners aux checkboxes et inputs après chaque rendu
 function attachEventListeners() {
-    const questCheckboxes = container.querySelectorAll('.dq-quest-checkbox');
-    questCheckboxes.forEach(checkbox => {
-        // Simple écouteur de 'change'
-        checkbox.addEventListener('change', handleQuestChange);
-    });
+    const activeColumns = container.querySelectorAll('.dq-player-column');
 
-    const staminaInputs = container.querySelectorAll('.dq-stamina-input');
-    staminaInputs.forEach(input => {
-        let debounceTimer; // Timer spécifique à cet input
-        // 'input' pour une validation visuelle rapide + debounce léger
-        input.addEventListener('input', (event) => { debounceTimer = handleStaminaInput(event, debounceTimer); });
-        // 'change' et 'blur' pour déclencher la sauvegarde serveur
-        input.addEventListener('change', (event) => { debounceTimer = handleStaminaChangeOrBlur(event, debounceTimer); });
-        input.addEventListener('blur', (event) => { debounceTimer = handleStaminaChangeOrBlur(event, debounceTimer); });
-    });
+    activeColumns.forEach(column => {
+        const index = parseInt(column.dataset.index, 10); // Récupérer l'index de la colonne
 
-    const staminaNextInputs = container.querySelectorAll('.dq-stamina-next-input'); // Minutes
-    staminaNextInputs.forEach(input => {
-        let debounceTimer;
-        input.addEventListener('input', (event) => { debounceTimer = handleStaminaNextInput(event, debounceTimer); });
-        input.addEventListener('change', (event) => { debounceTimer = handleStaminaNextChangeOrBlur(event, debounceTimer); });
-        input.addEventListener('blur', (event) => { debounceTimer = handleStaminaNextChangeOrBlur(event, debounceTimer); });
-    });
+        // Checkboxes
+        column.querySelectorAll('.dq-quest-checkbox').forEach(checkbox => {
+            // Remove previous listener if any before adding new one
+            checkbox.removeEventListener('change', handleQuestChange); // Assumes handleQuestChange is the named handler
+            checkbox.addEventListener('change', handleQuestChange);
+        });
 
-    const staminaNextSecondsInputs = container.querySelectorAll('.dq-stamina-next-seconds-input'); // Seconds
-    staminaNextSecondsInputs.forEach(input => {
-        let debounceTimer;
-        input.addEventListener('input', (event) => { debounceTimer = handleStaminaNextSecondsInput(event, debounceTimer); });
-        input.addEventListener('change', (event) => { debounceTimer = handleStaminaNextSecondsChangeOrBlur(event, debounceTimer); });
-        input.addEventListener('blur', (event) => { debounceTimer = handleStaminaNextSecondsChangeOrBlur(event, debounceTimer); });
+        // Stamina Input
+        const staminaInput = column.querySelector(`#dq-stamina-input-${index}`);
+        if (staminaInput) {
+            let debounceTimer;
+            // Clear previous listeners (important!)
+            staminaInput.replaceWith(staminaInput.cloneNode(true)); // Simple way to remove all listeners
+            const newStaminaInput = column.querySelector(`#dq-stamina-input-${index}`); // Get the new node
+
+            newStaminaInput.addEventListener('input', (event) => { debounceTimer = handleStaminaInput(event, debounceTimer); });
+            newStaminaInput.addEventListener('change', (event) => { debounceTimer = handleStaminaChangeOrBlur(event, debounceTimer); });
+            newStaminaInput.addEventListener('blur', (event) => { debounceTimer = handleStaminaChangeOrBlur(event, debounceTimer); });
+        }
+
+        // Minutes Input
+        const minutesInput = column.querySelector(`#dq-stamina-next-input-${index}`);
+        if (minutesInput) {
+            let debounceTimer;
+            minutesInput.replaceWith(minutesInput.cloneNode(true));
+            const newMinutesInput = column.querySelector(`#dq-stamina-next-input-${index}`);
+
+            newMinutesInput.addEventListener('input', (event) => { debounceTimer = handleStaminaNextInput(event, debounceTimer); });
+            newMinutesInput.addEventListener('change', (event) => { debounceTimer = handleStaminaNextChangeOrBlur(event, debounceTimer); });
+            newMinutesInput.addEventListener('blur', (event) => { debounceTimer = handleStaminaNextChangeOrBlur(event, debounceTimer); });
+        }
+
+        // Seconds Input
+        const secondsInput = column.querySelector(`#dq-stamina-next-seconds-input-${index}`);
+        if (secondsInput) {
+            let debounceTimer;
+            secondsInput.replaceWith(secondsInput.cloneNode(true));
+            const newSecondsInput = column.querySelector(`#dq-stamina-next-seconds-input-${index}`);
+
+            newSecondsInput.addEventListener('input', (event) => { debounceTimer = handleStaminaNextSecondsInput(event, debounceTimer); });
+            newSecondsInput.addEventListener('change', (event) => { debounceTimer = handleStaminaNextSecondsChangeOrBlur(event, debounceTimer); });
+            newSecondsInput.addEventListener('blur', (event) => { debounceTimer = handleStaminaNextSecondsChangeOrBlur(event, debounceTimer); });
+        }
     });
 }
+
 
 // --- Gestionnaires d'Événements ---
 // Gère le changement d'état d'une checkbox de quête
@@ -510,15 +522,12 @@ function handleStaminaInput(event, debounceTimer) {
     clearTimeout(debounceTimer);
     const target = event.target;
     const value = parseInt(target.value, 10);
-    // Validation visuelle simple (ex: bordure rouge si invalide)
     if (isNaN(value) || value < 0 || value > MAX_STAMINA) {
         target.style.borderColor = 'red';
     } else {
-        target.style.borderColor = ''; // Réinitialiser
+        target.style.borderColor = '';
     }
-    // Redémarrer le timer debounce
     const newTimer = setTimeout(() => {
-        // Appeler la mise à jour serveur SEULEMENT si la valeur est valide
         if (!isNaN(value) && value >= 0 && value <= MAX_STAMINA) {
             const index = parseInt(target.dataset.index, 10);
             const minutesInput = document.getElementById(`dq-stamina-next-input-${index}`);
@@ -526,24 +535,21 @@ function handleStaminaInput(event, debounceTimer) {
             updateStaminaValue(index, target, minutesInput, secondsInput);
         } else {
             console.warn("Debounced stamina update skipped due to invalid value:", target.value);
-            // Optionnel : Forcer une resynchronisation si l'utilisateur laisse une valeur invalide ?
-            // const index = parseInt(target.dataset.index, 10);
-            // startStaminaTimer(index); // Pour remettre la valeur correcte calculée
         }
-    }, 1200); // Délai avant sauvegarde auto
-    return newTimer; // Renvoyer le nouvel ID du timer
+    }, 1200);
+    return newTimer;
 }
 
 // Gère 'change' ou 'blur' sur l'input de stamina (sauvegarde immédiate)
 function handleStaminaChangeOrBlur(event, debounceTimer) {
-    clearTimeout(debounceTimer); // Annuler le debounce s'il était en cours
+    clearTimeout(debounceTimer);
     const target = event.target;
-    target.style.borderColor = ''; // Enlever la bordure rouge potentielle
+    target.style.borderColor = '';
     const index = parseInt(target.dataset.index, 10);
     const minutesInput = document.getElementById(`dq-stamina-next-input-${index}`);
     const secondsInput = document.getElementById(`dq-stamina-next-seconds-input-${index}`);
-    updateStaminaValue(index, target, minutesInput, secondsInput); // Appeler la sauvegarde serveur
-    return null; // Indiquer qu'il n'y a plus de timer debounce actif
+    updateStaminaValue(index, target, minutesInput, secondsInput);
+    return null;
 }
 
 // Gère la saisie dans l'input des minutes restantes
@@ -552,7 +558,6 @@ function handleStaminaNextInput(event, debounceTimer) {
     const target = event.target;
     const value = parseInt(target.value, 10);
     const index = parseInt(target.dataset.index, 10);
-    // Validation visuelle
     if (target.value !== '' && (isNaN(value) || value < 0 || value >= STAMINA_REGEN_RATE_MINUTES)) {
         target.style.borderColor = 'red';
     } else {
@@ -586,7 +591,6 @@ function handleStaminaNextSecondsInput(event, debounceTimer) {
     const target = event.target;
     const value = parseInt(target.value, 10);
     const index = parseInt(target.dataset.index, 10);
-    // Validation visuelle
     if (target.value !== '' && (isNaN(value) || value < 0 || value > 59)) {
         target.style.borderColor = 'red';
     } else {
@@ -650,22 +654,19 @@ export function initDailyQuests() {
                 {
                     type: 'dailyQuest',
                     index: index,
-                    allowCreation: false, // Ne pas autoriser la création depuis Daily Quests
-                    allSelectedIds: [...selectedPlayerIds] // Passer une copie des ID déjà sélectionnés
+                    allowCreation: false,
+                    allSelectedIds: [...selectedPlayerIds]
                 },
-                setSelectedPlayer // Passer la fonction callback
+                setSelectedPlayer
             );
         };
         if (button) button.addEventListener('click', triggerFn);
-        if (display) display.addEventListener('click', triggerFn); // Permettre clic sur nom aussi
+        if (display) display.addEventListener('click', triggerFn);
     });
 
     // Fetch initial des données et premier rendu
     fetchAndUpdatePlayerData().then(() => {
-        handleResizeOrLoad(); // Appliquer le layout après le fetch initial
+        // handleResizeOrLoad(); // Déjà appelé dans fetchAndUpdatePlayerData via renderQuestColumns
         console.log("Daily Quests initialized.");
     });
-
-    // Optionnel: Mettre à jour périodiquement (ex: toutes les 5 minutes)
-    // setInterval(fetchAndUpdatePlayerData, 5 * 60 * 1000);
 }

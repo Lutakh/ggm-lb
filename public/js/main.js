@@ -417,9 +417,71 @@ document.addEventListener('DOMContentLoaded', function() {
     // Filtre mobile pour les équipes (ne change pas)
     const teamMobileFilter = document.getElementById('team-guild-filter-mobile');
     const allTeamRows = document.querySelectorAll('#teams-leaderboard-table tbody tr.team-data-row');
-    function applyTeamMobileFilter() { /* ... (code inchangé) ... */ }
-    if (teamMobileFilter) { /* ... (code inchangé) ... */ }
-    window.addEventListener('resize', () => { /* ... (code inchangé) ... */ });
+
+    function applyTeamMobileFilter() {
+        if (!teamMobileFilter || !allTeamRows || allTeamRows.length === 0) return;
+        const selectedValue = teamMobileFilter.value;
+        let visibleRank = 1;
+        allTeamRows.forEach(row => {
+            const memberCount = parseInt(row.dataset.memberCountVal || 0, 10);
+            const guildName = row.dataset.guildName; // Ensure this attribute exists on the TR
+
+            const isVisible = (selectedValue === 'All') ||
+                (selectedValue === 'Incomplete' && memberCount < 4) ||
+                (guildName === selectedValue);
+
+            row.style.display = isVisible ? '' : 'none';
+            // Also hide the member details row
+            const membersRow = row.nextElementSibling;
+            if (membersRow && membersRow.classList.contains('team-members-row')) {
+                membersRow.style.display = 'none'; // Always hide member details on mobile filter change
+            }
+
+            if (isVisible) {
+                const rankCell = row.querySelector('.rank-col');
+                if (rankCell) rankCell.textContent = visibleRank;
+                // Re-apply podium classes based on new rank
+                row.classList.remove('rank-1', 'rank-2', 'rank-3');
+                if(visibleRank <= 3) row.classList.add(`rank-${visibleRank}`);
+                visibleRank++;
+            }
+        });
+    }
+
+    if (teamMobileFilter) {
+        teamMobileFilter.addEventListener('change', applyTeamMobileFilter);
+        // Apply filter initially if on mobile
+        if (window.innerWidth <= 768) {
+            applyTeamMobileFilter();
+        }
+    }
+
+    // Apply/Remove mobile team filter on resize
+    window.addEventListener('resize', () => {
+        if (window.innerWidth <= 768 && teamMobileFilter) {
+            applyTeamMobileFilter();
+        } else if (window.innerWidth > 768) {
+            // Reset styles possibly applied by mobile filter
+            allTeamRows.forEach(row => {
+                row.style.display = ''; // Reset display
+                const rankCell = row.querySelector('.rank-col');
+                // Restore original rank stored earlier
+                if (rankCell && row.dataset.originalRank) {
+                    rankCell.textContent = row.dataset.originalRank;
+                }
+
+                // Reset podium classes based on original rank
+                row.classList.remove('rank-1', 'rank-2', 'rank-3');
+                const originalRank = parseInt(row.dataset.originalRank || '999', 10);
+                if (originalRank <= 3) row.classList.add(`rank-${originalRank}`);
+
+            });
+            document.querySelectorAll('#teams-leaderboard-table tbody tr.team-members-row').forEach(row => {
+                row.style.display = 'none'; // Ensure member rows are hidden on desktop resize
+            });
+        }
+    });
+
 
     console.log("Main.js initialization complete.");
 }); // Fin DOMContentLoaded
