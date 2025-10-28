@@ -4,7 +4,7 @@ const router = express.Router(); // Ensure router is created
 const db = require('../services/db');
 
 const STAMINA_REGEN_RATE_MINUTES = 24;
-const MAX_STAMINA = 60; // Limite mise à jour
+const MAX_STAMINA = 60; // <<< LIMITE MISE A JOUR
 
 // Liste des quêtes (clés et descriptions)
 const dailyQuestsList = [
@@ -143,13 +143,16 @@ router.post('/daily-quests/update', async (req, res) => {
 });
 
 
-// Mettre à jour manuellement la stamina ET/OU le timer (avec réinitialisation notif)
+// Mettre à jour manuellement la stamina ET/OU le timer (avec réinitialisation notif et secondes)
 router.post('/daily-quests/update-stamina', async (req, res) => {
+    // Accepter minutesUntilNext ET secondsUntilNext
     const { playerId, stamina, minutesUntilNext, secondsUntilNext } = req.body;
 
     const staminaValue = parseInt(stamina, 10);
+    // Convertir '' ou undefined en null, puis parser
     const minutesValue = minutesUntilNext !== undefined && minutesUntilNext !== null && minutesUntilNext !== '' ? parseInt(minutesUntilNext, 10) : null;
     const secondsValue = secondsUntilNext !== undefined && secondsUntilNext !== null && secondsUntilNext !== '' ? parseInt(secondsUntilNext, 10) : null;
+
 
     // console.log(`[API /update-stamina] Received: Player ${playerId}, Stamina ${stamina}, Min ${minutesUntilNext}, Sec ${secondsUntilNext} -> Parsed: Stam ${staminaValue}, Min ${minutesValue}, Sec ${secondsValue}`); // Debug Log
 
@@ -158,9 +161,21 @@ router.post('/daily-quests/update-stamina', async (req, res) => {
         console.error('[API /update-stamina] Invalid stamina value:', staminaValue);
         return res.status(400).json({ error: `Invalid parameters. PlayerId and Stamina (0-${MAX_STAMINA}) are required.` });
     }
-    if (minutesValue !== null && (isNaN(minutesValue) || minutesValue < 0 || minutesValue >= STAMINA_REGEN_RATE_MINUTES)) { /* ... gestion erreur ... */ }
-    if (secondsValue !== null && (isNaN(secondsValue) || secondsValue < 0 || secondsValue > 59)) { /* ... gestion erreur ... */ }
-    if (minutesValue === null && secondsValue !== null && secondsValue !== 0) { /* ... gestion erreur ... */ }
+    // Minutes: 0 à (TAUX-1)
+    if (minutesValue !== null && (isNaN(minutesValue) || minutesValue < 0 || minutesValue >= STAMINA_REGEN_RATE_MINUTES)) {
+        console.error('[API /update-stamina] Invalid minutes value:', minutesValue);
+        return res.status(400).json({ error: `Invalid parameters. Minutes until next must be between 0 and ${STAMINA_REGEN_RATE_MINUTES - 1}.` });
+    }
+    // Secondes: 0 à 59
+    if (secondsValue !== null && (isNaN(secondsValue) || secondsValue < 0 || secondsValue > 59)) {
+        console.error('[API /update-stamina] Invalid seconds value:', secondsValue);
+        return res.status(400).json({ error: `Invalid parameters. Seconds until next must be between 0 and 59.` });
+    }
+    // Si les minutes sont null, les secondes doivent l'être aussi (ou 0)
+    if (minutesValue === null && secondsValue !== null && secondsValue !== 0) {
+        console.error('[API /update-stamina] Invalid combination: Seconds provided without minutes.');
+        return res.status(400).json({ error: `Invalid parameters. Cannot provide seconds without minutes.` });
+    }
     // --- Fin Validation ---
 
     try {
@@ -169,29 +184,39 @@ router.post('/daily-quests/update-stamina', async (req, res) => {
 
         // Si minutes/secondes sont fournies (et valides) ET que la stamina n'est pas déjà max
         if (minutesValue !== null && staminaValue < MAX_STAMINA) {
+            // S'assurer que les secondes ont une valeur par défaut si non fournies mais minutes oui
             const validSeconds = (secondsValue === null) ? 0 : secondsValue;
             // console.log(`[API /update-stamina] Adjusting timestamp based on Min: ${minutesValue}, Sec: ${validSeconds}`); // Debug Log
+
+            // Calculer le temps total restant en secondes
             const totalSecondsRemaining = (minutesValue * 60) + validSeconds;
+            // Calculer le temps total d'un cycle en secondes
             const cycleSeconds = STAMINA_REGEN_RATE_MINUTES * 60;
+            // Calculer le temps écoulé depuis le dernier gain en secondes
             const secondsAgo = cycleSeconds - totalSecondsRemaining;
+
+            // Log calculation details
             // console.log(`[API /update-stamina] Calculation: cycleSec=${cycleSeconds}, remainingSec=${totalSecondsRemaining}, secondsAgo=${secondsAgo}`);
+
+            // Décaler le timestamp actuel en arrière en millisecondes
             newStaminaLastUpdated.setTime(newStaminaLastUpdated.getTime() - (secondsAgo * 1000));
+
         } else if (minutesValue !== null && staminaValue >= MAX_STAMINA) {
             // console.log(`[API /update-stamina] Stamina is max (${staminaValue}), ignoring timer. Timestamp set to now.`); // Debug Log
-            newStaminaLastUpdated = new Date();
+            newStaminaLastUpdated = new Date(); // Si stamina max, le timestamp précis importe moins
         }
         // Si minutesValue est null, newStaminaLastUpdated reste à 'now'
 
         const newStaminaLastUpdatedISO = newStaminaLastUpdated.toISOString();
         // console.log(`[API /update-stamina] Player ${playerId}: BaseTime=${baseTimeLog}, Final Calculated Timestamp=${newStaminaLastUpdatedISO}`);
 
-        // --- NOUVEAU : Réinitialiser le niveau de notification si < 55 ---
+        // --- Réinitialiser le niveau de notification si < 55 ---
         let notificationLevelUpdateClause = '';
         const queryParams = [staminaValue, newStaminaLastUpdatedISO, playerId];
         if (staminaValue < 55) {
             notificationLevelUpdateClause = ', last_stamina_notification_level = $4'; // Placeholder $4
             queryParams.push(0); // Ajouter la valeur 0 pour le $4
-            console.log(`[API /update-stamina] Stamina < 55, resetting notification level for player ${playerId}`);
+            // console.log(`[API /update-stamina] Stamina < 55, resetting notification level for player ${playerId}`);
         }
         // ----------------------------------------------------------------
 
