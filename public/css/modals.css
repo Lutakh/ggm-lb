@@ -159,6 +159,35 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
 }
 #pt-help-modal-body ul ul { list-style-type: circle; margin-top: 5px; }
 
+/* --- NOUVEAU: DQ Help Modal --- */
+#dq-help-modal-backdrop { z-index: 1000; }
+#dq-help-modal { z-index: 1001; }
+#dq-help-modal-body {
+    /* Appliquer les mêmes styles que pt-help-modal-body */
+    padding: 20px 25px;
+    white-space: normal;
+    line-height: 1.6;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+#dq-help-modal-body p { margin-top: 0; margin-bottom: 10px; }
+#dq-help-modal-body strong {
+    display: block;
+    margin-top: 15px;
+    margin-bottom: 5px;
+    color: var(--primary-color);
+    font-size: 1.1em;
+}
+#dq-help-modal-body ul, #dq-help-modal-body ol {
+    padding-left: 25px;
+    margin-top: 5px;
+    margin-bottom: 15px;
+}
+#dq-help-modal-body ul ul, #dq-help-modal-body ol ol {
+    margin-top: 5px;
+}
+/* --- FIN NOUVEAU --- */
+
 /* --- Player Detail Modal (Mobile) --- */
 #player-detail-modal-backdrop { z-index: 1000; } /* Z-index par défaut */
 #player-detail-modal { z-index: 1001; } /* Z-index par défaut */

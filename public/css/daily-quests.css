@@ -1,0 +1,310 @@
+/* public/css/daily-quests.css */
+
+.daily-quests-selectors {
+    display: grid;
+    /* Grid pour desktop par défaut */
+    grid-template-columns: repeat(3, 1fr); /* 3 colonnes sur desktop */
+    gap: 20px;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.player-selector-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.player-selector-group label {
+    font-weight: bold;
+    font-size: 0.9em;
+    color: var(--primary-color);
+}
+
+/* Styles pour la nouvelle sélection de joueur */
+.dq-player-selection-ui {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Espace entre l'affichage et le bouton */
+    width: 100%;
+}
+
+.dq-player-name-display {
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    background-color: #f9f6f1; /* Fond légèrement différent pour le distinguer */
+    border-radius: 10px;
+    flex-grow: 1; /* Prend l'espace disponible */
+    color: var(--text-color);
+    font-style: italic; /* Italique si aucun joueur sélectionné */
+    overflow: hidden; /* Empêche le texte long de déborder */
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer; /* Indiquer qu'on peut cliquer */
+}
+.dq-player-name-display.player-selected {
+    font-style: normal; /* Style normal quand un joueur est choisi */
+    font-weight: bold;
+}
+
+
+.dq-open-modal-btn {
+    padding: 10px 15px; /* Ajuster la taille du bouton si nécessaire */
+    margin-left: 0; /* Pas besoin de marge si on utilise gap */
+    flex-shrink: 0; /* Empêche le bouton de rétrécir */
+}
+
+
+.daily-quests-container {
+    display: grid;
+    gap: 30px;
+}
+
+/* Styles pour 1, 2 ou 3 colonnes (par défaut desktop) */
+.daily-quests-container.columns-1 { grid-template-columns: 1fr; }
+.daily-quests-container.columns-2 { grid-template-columns: 1fr 1fr; }
+.daily-quests-container.columns-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+
+.dq-player-column {
+    background-color: #fdfaf5;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    display: flex; /* Allow flex for ordering if needed */
+    flex-direction: column;
+}
+.dq-player-column.dq-error-column p {
+    color: var(--accent-color);
+    font-style: italic;
+    text-align: center;
+}
+
+
+.dq-player-column h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    text-align: center;
+    color: var(--accent-color);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+.dq-stamina-section {
+    display: flex;
+    flex-wrap: wrap; /* Permet le retour à la ligne si manque de place */
+    align-items: center;
+    gap: 8px 10px; /* Vertical gap, Horizontal gap */
+    margin-bottom: 20px;
+    background-color: #fff;
+    padding: 10px 12px;
+    border-radius: 8px;
+}
+
+.dq-stamina-section label { /* Pour "Stamina:" */
+    font-weight: bold;
+    margin-right: 5px; /* Petit espace après "Stamina:" */
+    flex-shrink: 0; /* Empêche le label de rétrécir */
+}
+
+.dq-stamina-input {
+    width: 55px; /* Largeur réduite pour la valeur */
+    text-align: center;
+    padding: 5px 8px;
+    font-size: 1em;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    -moz-appearance: textfield;
+}
+.dq-stamina-input::-webkit-outer-spin-button,
+.dq-stamina-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+
+.dq-stamina-display-group { /* Groupe pour affichage X / MAX */
+    display: flex;
+    align-items: baseline; /* Aligner sur la ligne de base */
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.dq-stamina-current {
+    font-weight: bold;
+    color: var(--primary-color);
+    font-size: 1.1em;
+    min-width: 2ch; /* Ensure space for 2 digits */
+    text-align: right;
+}
+
+.dq-stamina-separator {
+    font-size: 0.9em;
+    color: #888;
+}
+
+.dq-stamina-max {
+    font-size: 0.9em;
+    color: #888;
+}
+
+.dq-stamina-timer-group { /* Groupe pour "Next in: Y min Z sec" */
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: auto; /* Pousse ce groupe vers la droite sur desktop */
+    flex-shrink: 0;
+}
+
+.dq-stamina-timer-group label { /* Pour "Next in:" */
+    font-size: 0.85em;
+    color: #555;
+    font-weight: normal; /* Plus léger */
+    white-space: nowrap; /* Empêche retour à la ligne du label */
+    flex-shrink: 0;
+}
+
+.dq-stamina-next-input { /* Input pour les minutes */
+    width: 45px; /* Très petit */
+    padding: 4px 6px;
+    font-size: 0.9em;
+    text-align: center;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    -moz-appearance: textfield;
+    flex-shrink: 0;
+}
+.dq-stamina-next-input::-webkit-outer-spin-button,
+.dq-stamina-next-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Input pour les secondes */
+.dq-stamina-next-seconds-input {
+    width: 45px; /* Même taille que minutes */
+    padding: 4px 6px;
+    font-size: 0.9em;
+    text-align: center;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    -moz-appearance: textfield;
+    flex-shrink: 0;
+}
+.dq-stamina-next-seconds-input::-webkit-outer-spin-button,
+.dq-stamina-next-seconds-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+
+.dq-stamina-timer-group span { /* Pour les labels "min" et "sec" */
+    font-size: 0.85em;
+    color: #555;
+    flex-shrink: 0;
+}
+
+
+.dq-quest-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1; /* Take remaining vertical space */
+}
+
+.dq-quest-list li {
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--border-color);
+    display: flex;
+    align-items: center;
+}
+.dq-quest-list li:last-child {
+    border-bottom: none;
+}
+
+.dq-quest-list input[type="checkbox"] {
+    margin-right: 10px;
+    flex-shrink: 0;
+    width: 18px; /* Taille personnalisée si besoin */
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--primary-color); /* Style checkbox */
+}
+
+.dq-quest-list label {
+    cursor: pointer;
+    flex-grow: 1;
+}
+.dq-quest-list input[type="checkbox"]:checked + label {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+
+.dq-placeholder, .dq-error {
+    text-align: center;
+    padding: 40px 20px;
+    color: #888;
+    font-style: italic;
+    grid-column: 1 / -1; /* S'assurer qu'il prend toute la largeur */
+}
+.dq-error {
+    color: var(--accent-color);
+    font-weight: bold;
+    font-style: normal;
+}
+
+
+/* --- Responsive Mobile --- */
+@media (max-width: 768px) {
+    .daily-quests-selectors {
+        grid-template-columns: 1fr; /* Une seule colonne pour les sélecteurs */
+    }
+
+    /* Cacher les sélecteurs 2 et 3 */
+    .player-selector-group:nth-child(n+2) {
+        display: none;
+    }
+
+    /* Toujours une seule colonne pour les quêtes */
+    .daily-quests-container.columns-1,
+    .daily-quests-container.columns-2,
+    .daily-quests-container.columns-3 {
+        grid-template-columns: 1fr;
+    }
+
+    .dq-stamina-timer-group {
+        margin-left: 0; /* Ne plus pousser à droite */
+        justify-content: flex-start; /* Aligner à gauche par défaut? */
+        margin-top: 5px; /* Espace si retour à la ligne */
+        width: 100%; /* Peut prendre toute la largeur si besoin */
+    }
+
+}
+
+/* Ajustement pour très petits écrans si nécessaire */
+@media (max-width: 480px) { /* Seuil ajusté */
+    .dq-stamina-section {
+        gap: 10px 8px; /* Un peu plus d'espace vertical sur très petit écran */
+        /* Peut-être forcer le groupe timer sur une nouvelle ligne ? */
+    }
+    .dq-stamina-timer-group {
+        margin-left: 0;
+        justify-content: flex-start;
+        /* Peut-être forcer le retour à la ligne avant */
+        flex-basis: 100%; /* Force le groupe timer à prendre une nouvelle ligne */
+        margin-top: 8px;
+    }
+}
+#daily-quests-section .view-tabs {
+    justify-content: flex-start; /* Aligne les éléments au début */
+    align-items: center; /* Garde l'alignement vertical centré */
+    gap: 15px; /* Ajoute un espace entre le titre et le bouton */
+}
+
+#daily-quests-section .view-tabs .help-button {
+    margin-left: 0; /* Annule la marge gauche par défaut du bouton si 'gap' est suffisant */
+    /* Vous pouvez ajuster margin-bottom si l'alignement vertical n'est pas parfait */
+    /* margin-bottom: 2px; */
+}
