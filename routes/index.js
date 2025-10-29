@@ -118,14 +118,15 @@ router.get('/', async (req, res) => {
 // Nombre de jours COMPLETS écoulés
         const serverAgeInDays = Math.floor(timeSinceStart / (1000 * 60 * 60 * 24));
 
-// --- NOUVELLE LOGIQUE Corrigée pour paperPlaneNumber ---
+// --- NOUVELLE LOGIQUE Corrigée pour paperPlaneNumber (V2) ---
         const serverStartDay = serverStartDate.getUTCDay(); // 0=Dim, 3=Wed
+// Calculer le premier Mercredi 09:00 UTC
         const daysUntilFirstWed = (3 - serverStartDay + 7) % 7;
         const firstEventReset = new Date(serverStartDate.getTime());
         firstEventReset.setUTCDate(firstEventReset.getUTCDate() + daysUntilFirstWed);
         firstEventReset.setUTCHours(9, 0, 0, 0);
 
-// Si le serveur a démarré un mercredi MAIS *après* 9h UTC, le premier reset est la semaine d'après
+// Si le serveur a démarré un Mercredi APRÈS 9h, le premier reset est la semaine suivante
         if (firstEventReset < serverStartDate) {
             firstEventReset.setUTCDate(firstEventReset.getUTCDate() + 7);
         }
@@ -134,15 +135,15 @@ router.get('/', async (req, res) => {
         let paperPlaneNumber;
 
         if (timeSinceFirstReset < 0) {
-            // Nous sommes dans la première "semaine" partielle (PP0) avant le premier reset
+            // Nous sommes avant le tout premier reset (Semaine 0)
             paperPlaneNumber = 0;
         } else {
-            // Calculer le nombre de semaines complètes *depuis* le premier reset et ajouter 1 (pour PP1, PP2...)
-            const weeksSinceFirstReset = Math.floor(timeSinceFirstReset / (1000 * 60 * 60 * 24 * 7));
-            paperPlaneNumber = weeksSinceFirstReset + 1;
+            // Le nombre de semaines complètes écoulées *depuis* le premier reset
+            // (Ex: Si 4.8 semaines se sont écoulées, nous sommes dans le PP 4)
+            // C'est ici que le "+ 1" erroné a été RETIRÉ.
+            paperPlaneNumber = Math.floor(timeSinceFirstReset / (1000 * 60 * 60 * 24 * 7));
         }
-// --- FIN NOUVELLE LOGIQUE ---
-        
+// --- FIN NOUVELLE LOGIQUE (V2) ---
 
         // Obtenir le timer du prochain reset (via la fonction corrigée)
         const nextPaperPlaneReset = getNextReset(3); // Mercredi = 3 (09:00 UTC)
