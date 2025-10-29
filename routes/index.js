@@ -114,11 +114,35 @@ router.get('/', async (req, res) => {
         const serverStartDate = new Date(serverSettings.server_open_date + 'T00:00:00Z');
         // Temps écoulé en millisecondes depuis le début du serveur
         const timeSinceStart = now.getTime() - serverStartDate.getTime();
-        // Nombre de jours COMPLETS écoulés
+        // ...
+// Nombre de jours COMPLETS écoulés
         const serverAgeInDays = Math.floor(timeSinceStart / (1000 * 60 * 60 * 24));
 
-        // Le numéro du Paper Plane est le nombre de semaines complètes écoulées.
-        const paperPlaneNumber = Math.floor(serverAgeInDays / 7);
+// --- NOUVELLE LOGIQUE Corrigée pour paperPlaneNumber ---
+        const serverStartDay = serverStartDate.getUTCDay(); // 0=Dim, 3=Wed
+        const daysUntilFirstWed = (3 - serverStartDay + 7) % 7;
+        const firstEventReset = new Date(serverStartDate.getTime());
+        firstEventReset.setUTCDate(firstEventReset.getUTCDate() + daysUntilFirstWed);
+        firstEventReset.setUTCHours(9, 0, 0, 0);
+
+// Si le serveur a démarré un mercredi MAIS *après* 9h UTC, le premier reset est la semaine d'après
+        if (firstEventReset < serverStartDate) {
+            firstEventReset.setUTCDate(firstEventReset.getUTCDate() + 7);
+        }
+
+        const timeSinceFirstReset = now.getTime() - firstEventReset.getTime();
+        let paperPlaneNumber;
+
+        if (timeSinceFirstReset < 0) {
+            // Nous sommes dans la première "semaine" partielle (PP0) avant le premier reset
+            paperPlaneNumber = 0;
+        } else {
+            // Calculer le nombre de semaines complètes *depuis* le premier reset et ajouter 1 (pour PP1, PP2...)
+            const weeksSinceFirstReset = Math.floor(timeSinceFirstReset / (1000 * 60 * 60 * 24 * 7));
+            paperPlaneNumber = weeksSinceFirstReset + 1;
+        }
+// --- FIN NOUVELLE LOGIQUE ---
+        
 
         // Obtenir le timer du prochain reset (via la fonction corrigée)
         const nextPaperPlaneReset = getNextReset(3); // Mercredi = 3 (09:00 UTC)
