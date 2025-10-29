@@ -114,11 +114,36 @@ router.get('/', async (req, res) => {
         const serverStartDate = new Date(serverSettings.server_open_date + 'T00:00:00Z');
         // Temps écoulé en millisecondes depuis le début du serveur
         const timeSinceStart = now.getTime() - serverStartDate.getTime();
-        // Nombre de jours COMPLETS écoulés
+        // ...
+// Nombre de jours COMPLETS écoulés
         const serverAgeInDays = Math.floor(timeSinceStart / (1000 * 60 * 60 * 24));
 
-        // Le numéro du Paper Plane est le nombre de semaines complètes écoulées.
-        const paperPlaneNumber = Math.floor(serverAgeInDays / 7);
+// --- NOUVELLE LOGIQUE Corrigée pour paperPlaneNumber (V2) ---
+        const serverStartDay = serverStartDate.getUTCDay(); // 0=Dim, 3=Wed
+// Calculer le premier Mercredi 09:00 UTC
+        const daysUntilFirstWed = (3 - serverStartDay + 7) % 7;
+        const firstEventReset = new Date(serverStartDate.getTime());
+        firstEventReset.setUTCDate(firstEventReset.getUTCDate() + daysUntilFirstWed);
+        firstEventReset.setUTCHours(9, 0, 0, 0);
+
+// Si le serveur a démarré un Mercredi APRÈS 9h, le premier reset est la semaine suivante
+        if (firstEventReset < serverStartDate) {
+            firstEventReset.setUTCDate(firstEventReset.getUTCDate() + 7);
+        }
+
+        const timeSinceFirstReset = now.getTime() - firstEventReset.getTime();
+        let paperPlaneNumber;
+
+        if (timeSinceFirstReset < 0) {
+            // Nous sommes avant le tout premier reset (Semaine 0)
+            paperPlaneNumber = 0;
+        } else {
+            // Le nombre de semaines complètes écoulées *depuis* le premier reset
+            // (Ex: Si 4.8 semaines se sont écoulées, nous sommes dans le PP 4)
+            // C'est ici que le "+ 1" erroné a été RETIRÉ.
+            paperPlaneNumber = Math.floor(timeSinceFirstReset / (1000 * 60 * 60 * 24 * 7));
+        }
+// --- FIN NOUVELLE LOGIQUE (V2) ---
 
         // Obtenir le timer du prochain reset (via la fonction corrigée)
         const nextPaperPlaneReset = getNextReset(3); // Mercredi = 3 (09:00 UTC)
