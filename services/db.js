@@ -34,7 +34,7 @@ const initializeDb = async () => {
                 stamina INTEGER DEFAULT 0,
                 stamina_last_updated TIMESTAMPTZ DEFAULT NOW(),
                 discord_user_id TEXT NULL,                 -- ID Discord de l'utilisateur (TEXT car Snowflake ID est grand)
-                last_stamina_notification_level INTEGER DEFAULT 0 -- Niveau notifié (0, 55, ou 60)
+                last_stamina_notification_level INTEGER DEFAULT 0 -- Niveau notifié (0, 40, ou 60)
                 );
         `);
         // Ajouter les colonnes si elles n'existent pas (pour les tables existantes)
