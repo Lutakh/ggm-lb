@@ -15,10 +15,10 @@ const dailyQuestsList = [
     { key: 'upgrade_melo', label: 'Upgrade Melo' },
     { key: 'enhance_gear', label: 'Enhance Gear' },
     { key: 'guild_activities', label: 'Guild Activities (3)' },
+    { key: 'quick_collect_res', label: 'Quick Collect Resources' },
     { key: 'quick_purchase', label: 'Quick Purchase (Shop)' },
     { key: 'collect_artifact_res', label: 'Collect Artifact Resources' },
     { key: 'artifact_treasure_hunt', label: 'Artifact Treasure Hunt' },
-    { key: 'quick_collect_res', label: 'Quick Collect Resources' },
     { key: 'buy_hamster_store', label: 'Buy from Hamster Store' },
     { key: 'claim_activity_points', label: 'Claim Daily Activity Points' },
     { key: 'check_event_page', label: 'Check Event Page' },
@@ -164,10 +164,10 @@ router.post('/daily-quests/update-stamina', async (req, res) => {
 
         console.log(`[UPDATE STAMINA v2] Player ${playerId}: Input(S:${staminaValue}, M:${minutesValue}, Sec:${secondsValue}) -> NowMillis:${nowTimestampForLog}, NowISO:${baseTimeLog}, Calculated TimestampISO: ${newStaminaLastUpdatedISO}`);
 
-        // --- Réinitialiser le niveau de notification si < 55 (remains the same) ---
+        // --- Réinitialiser le niveau de notification si < 40 (remains the same) ---
         let notificationLevelUpdateClause = '';
         const queryParams = [staminaValue, newStaminaLastUpdatedISO, playerId];
-        if (staminaValue < 55) {
+        if (staminaValue < 40) {
             notificationLevelUpdateClause = ', last_stamina_notification_level = $4';
             queryParams.push(0);
         }

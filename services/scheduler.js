@@ -59,23 +59,23 @@ async function checkStaminaLevels() {
             let newNotificationLevel = player.last_stamina_notification_level;
             let notificationSentSuccessfully = false; // Flag pour savoir si une notif a VRAIMENT été envoyée
 
-            // Atteint 55 ?
-            if (currentStamina >= 55 && player.last_stamina_notification_level < 55) {
-                console.log(`[Scheduler] Player ${player.name} (ID: ${player.id}) reached 55 stamina (${currentStamina}). Attempting DM to ${player.discord_user_id}...`);
+            // Atteint 40 ?
+            if (currentStamina >= 40 && player.last_stamina_notification_level < 40) {
+                console.log(`[Scheduler] Player ${player.name} (ID: ${player.id}) reached 40 stamina (${currentStamina}). Attempting DM to ${player.discord_user_id}...`);
                 const success = await sendDiscordDM(player.discord_user_id, `Hey ${player.name}, your stamina reached ${currentStamina}/${MAX_STAMINA}!`);
                 if (success) {
-                    newNotificationLevel = 55; // Marquer 55 comme atteint
+                    newNotificationLevel = 40; // Marquer 40 comme atteint
                     notificationSentSuccessfully = true;
                 }
                 // Si !success, on ne met pas à jour le niveau, on réessaiera la prochaine fois
             }
 
-            // Atteint 60 ? (Vérifier même si 55 vient d'être atteint/tenté)
+            // Atteint 60 ? (Vérifier même si 40 vient d'être atteint/tenté)
             if (currentStamina >= MAX_STAMINA && player.last_stamina_notification_level < MAX_STAMINA) {
                 console.log(`[Scheduler] Player ${player.name} (ID: ${player.id}) reached MAX (${MAX_STAMINA}) stamina. Attempting DM to ${player.discord_user_id}...`);
                 const success = await sendDiscordDM(player.discord_user_id, `⚡️ ${player.name}, your stamina is FULL (${currentStamina}/${MAX_STAMINA})! ⚡️`);
                 if (success) {
-                    newNotificationLevel = MAX_STAMINA; // 60 a priorité sur 55 si atteint dans la même vérification
+                    newNotificationLevel = MAX_STAMINA; // 60 a priorité sur 40 si atteint dans la même vérification
                     notificationSentSuccessfully = true;
                 }
                 // Si !success, on ne met pas à jour le niveau, on réessaiera la prochaine fois
@@ -98,7 +98,7 @@ async function checkStaminaLevels() {
                 console.log(`[Scheduler] Notification failed for ${player.name} (ID: ${player.id}) at level ${newNotificationLevel}. Will retry next cycle.`);
             }
 
-            // La réinitialisation du niveau (si stamina < 55) est gérée dans la route /update-stamina
+            // La réinitialisation du niveau (si stamina < 40) est gérée dans la route /update-stamina
         }
 
     } catch (err) {
