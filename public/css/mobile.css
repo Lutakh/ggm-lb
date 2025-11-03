@@ -36,6 +36,9 @@
         order: 1; /* Mettre Discord à gauche */
         flex-grow: 0; /* MODIFIÉ: Ne pas grandir */
         justify-content: flex-start;
+        /* NOUVEAU: Aligner l'icône et le compteur */
+        display: flex;
+        align-items: center;
     }
     header .guides-section {
         order: 3; /* Mettre Guides à droite */
@@ -44,17 +47,39 @@
     }
     /* MODIFIÉ: Ajuster la taille des icônes/texte dans le header mobile */
     header .top-bar-section {
-        gap: 0; /* MODIFIÉ: Pas d'espace entre icône et texte (car texte caché) */
+        gap: 5px; /* MODIFIÉ: Espace entre icône et compteur */
     }
     header .top-bar-section svg {
         width: 24px; /* MODIFIÉ: Icônes plus petites */
         height: 24px;
     }
-    /* NOUVEAU: Cacher le texte des liens header sur mobile */
-    header .discord-info,
-    header .guides-section span {
+
+    /* MODIFIÉ: Cacher "Join Discord" et "Guides", mais afficher le compteur */
+    header .discord-info span, /* Cache "Join Discord" */
+    header .guides-section span { /* Cache "Guides" */
         display: none;
     }
+
+    /* NOUVEAU: Style pour le compteur de stats sur mobile */
+    header .discord-stats {
+        font-size: 0.85em;
+        opacity: 1;
+        gap: 4px; /* Espace entre point et nombre */
+        font-weight: bold;
+        color: var(--text-color);
+        /* S'assurer que le flex est là (normalement hérité) */
+        display: flex;
+        align-items: center;
+        /* Empêcher le retour à la ligne du compteur */
+        white-space: nowrap;
+    }
+    /* NOUVEAU: S'assurer que le point de statut est de la bonne taille */
+    header #discord-online-count .status-dot {
+        width: 7px;
+        height: 7px;
+        margin-right: 3px;
+    }
+
 
     /* NOUVEAU: Cacher le logo et le titre long sur mobile */
     .logo-desktop { display: none; }
@@ -173,7 +198,7 @@
 
     /* --- Perilous Trials (Mobile) --- */
     #perilous-trials-section .desktop-pt-controls { display: none; }
-    #perilous-trials-section .mobile-pt-controls { display: flex; gap: 10px; margin-bottom: 15px; }
+    #perililous-trials-section .mobile-pt-controls { display: flex; gap: 10px; margin-bottom: 15px; }
     #perilous-trials-section .mobile-pt-controls .action-btn-main { flex-grow: 1; }
 
     /* Tableau Global PT (Mobile) */
