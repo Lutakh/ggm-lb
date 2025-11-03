@@ -5,9 +5,9 @@ header {
 
     /* MODIFIÉ: Configuration Flexbox pour Desktop */
     display: flex;
-    justify-content: space-between; /* Espace entre les 3 éléments */
+    justify-content: center; /* MODIFIÉ: Centrer le groupe (Discord-Titre-Guides) */
     align-items: center; /* Centrage vertical */
-    gap: 20px; /* Espace entre les éléments */
+    gap: 30px; /* MODIFIÉ: Espace réduit entre les éléments */
 }
 header h1 {
     font-size: 3em;
@@ -20,13 +20,14 @@ header h1 {
     margin-top: 0; /* Assurer qu'il n'y a pas de marge haute */
     margin-bottom: 0; /* Réduire l'espace si besoin */
 
-    /* MODIFIÉ: Permet au titre de prendre l'espace central */
-    flex-grow: 1;
-    text-align: center; /* Assure le centrage du texte si flex-grow déséquilibre */
+    /* MODIFIÉ: Le titre ne s'étire plus, il prend sa taille naturelle */
+    /* flex-grow: 1; */
+    text-align: center;
+    flex-shrink: 0; /* Empêche le titre de se réduire si la fenêtre est petite */
 }
 /* MODIFIÉ: Styles pour les éléments latéraux dans le header */
 header .top-bar-section {
-    flex-basis: 210px; /* Donne une largeur de base (similaire à sidebar) pour équilibrer */
+    /* flex-basis: 210px; SUPPRIMÉ: C'est ce qui créait l'espace excessif */
     flex-shrink: 0; /* Ne pas les laisser rétrécir */
 }
 header .guides-section {
@@ -35,6 +36,11 @@ header .guides-section {
 header .discord-section {
     justify-content: flex-start; /* Aligne le contenu (icône + texte) à gauche */
 }
+
+/* NOUVEAU: Cacher les titres mobiles sur desktop */
+.title-full-text { display: inline; }
+.title-mobile-short { display: none; }
+
 
 .logo {
     width: 60px;
