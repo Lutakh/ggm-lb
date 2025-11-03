@@ -1,8 +1,13 @@
 header {
-    text-align: center;
+    /* text-align: center; MODIFIÉ: Géré par flex */
     margin-bottom: 20px;
     position: relative;
-    /* Suppression du margin-top: 0; car géré par padding-top du body */
+
+    /* MODIFIÉ: Configuration Flexbox pour Desktop */
+    display: flex;
+    justify-content: space-between; /* Espace entre les 3 éléments */
+    align-items: center; /* Centrage vertical */
+    gap: 20px; /* Espace entre les éléments */
 }
 header h1 {
     font-size: 3em;
@@ -10,11 +15,27 @@ header h1 {
     color: var(--primary-color);
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: center; /* Garde le centrage du logo + texte */
     gap: 15px;
     margin-top: 0; /* Assurer qu'il n'y a pas de marge haute */
     margin-bottom: 0; /* Réduire l'espace si besoin */
+
+    /* MODIFIÉ: Permet au titre de prendre l'espace central */
+    flex-grow: 1;
+    text-align: center; /* Assure le centrage du texte si flex-grow déséquilibre */
 }
+/* MODIFIÉ: Styles pour les éléments latéraux dans le header */
+header .top-bar-section {
+    flex-basis: 210px; /* Donne une largeur de base (similaire à sidebar) pour équilibrer */
+    flex-shrink: 0; /* Ne pas les laisser rétrécir */
+}
+header .guides-section {
+    justify-content: flex-end; /* Aligne le contenu (icône + texte) à droite */
+}
+header .discord-section {
+    justify-content: flex-start; /* Aligne le contenu (icône + texte) à gauche */
+}
+
 .logo {
     width: 60px;
     height: 60px;
@@ -130,7 +151,11 @@ header h1 {
 }
 .top-bar .timers-section {
     flex-grow: 1;
+    /* MODIFIÉ: S'assurer que les minuteurs se centrent */
+    display: flex;
+    justify-content: center;
 }
+/* MODIFIÉ: Déplacé vers le header, mais garde la règle de base */
 .guides-section {
     justify-content: flex-end;
 }
@@ -138,6 +163,7 @@ header h1 {
     width: 38px;
     height: 38px;
 }
+/* MODIFIÉ: Déplacé vers le header */
 .discord-section svg {
     fill: var(--discord-blue);
 }
@@ -163,6 +189,7 @@ header h1 {
 #discord-online-count .status-dot.online { background-color: var(--success-color); }
 #discord-online-count .status-dot.offline { background-color: var(--accent-color); }
 
+/* MODIFIÉ: Déplacé vers le header */
 .guides-section svg {
     fill: var(--primary-color);
 }
@@ -176,7 +203,8 @@ header h1 {
     margin: 0;
     display: flex;
     gap: 20px;
-    justify-content: flex-start;
+    /* MODIFIÉ: Centrer les minuteurs */
+    justify-content: center;
     flex-wrap: wrap;
 }
 .timer-entry {

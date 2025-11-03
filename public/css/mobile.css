@@ -10,13 +10,53 @@
         margin: 0 auto; /* Rétablir le centrage */
     }
     .card { padding: 15px; }
-    header { /* Ajustement header si nécessaire */
+
+    /* MODIFIÉ: Mise en page mobile du Header */
+    header {
         padding-left: 0; /* Annule le décalage desktop si appliqué */
+        display: flex;
+        flex-wrap: wrap; /* Permet aux éléments de passer à la ligne */
+        justify-content: space-between; /* Espace Discord et Guides sur la 1ère ligne */
+        align-items: center;
+        gap: 10px; /* Espace entre les lignes/éléments */
     }
-    header h1 { font-size: 1.5em; gap: 10px; }
-    .logo { width: 35px; height: 35px; }
+    header h1 {
+        font-size: 1.5em;
+        gap: 10px;
+        /* MODIFIÉ: Force le titre à prendre 100% et à être centré, sur sa propre ligne */
+        order: 2; /* Mettre le titre en 2ème */
+        flex-basis: 100%; /* Prend toute la largeur */
+        text-align: center; /* Centre le H1 */
+        margin: 0; /* Annule marges par défaut */
+    }
+    /* MODIFIÉ: Styles pour les éléments latéraux DANS le header */
+    header .discord-section {
+        order: 1; /* Mettre Discord en 1er */
+        flex-grow: 1; /* Partage l'espace de la 1ère ligne */
+        justify-content: flex-start; /* Aligne à gauche */
+    }
+    header .guides-section {
+        order: 1; /* Mettre Guides en 1er (même ordre que Discord) */
+        flex-grow: 1; /* Partage l'espace */
+        justify-content: flex-end; /* Aligne à droite */
+    }
+    /* MODIFIÉ: Ajuster la taille des icônes/texte dans le header mobile */
+    header .top-bar-section {
+        gap: 8px;
+    }
+    header .top-bar-section svg {
+        width: 28px;
+        height: 28px;
+    }
+    header .discord-info span, header .guides-section span {
+        font-size: 0.9em;
+    }
+    /* Le bouton admin est position: fixed, pas besoin de le réorganiser */
     #admin-settings-btn { width: 40px; height: 40px; top: 10px; right: 10px; }
     #admin-settings-btn svg { width: 20px; height: 20px; }
+
+
+    .logo { width: 35px; height: 35px; }
 
     /* --- NOUVEAU: Gestion Sidebar/Bouton Nav --- */
     #desktop-sidebar {
@@ -39,16 +79,27 @@
     }
 
     .top-bar { flex-wrap: wrap; padding: 10px; gap: 15px; }
-    .top-bar-section { gap: 10px; }
-    .top-bar-section svg { width: 28px; height: 28px; }
-    .discord-section .discord-info span, .guides-section span { font-size: 0.9em; }
+
+    /* MODIFIÉ: Ces règles ne s'appliquent qu'aux minuteurs dans la top-bar */
+    .top-bar .top-bar-section { gap: 10px; }
+    .top-bar .top-bar-section svg { width: 28px; height: 28px; }
+
+    /* SUPPRIMÉ: Ces règles s'appliquent maintenant au header */
+    /* .discord-section .discord-info span, .guides-section span { font-size: 0.9em; } */
+
     .timers-list { flex-wrap: wrap; gap: 10px; justify-content: center; width: 100%; order: 3; }
     .timer-entry { flex-direction: row; gap: 8px; background-color: #f9f6f1; padding: 8px 12px; border-radius: 8px; width: 100%; box-sizing: border-box; }
     .timer-label { font-size: 0.8em; text-align: left; flex-grow: 1; opacity: 0.8; }
     .timer-value { font-size: 0.85em; }
-    .timers-section { flex-basis: 100%; }
-    .discord-section { flex-grow: 1; }
-    .guides-section { flex-grow: 1; justify-content: flex-end; }
+    .timers-section {
+        flex-basis: 100%;
+        width: 100%; /* S'assurer que la section minuteur prend toute la largeur */
+    }
+
+    /* SUPPRIMÉ: Ces règles ne s'appliquent plus au top-bar */
+    /* .discord-section { flex-grow: 1; } */
+    /* .guides-section { flex-grow: 1; justify-content: flex-end; } */
+
     .timer-entry:hover .timer-tooltip { display: none; }
 
     /* --- Formulaire d'ajout (mobile) --- */
