@@ -10,13 +10,93 @@
         margin: 0 auto; /* Rétablir le centrage */
     }
     .card { padding: 15px; }
-    header { /* Ajustement header si nécessaire */
+
+    /* MODIFIÉ: Mise en page mobile du Header (Refonte) */
+    header {
         padding-left: 0; /* Annule le décalage desktop si appliqué */
+        display: flex;
+        flex-wrap: nowrap; /* MODIFIÉ: Forcer une seule ligne */
+        justify-content: space-between; /* MODIFIÉ: Espacer les 3 éléments */
+        align-items: center;
+        gap: 10px; /* Espace entre les éléments */
     }
-    header h1 { font-size: 1.5em; gap: 10px; }
-    .logo { width: 35px; height: 35px; }
+    header h1 {
+        font-size: 1.2em; /* MODIFIÉ: Taille réduite */
+        gap: 5px; /* MODIFIÉ: Espace réduit */
+        order: 2; /* Mettre le titre au milieu */
+        flex-basis: auto; /* MODIFIÉ: Taille auto */
+        flex-grow: 0; /* MODIFIÉ: Ne pas grandir */
+        flex-shrink: 1; /* MODIFIÉ: Peut rétrécir */
+        text-align: center;
+        margin: 0;
+        white-space: nowrap; /* Empêche le titre de passer à la ligne */
+    }
+    /* MODIFIÉ: Styles pour les éléments latéraux DANS le header */
+    header .discord-section {
+        order: 1; /* Mettre Discord à gauche */
+        flex-grow: 0; /* MODIFIÉ: Ne pas grandir */
+        justify-content: flex-start;
+        /* NOUVEAU: Aligner l'icône et le compteur */
+        display: flex;
+        align-items: center;
+    }
+    header .guides-section {
+        order: 3; /* Mettre Guides à droite */
+        flex-grow: 0; /* MODIFIÉ: Ne pas grandir */
+        justify-content: flex-end;
+    }
+    /* MODIFIÉ: Ajuster la taille des icônes/texte dans le header mobile */
+    header .top-bar-section {
+        gap: 5px; /* MODIFIÉ: Espace entre icône et compteur */
+    }
+    header .top-bar-section svg {
+        width: 24px; /* MODIFIÉ: Icônes plus petites */
+        height: 24px;
+    }
+
+    /* MODIFIÉ: Cacher "Join Discord" et "Guides", mais afficher le compteur */
+    header .discord-info span, /* Cache "Join Discord" */
+    header .guides-section span { /* Cache "Guides" */
+        display: none;
+    }
+
+    /* NOUVEAU: Style pour le compteur de stats sur mobile */
+    header .discord-stats {
+        font-size: 0.85em;
+        opacity: 1;
+        gap: 4px; /* Espace entre point et nombre */
+        font-weight: bold;
+        color: var(--text-color);
+        /* S'assurer que le flex est là (normalement hérité) */
+        display: flex;
+        align-items: center;
+        /* Empêcher le retour à la ligne du compteur */
+        white-space: nowrap;
+    }
+    /* NOUVEAU: S'assurer que le point de statut est de la bonne taille */
+    header #discord-online-count .status-dot {
+        width: 7px;
+        height: 7px;
+        margin-right: 3px;
+    }
+
+
+    /* NOUVEAU: Cacher le logo et le titre long sur mobile */
+    .logo-desktop { display: none; }
+    .title-full-text { display: none; }
+    .title-mobile-short {
+        display: block;
+        font-size: 1.15em; /* Ajustement taille titre mobile */
+        white-space: nowrap;
+    }
+
+
+    /* Le bouton admin est position: fixed, pas besoin de le réorganiser */
     #admin-settings-btn { width: 40px; height: 40px; top: 10px; right: 10px; }
     #admin-settings-btn svg { width: 20px; height: 20px; }
+
+
+    .logo { width: 35px; height: 35px; }
 
     /* --- NOUVEAU: Gestion Sidebar/Bouton Nav --- */
     #desktop-sidebar {
@@ -39,17 +119,22 @@
     }
 
     .top-bar { flex-wrap: wrap; padding: 10px; gap: 15px; }
-    .top-bar-section { gap: 10px; }
-    .top-bar-section svg { width: 28px; height: 28px; }
-    .discord-section .discord-info span, .guides-section span { font-size: 0.9em; }
+
+    /* MODIFIÉ: Ces règles ne s'appliquent qu'aux minuteurs dans la top-bar */
+    .top-bar .top-bar-section { gap: 10px; }
+    .top-bar .top-bar-section svg { width: 28px; height: 28px; }
+
     .timers-list { flex-wrap: wrap; gap: 10px; justify-content: center; width: 100%; order: 3; }
     .timer-entry { flex-direction: row; gap: 8px; background-color: #f9f6f1; padding: 8px 12px; border-radius: 8px; width: 100%; box-sizing: border-box; }
     .timer-label { font-size: 0.8em; text-align: left; flex-grow: 1; opacity: 0.8; }
     .timer-value { font-size: 0.85em; }
-    .timers-section { flex-basis: 100%; }
-    .discord-section { flex-grow: 1; }
-    .guides-section { flex-grow: 1; justify-content: flex-end; }
-    .timer-entry:hover .timer-tooltip { display: none; }
+    .timers-section {
+        flex-basis: 100%;
+        width: 100%; /* S'assurer que la section minuteur prend toute la largeur */
+    }
+
+    /* MODIFIÉ: SUPPRESSION de la règle qui cachait les tooltips sur mobile */
+    /* .timer-entry:hover .timer-tooltip { display: none; } */
 
     /* --- Formulaire d'ajout (mobile) --- */
     #player-form { grid-template-columns: 1fr; }
@@ -113,7 +198,7 @@
 
     /* --- Perilous Trials (Mobile) --- */
     #perilous-trials-section .desktop-pt-controls { display: none; }
-    #perilous-trials-section .mobile-pt-controls { display: flex; gap: 10px; margin-bottom: 15px; }
+    #perililous-trials-section .mobile-pt-controls { display: flex; gap: 10px; margin-bottom: 15px; }
     #perilous-trials-section .mobile-pt-controls .action-btn-main { flex-grow: 1; }
 
     /* Tableau Global PT (Mobile) */
