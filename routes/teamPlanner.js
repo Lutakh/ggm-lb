@@ -3,12 +3,11 @@ const express = require('express');
 const router = express.Router();
 const db = require('../services/db');
 
-// Obtenir toutes les activités futures avec leurs participants
+// Obtenir toutes les activités (futures ET passées)
 router.get('/team-planner/activities', async (req, res) => {
     try {
-        // Nettoyage des vieilles activités (optionnel, par exemple > 24h passées)
-        // await db.query("DELETE FROM planned_activities WHERE scheduled_time < NOW() - INTERVAL '1 day'");
-
+        // Pas de filtrage par date ici, on renvoie tout l'historique.
+        // Le front-end se chargera de séparer futur/passé.
         const activitiesRes = await db.query(`
             SELECT pa.*,
                    p_creator.name as creator_name,
@@ -18,14 +17,13 @@ router.get('/team-planner/activities', async (req, res) => {
                            'class', p.class,
                            'guild', p.guild,
                            'combat_power', p.combat_power
-                       ))
+                                    ))
                     FROM activity_participants ap
-                    JOIN players p ON ap.player_id = p.id
+                             JOIN players p ON ap.player_id = p.id
                     WHERE ap.activity_id = pa.id
                    ) as participants
             FROM planned_activities pa
-            LEFT JOIN players p_creator ON pa.creator_id = p_creator.id
-            WHERE pa.scheduled_time > NOW() - INTERVAL '2 hours' -- Affiche encore pendant 2h après l'heure prévue
+                     LEFT JOIN players p_creator ON pa.creator_id = p_creator.id
             ORDER BY pa.scheduled_time ASC
         `);
 
@@ -105,7 +103,6 @@ router.post('/team-planner/leave', async (req, res) => {
     const { activity_id, player_id } = req.body;
     try {
         await db.query(`DELETE FROM activity_participants WHERE activity_id = $1 AND player_id = $2`, [activity_id, player_id]);
-        // Si plus personne, supprimer l'activité ? (Optionnel, on garde pour l'instant)
         res.json({ success: true });
     } catch (err) {
         console.error("Error leaving activity:", err);
@@ -113,20 +110,7 @@ router.post('/team-planner/leave', async (req, res) => {
     }
 });
 
-// Supprimer une activité (Admin ou Créateur - ici simplifié via mot de passe admin pour la démo, ou juste un bouton delete si on est le créateur côté front)
-router.post('/team-planner/delete', async (req, res) => {
-    // Pour simplifier, on demande le mot de passe admin comme les autres suppressions
-    if (req.body.admin_password !== process.env.ADMIN_PASSWORD) {
-        return res.status(403).json({ error: 'Incorrect admin password.' });
-    }
-    try {
-        await db.query("DELETE FROM planned_activities WHERE id = $1", [req.body.activity_id]);
-        res.json({ success: true });
-    } catch (err) {
-        console.error("Error deleting activity:", err);
-        res.status(500).json({ error: "Failed to delete activity." });
-    }
-});
+// KICK un joueur (Admin seulement)
 router.post('/team-planner/kick', async (req, res) => {
     const { activity_id, target_player_id, admin_password } = req.body;
 
@@ -143,4 +127,19 @@ router.post('/team-planner/kick', async (req, res) => {
         res.status(500).json({ error: "Failed to kick player." });
     }
 });
+
+// Supprimer une activité (Admin seulement pour l'instant)
+router.post('/team-planner/delete', async (req, res) => {
+    if (req.body.admin_password !== process.env.ADMIN_PASSWORD) {
+        return res.status(403).json({ error: 'Incorrect admin password.' });
+    }
+    try {
+        await db.query("DELETE FROM planned_activities WHERE id = $1", [req.body.activity_id]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error("Error deleting activity:", err);
+        res.status(500).json({ error: "Failed to delete activity." });
+    }
+});
+
 module.exports = router;

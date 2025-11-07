@@ -6,12 +6,18 @@
 <div class="tp-controls">
     <label class="tp-filter-checkbox">
         <input type="checkbox" id="tp-filter-open" checked>
-        Show only with open spots
+        Show only with open spots (Upcoming)
     </label>
 </div>
 
 <div id="tp-activities-list" class="tp-activities-list">
     <div class="tp-loading-placeholder">Loading activities...</div>
+</div>
+
+<div class="tp-past-activities-section">
+    <button id="tp-toggle-past-btn" class="tp-toggle-btn">Show Past Activities ▼</button>
+    <div id="tp-past-activities-list" class="tp-activities-list tp-past-list hidden">
+        </div>
 </div>
 
 <template id="tp-activity-card-template">
@@ -30,7 +36,7 @@
             <div class="tp-participants-section">
                 <div class="tp-participants-header">
                     <span>Participants <span class="tp-participant-count">(0/4)</span></span>
-                </div>
+                    </div>
                 <div class="tp-participants-list">
                     </div>
             </div>

@@ -7,12 +7,16 @@ let currentUserPlayerId = null;
 
 // --- Éléments du DOM ---
 const activitiesListEl = document.getElementById('tp-activities-list');
+const pastActivitiesListEl = document.getElementById('tp-past-activities-list');
+const togglePastBtn = document.getElementById('tp-toggle-past-btn');
 const filterOpenEl = document.getElementById('tp-filter-open');
+
 const createBtn = document.getElementById('tp-create-btn');
 const createModal = document.getElementById('tp-create-modal');
 const createBackdrop = document.getElementById('tp-create-modal-backdrop');
 const createCloseBtn = document.getElementById('tp-create-close-btn');
 const createForm = document.getElementById('tp-create-form');
+
 const typeSelect = document.getElementById('tp-type-select');
 const subtypeContainer = document.getElementById('tp-subtype-container');
 const subtypeSelect = document.getElementById('tp-subtype-select');
@@ -31,7 +35,8 @@ const ACTIVITY_OPTIONS = {
         ] },
     'Echo of Battlefield': { label: 'Mode', options: ['Standard'] },
     'Echo of War': { label: 'Boss', options: ['Current Boss'] },
-    'Dragon Hunt': { label: 'Difficulty', options: ['CC0 (Lv.65+)', 'CC1 (Lv.150+)', 'CC2 (Lv.250+)', 'CC3 (Lv.350+)', 'CC4 (Lv.450+)'] }
+    // Dragon Hunt simplifié : Juste CC0, CC1, etc.
+    'Dragon Hunt': { label: 'Difficulty', options: ['CC0', 'CC1', 'CC2', 'CC3', 'CC4'] }
 };
 
 // --- Initialisation ---
@@ -46,6 +51,18 @@ export function initTeamPlanner(perilousTrialsList, currentCC) {
 
     // Listeners
     if (filterOpenEl) filterOpenEl.addEventListener('change', renderActivities);
+
+    // Toggle Past Activities
+    if (togglePastBtn) {
+        togglePastBtn.addEventListener('click', () => {
+            if (pastActivitiesListEl) {
+                pastActivitiesListEl.classList.toggle('hidden');
+                const isHidden = pastActivitiesListEl.classList.contains('hidden');
+                togglePastBtn.textContent = isHidden ? 'Show Past Activities ▼' : 'Hide Past Activities ▲';
+            }
+        });
+    }
+
     if (createBtn) createBtn.addEventListener('click', openCreateModal);
     if (createCloseBtn) createCloseBtn.addEventListener('click', closeCreateModal);
     if (createBackdrop) createBackdrop.addEventListener('click', closeCreateModal);
@@ -59,7 +76,7 @@ export function initTeamPlanner(perilousTrialsList, currentCC) {
     });
     if (createForm) createForm.addEventListener('submit', handleCreateSubmit);
 
-    // Chargement initial et boucle de rafraîchissement
+    // Chargement initial et boucle
     fetchActivities();
     setInterval(fetchActivities, 60000);
 }
@@ -77,128 +94,139 @@ async function fetchActivities() {
 }
 
 function renderActivities() {
-    if (!activitiesListEl) return;
+    if (!activitiesListEl || !pastActivitiesListEl) return;
     activitiesListEl.innerHTML = '';
+    pastActivitiesListEl.innerHTML = '';
 
-    // Vérification simple du mode admin pour afficher le bouton Kick
     const isAdmin = document.body.classList.contains('admin-mode') || sessionStorage.getItem('adminPassword');
-
     const showOnlyOpen = filterOpenEl ? filterOpenEl.checked : false;
     const now = new Date();
 
-    let filtered = allActivities.filter(act => new Date(act.scheduled_time) > now);
+    // Séparer futures et passées
+    let futureActs = allActivities.filter(act => new Date(act.scheduled_time) >= now);
+    // Pour l'historique, on trie du plus récent au plus ancien
+    let pastActs = allActivities.filter(act => new Date(act.scheduled_time) < now)
+        .sort((a, b) => new Date(b.scheduled_time) - new Date(a.scheduled_time));
 
+    // Filtre "Open spots" s'applique uniquement aux futures
     if (showOnlyOpen) {
-        filtered = filtered.filter(act => {
+        futureActs = futureActs.filter(act => {
             const max = (act.activity_type === 'Echo of War' || act.activity_type === 'Dragon Hunt') ? 6 : 4;
             return (act.participants?.length || 0) < max;
         });
     }
 
-    if (filtered.length === 0) {
-        activitiesListEl.innerHTML = '<div class="tp-loading-placeholder">No upcoming activities found.</div>';
-        return;
+    if (futureActs.length === 0) activitiesListEl.innerHTML = '<div class="tp-loading-placeholder">No upcoming activities found.</div>';
+    if (pastActs.length === 0) pastActivitiesListEl.innerHTML = '<div class="tp-loading-placeholder">No past activities.</div>';
+
+    // Rendu via fonction helper
+    futureActs.forEach(act => activitiesListEl.appendChild(createActivityCard(act, false, isAdmin)));
+    pastActs.forEach(act => pastActivitiesListEl.appendChild(createActivityCard(act, true, isAdmin)));
+}
+
+// Helper pour créer une carte (évite la duplication de code)
+function createActivityCard(act, isPast, isAdmin) {
+    const template = document.getElementById('tp-activity-card-template');
+    const card = template.content.cloneNode(true).querySelector('.tp-activity-card');
+    if (isPast) card.classList.add('past');
+
+    const maxPlayers = (act.activity_type === 'Echo of War' || act.activity_type === 'Dragon Hunt') ? 6 : 4;
+    const currentPlayers = act.participants?.length || 0;
+    const actDate = new Date(act.scheduled_time);
+
+    // Header
+    card.querySelector('.tp-activity-title').textContent = act.activity_type;
+    card.querySelector('.tp-activity-subtype').textContent = act.activity_subtype || '';
+    card.querySelector('.tp-time-date').textContent = actDate.toLocaleDateString();
+    card.querySelector('.tp-time-hour').textContent = actDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    card.querySelector('.tp-participant-count').textContent = `(${currentPlayers}/${maxPlayers})`;
+
+    // Bouton [+] seulement si FUTUR et pas plein
+    if (!isPast && currentPlayers < maxPlayers) {
+        const addOtherBtn = document.createElement('button');
+        addOtherBtn.className = 'tp-add-other-btn';
+        addOtherBtn.textContent = '+';
+        addOtherBtn.title = 'Add another player manually';
+        addOtherBtn.onclick = (e) => { e.stopPropagation(); handleAddOther(act.id); };
+        card.querySelector('.tp-participants-header').appendChild(addOtherBtn);
     }
 
-    const template = document.getElementById('tp-activity-card-template');
+    const participantsList = card.querySelector('.tp-participants-list');
+    let hasTank = false;
+    let hasHeal = false;
+    const guilds = new Set();
 
-    filtered.forEach(act => {
-        const card = template.content.cloneNode(true).querySelector('.tp-activity-card');
-        const maxPlayers = (act.activity_type === 'Echo of War' || act.activity_type === 'Dragon Hunt') ? 6 : 4;
-        const currentPlayers = act.participants?.length || 0;
-        const actDate = new Date(act.scheduled_time);
+    // Liste des participants
+    if (act.participants) {
+        act.participants.forEach(p => {
+            const pEl = document.createElement('div');
+            pEl.className = 'tp-participant';
+            pEl.innerHTML = `
+                <div class="tp-participant-info">
+                    <span class="class-tag class-${p.class.toLowerCase()}">
+                        <span class="short-name">${p.class.substring(0,3)}</span>
+                        <span class="full-name">${p.class}</span>
+                    </span>
+                    <span class="tp-player-name">${p.guild ? `[${p.guild}] ` : ''}${p.name}</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <span class="tp-player-cp">${formatCP(p.combat_power)}</span>
+                    ${isAdmin ? `<button class="tp-kick-btn" title="Kick (Admin)">❌</button>` : ''}
+                </div>
+            `;
 
-        // Header
-        card.querySelector('.tp-activity-title').textContent = act.activity_type;
-        card.querySelector('.tp-activity-subtype').textContent = act.activity_subtype || '';
-        card.querySelector('.tp-time-date').textContent = actDate.toLocaleDateString();
-        card.querySelector('.tp-time-hour').textContent = actDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            if (isAdmin) {
+                const kickBtn = pEl.querySelector('.tp-kick-btn');
+                if (kickBtn) kickBtn.onclick = (e) => { e.stopPropagation(); handleKick(act.id, p.id, p.name); };
+            }
 
-        // Participants Header & Count
-        card.querySelector('.tp-participant-count').textContent = `(${currentPlayers}/${maxPlayers})`;
+            participantsList.appendChild(pEl);
+            if (p.class === 'Swordbearer') hasTank = true;
+            if (p.class === 'Acolyte') hasHeal = true;
+            if (p.guild) guilds.add(p.guild);
+        });
+    }
 
-        // Bouton [+] discret dans le header si places dispos
-        if (currentPlayers < maxPlayers) {
-            const addOtherBtn = document.createElement('button');
-            addOtherBtn.className = 'tp-add-other-btn';
-            addOtherBtn.textContent = '+';
-            addOtherBtn.title = 'Add another player manually';
-            addOtherBtn.onclick = (e) => { e.stopPropagation(); handleAddOther(act.id); };
-            card.querySelector('.tp-participants-header').appendChild(addOtherBtn);
-        }
+    // Slots vides
+    for (let i = currentPlayers; i < maxPlayers; i++) {
+        const empty = document.createElement('div');
+        empty.className = 'tp-participant empty-slot';
+        empty.textContent = 'Empty Slot';
 
-        const participantsList = card.querySelector('.tp-participants-list');
-        let hasTank = false;
-        let hasHeal = false;
-        const guilds = new Set();
-
-        // Liste des participants
-        if (act.participants) {
-            act.participants.forEach(p => {
-                const pEl = document.createElement('div');
-                pEl.className = 'tp-participant';
-                pEl.innerHTML = `
-                    <div class="tp-participant-info">
-                        <span class="class-tag class-${p.class.toLowerCase()}">
-                            <span class="short-name">${p.class.substring(0,3)}</span>
-                            <span class="full-name">${p.class}</span>
-                        </span>
-                        <span class="tp-player-name">${p.guild ? `[${p.guild}] ` : ''}${p.name}</span>
-                    </div>
-                    <div style="display: flex; align-items: center;">
-                        <span class="tp-player-cp">${formatCP(p.combat_power)}</span>
-                        ${isAdmin ? `<button class="tp-kick-btn" title="Kick player (Admin)">❌</button>` : ''}
-                    </div>
-                `;
-
-                // Listener pour le kick admin
-                if (isAdmin) {
-                    const kickBtn = pEl.querySelector('.tp-kick-btn');
-                    if (kickBtn) kickBtn.onclick = (e) => { e.stopPropagation(); handleKick(act.id, p.id, p.name); };
-                }
-
-                participantsList.appendChild(pEl);
-
-                if (p.class === 'Swordbearer') hasTank = true;
-                if (p.class === 'Acolyte') hasHeal = true;
-                if (p.guild) guilds.add(p.guild);
-            });
-        }
-
-        // Slots vides (FIX 2 : Cliquables maintenant)
-        for (let i = currentPlayers; i < maxPlayers; i++) {
-            const empty = document.createElement('div');
-            empty.className = 'tp-participant empty-slot';
-            empty.textContent = 'Empty Slot';
-            empty.title = 'Click to add a player to this slot';
-            // Render le slot cliquable pour ajouter quelqu'un
+        if (!isPast) { // Cliquable seulement si futur
+            empty.title = 'Click to add a player';
+            empty.style.cursor = 'pointer';
             empty.onclick = (e) => { e.stopPropagation(); handleAddOther(act.id); };
-            participantsList.appendChild(empty);
+        } else {
+            empty.style.cursor = 'default';
         }
+        participantsList.appendChild(empty);
+    }
 
-        // Notes
-        if (act.notes) {
-            card.querySelector('.tp-notes-section').style.display = 'block';
-            card.querySelector('.tp-notes-text').textContent = act.notes;
-        }
+    // Notes & Warnings
+    if (act.notes) {
+        card.querySelector('.tp-notes-section').style.display = 'block';
+        card.querySelector('.tp-notes-text').textContent = act.notes;
+    }
+    const warningsEl = card.querySelector('.tp-warnings-section');
+    if (currentPlayers === maxPlayers) {
+        if (!hasTank) warningsEl.innerHTML += '<div class="tp-warning">Missing Tank (Swordbearer)</div>';
+        if (!hasHeal) warningsEl.innerHTML += '<div class="tp-warning">Missing Healer (Acolyte)</div>';
+    }
+    if (act.activity_type === 'Echo of Battlefield' && guilds.size > 1) {
+        warningsEl.innerHTML += '<div class="tp-warning">Warning: Mixed Guilds for EoB</div>';
+    }
 
-        // Warnings
-        const warningsEl = card.querySelector('.tp-warnings-section');
-        if (currentPlayers === maxPlayers) {
-            if (!hasTank) warningsEl.innerHTML += '<div class="tp-warning">Missing Tank (Swordbearer)</div>';
-            if (!hasHeal) warningsEl.innerHTML += '<div class="tp-warning">Missing Healer (Acolyte)</div>';
-        }
-        if (act.activity_type === 'Echo of Battlefield' && guilds.size > 1) {
-            warningsEl.innerHTML += '<div class="tp-warning">Warning: Mixed Guilds for EoB</div>';
-        }
+    // Footer Actions
+    card.querySelector('.tp-creator-name').textContent = act.creator_name || 'Unknown';
+    const actionsEl = card.querySelector('.tp-card-actions');
+    const joinBtn = actionsEl.querySelector('.tp-join-btn');
 
-        // Footer
-        card.querySelector('.tp-creator-name').textContent = act.creator_name || 'Unknown';
-        const actionsEl = card.querySelector('.tp-card-actions');
-        const joinBtn = actionsEl.querySelector('.tp-join-btn');
-
+    if (isPast) {
+        // Activité passée : on cache le bouton Join (même pour admin, ça n'a pas de sens)
+        joinBtn.style.display = 'none';
+    } else {
         const isJoined = currentUserPlayerId && act.participants?.some(p => p.id === currentUserPlayerId);
-
         if (isJoined) {
             joinBtn.textContent = 'Leave';
             joinBtn.style.backgroundColor = 'var(--accent-color)';
@@ -211,17 +239,19 @@ function renderActivities() {
         } else {
             joinBtn.onclick = () => handleJoinAsSelf(act.id);
         }
+    }
 
-        // Bouton Delete (Admin)
+    // Bouton Delete (Admin toujours visible)
+    if (isAdmin) {
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'action-btn';
         deleteBtn.innerHTML = '🗑️';
-        deleteBtn.title = 'Delete Activity (Admin)';
+        deleteBtn.title = 'Delete (Admin)';
         deleteBtn.onclick = (e) => { e.stopPropagation(); handleDelete(act.id); };
         actionsEl.appendChild(deleteBtn);
+    }
 
-        activitiesListEl.appendChild(card);
-    });
+    return card;
 }
 
 // --- Actions & Handlers ---
@@ -258,7 +288,6 @@ function closeCreateModal() {
 async function handleCreateSubmit(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
-    // Combine date/heure locale pour envoyer en UTC ISO au serveur
     const localDateTime = new Date(`${formData.get('tp-date-input') || document.getElementById('tp-date-input').value}T${formData.get('tp-time-input') || document.getElementById('tp-time-input').value}`);
 
     const payload = {
@@ -279,15 +308,14 @@ async function handleCreateSubmit(e) {
             closeCreateModal();
             fetchActivities();
         } else {
-            alert('Failed to create activity.');
+            alert('Failed to create.');
         }
     } catch (err) {
         console.error(err);
-        alert('Error creating activity.');
+        alert('Error creating.');
     }
 }
 
-// Fonction générique pour rejoindre
 async function joinActivity(activityId, playerId) {
     try {
         const res = await fetch('/team-planner/join', {
@@ -304,19 +332,17 @@ async function joinActivity(activityId, playerId) {
     } catch (err) { console.error(err); }
 }
 
-// Rejoindre en tant que soi-même
 function handleJoinAsSelf(activityId) {
-    openPlayerSelectModal({ type: 'teamPlannerJoin' }, (playerId, playerName) => {
+    openPlayerSelectModal({ type: 'teamPlannerJoin' }, (playerId, name) => {
         if (playerId) {
-            currentUserPlayerId = playerId; // On mémorise qui est l'utilisateur courant
+            currentUserPlayerId = playerId;
             joinActivity(activityId, playerId);
         }
     });
 }
 
-// Ajouter un autre joueur (via Empty Slot ou bouton +)
 function handleAddOther(activityId) {
-    openPlayerSelectModal({ type: 'teamPlannerAddOther' }, (playerId, playerName) => {
+    openPlayerSelectModal({ type: 'teamPlannerAddOther' }, (playerId, name) => {
         if (playerId) {
             joinActivity(activityId, playerId);
         }
@@ -324,8 +350,7 @@ function handleAddOther(activityId) {
 }
 
 async function handleLeave(activityId) {
-    if (!currentUserPlayerId) return;
-    if (!confirm('Are you sure you want to leave this activity?')) return;
+    if (!currentUserPlayerId || !confirm('Leave this activity?')) return;
     try {
         const res = await fetch('/team-planner/leave', {
             method: 'POST',
@@ -337,36 +362,36 @@ async function handleLeave(activityId) {
 }
 
 async function handleDelete(activityId) {
-    const password = prompt("Enter Admin Password to delete this activity:");
-    if (!password) return;
+    const pw = prompt("Admin Password to delete:");
+    if (!pw) return;
     try {
         const res = await fetch('/team-planner/delete', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ activity_id: activityId, admin_password: password })
+            body: JSON.stringify({ activity_id: activityId, admin_password: pw })
         });
         if (res.ok) fetchActivities();
-        else alert('Incorrect password or failed to delete.');
+        else alert('Failed to delete.');
     } catch (err) { console.error(err); }
 }
 
-async function handleKick(activityId, playerId, playerName) {
-    let password = sessionStorage.getItem('adminPassword');
-    if (!password) {
-        password = prompt(`Enter Admin Password to kick ${playerName}:`);
+async function handleKick(actId, pId, pName) {
+    let pw = sessionStorage.getItem('adminPassword');
+    if (!pw) {
+        pw = prompt(`Admin Password to kick ${pName}:`);
     }
-    if (!password) return;
+    if (!pw) return;
 
     try {
         const res = await fetch('/team-planner/kick', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ activity_id: activityId, target_player_id: playerId, admin_password: password })
+            body: JSON.stringify({ activity_id: actId, target_player_id: pId, admin_password: pw })
         });
         if (res.ok) {
             fetchActivities();
         } else {
-            alert('Failed to kick player (Incorrect password?).');
+            alert('Failed to kick.');
         }
     } catch (err) { console.error(err); }
 }
