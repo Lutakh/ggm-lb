@@ -5,6 +5,9 @@ const path = require('path');
 const { initDiscordBot, isBotReady } = require('./services/discordBot'); // Importer l'init du bot et isBotReady
 const { startScheduler } = require('./services/scheduler'); // Importer le démarrage du scheduler
 
+// ⬇️ Ajout Team Planner: init DB (création tables si besoin)
+const { initializeDb } = require('./services/db'); // <-- ajouté
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -25,7 +28,15 @@ const ptRoutes = require('./routes/perilousTrials');
 const adminRoutes = require('./routes/admin');
 const dailyQuestsRoutes = require('./routes/dailyQuests');
 
-// Montage des routes
+// ⬇️ Ajout Team Planner: routes API Team Planner
+let teamPlannerRoutes;
+try {
+    teamPlannerRoutes = require('./routes/teamPlanner'); // <-- ajouté
+} catch (e) {
+    console.warn('[Server] teamPlanner routes not loaded:', e.message);
+}
+
+// Montage des routes (on garde EXACTEMENT ton ordre, pour ne pas casser l’injection de variables dans index.ejs)
 app.use('/', mainRoutes);
 app.use('/', playerRoutes);
 app.use('/', guildRoutes);
@@ -33,21 +44,34 @@ app.use('/', ptRoutes);
 app.use('/', adminRoutes);
 app.use('/', dailyQuestsRoutes);
 
+// ⬇️ Ajout Team Planner: monter l’API seulement si dispo
+if (teamPlannerRoutes) {
+    app.use('/api', teamPlannerRoutes); // <-- ajouté
+}
+
+// Démarrer le serveur et la tâche planifiée
+function startServerAndScheduler() {
+    // ⬇️ Ajout Team Planner: initialiser le schéma (création des tables activities/activity_participants si absentes)
+    initializeDb()
+        .catch(err => {
+            console.error('❌ DB initialization failed:', err.message);
+            // On NE bloque PAS le démarrage pour rester fidèle à ton flux d’origine,
+            // mais on log clairement. Si tu veux bloquer, remplace par "process.exit(1)".
+        })
+        .finally(() => {
+            app.listen(PORT, () => {
+                console.log(`🚀 Server started on http://localhost:${PORT}`);
+                // Démarrer le scheduler après le démarrage du serveur (le scheduler attendra que le bot soit prêt)
+                startScheduler();
+            });
+        });
+}
 
 // Initialiser le Bot Discord
 console.log("Attempting to initialize Discord Bot...");
 const discordClient = initDiscordBot();
 
-// Démarrer le serveur et la tâche planifiée
-function startServerAndScheduler() {
-    app.listen(PORT, () => {
-        console.log(`🚀 Server started on http://localhost:${PORT}`);
-        // Démarrer le scheduler après le démarrage du serveur (le scheduler attendra que le bot soit prêt)
-        startScheduler();
-    });
-}
-
-// Logique de démarrage améliorée
+// Logique de démarrage améliorée (inchangée)
 if (discordClient) {
     console.log("Discord client initialized, waiting for 'ready' event or timeout...");
     let serverStarted = false; // Flag pour éviter double démarrage
