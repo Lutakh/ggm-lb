@@ -155,15 +155,7 @@ router.post('/pt-leaderboard', async (req, res) => {
 
                 if (playerId) {
                     if (newPlayerCp > 0) {
-                        // MODIFICATION : Mise à jour conditionnelle de cp_last_updated
-                        await client.query(
-                            `UPDATE players SET
-                                cp_last_updated = CASE WHEN combat_power != $1 THEN NOW() ELSE cp_last_updated END,
-                                combat_power = $1,
-                                updated_at = NOW()
-                             WHERE id = $2`,
-                            [newPlayerCp, playerId]
-                        );
+                        await client.query('UPDATE players SET combat_power = $1, updated_at = NOW() WHERE id = $2', [newPlayerCp, playerId]);
                     }
                 } else {
                     const newPlayerClass = playerData.class || 'Unknown';
@@ -171,10 +163,9 @@ router.post('/pt-leaderboard', async (req, res) => {
                     if (newPlayerGuild) {
                         await client.query('INSERT INTO guilds (name) VALUES ($1) ON CONFLICT (name) DO NOTHING', [newPlayerGuild]);
                     }
-                    // MODIFICATION : Ajouter cp_last_updated à l'INSERT
                     const newPlayerRes = await client.query(
-                        `INSERT INTO players (name, class, combat_power, guild, team, notes, updated_at, cp_last_updated)
-                         VALUES ($1, $2, $3, $4, 'No Team', 'Created from PT leaderboard', NOW(), NOW())
+                        `INSERT INTO players (name, class, combat_power, guild, team, notes, updated_at)
+                         VALUES ($1, $2, $3, $4, 'No Team', 'Created from PT leaderboard', NOW())
                          RETURNING id`,
                         [trimmedName, newPlayerClass, newPlayerCp, newPlayerGuild]
                     );
