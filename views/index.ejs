@@ -89,9 +89,8 @@
     </div>
 </main>
 
-<%# --- MODALS (HTML is already here, no need for includes) --- %>
+<%# --- MODALS --- %>
 
-<%# Player Select Modal Structure %>
 <div id="player-select-modal-backdrop" class="player-select-modal-backdrop"></div>
 <div id="player-select-modal" class="player-select-modal">
     <div class="player-select-modal-header">
@@ -106,12 +105,8 @@
     </div>
 </div>
 
-<%# Admin Modal Structure %>
-<div id="admin-modal-backdrop" class="player-select-modal-backdrop"></div>
-<div id="admin-modal" class="player-select-modal"> <%# Reuse class? Or create specific admin-modal class %>
-    <%- include('partials/admin-modal') %> <%# Keep this if admin-modal.ejs HAS content %>
-    <%# If admin-modal.ejs is just the container, remove include and paste HTML here %>
-</div>
+<%# Admin Modal Structure - CORRECTION ICI : Suppression des conteneurs en double %>
+<%- include('partials/admin-modal') %>
 
 <%# Notes Modal Structure %>
 <div id="notes-modal-backdrop" class="player-select-modal-backdrop"></div>
@@ -204,13 +199,8 @@
     </div>
     <div class="filters-modal-body"> <%# ... PT Filters content ... %> </div>
 </div>
-<%# --- END MODALS --- %>
 
-
-<%# --- SCRIPTS JSON DATA --- %>
-<script id="players-data" type="application/json"><%- JSON.stringify(players.map(p => ({id: p.id, name: p.name, class: p.class}))) %></script>
-<script id="player-selector-data" type="application/json"><%- JSON.stringify(playerListForSelectors) %></script>
-<%# --- NOUVELLE MODALE DQ HELP --- %>
+<%# DQ Help Modal Structure %>
 <div id="dq-help-modal-backdrop" class="player-select-modal-backdrop"></div>
 <div id="dq-help-modal" class="player-select-modal">
     <div class="player-select-modal-header">
@@ -260,5 +250,9 @@
         </ol>
     </div>
 </div>
-<%# --- FIN NOUVELLE MODALE DQ HELP --- %>
+
+<%# --- SCRIPTS JSON DATA --- %>
+<script id="players-data" type="application/json"><%- JSON.stringify(players.map(p => ({id: p.id, name: p.name, class: p.class}))) %></script>
+<script id="player-selector-data" type="application/json"><%- JSON.stringify(playerListForSelectors) %></script>
+
 <%- include('partials/footer') %>
