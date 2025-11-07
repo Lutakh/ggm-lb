@@ -34,13 +34,26 @@ document.addEventListener('DOMContentLoaded', function() {
                         body: JSON.stringify({ password })
                     })
                         .then(res => res.json())
-                        .then(data => {
-                            if (data.success) {
-                                activateAdminMode(password);
-                            } else {
-                                alert('Incorrect Password');
-                            }
+                    if (password) {
+                        fetch('/verify-admin', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ password })
                         })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success) {
+                                    activateAdminMode(password);
+                                    // --- AJOUTEZ CES DEUX LIGNES ---
+                                    if (adminModal) adminModal.classList.add('active');
+                                    if (adminBackdrop) adminBackdrop.classList.add('active');
+                                    // -------------------------------
+                                } else {
+                                    alert('Incorrect Password');
+                                }
+                            })
+                            .catch(err => console.error('Error verifying admin password:', err));
+                    }
                         .catch(err => console.error('Error verifying admin password:', err));
                 }
             }
