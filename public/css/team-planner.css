@@ -1,6 +1,5 @@
 /* public/css/team-planner.css */
 
-/* Badge NEW dans la sidebar */
 .nav-badge {
     background-color: var(--accent-color); color: white; font-size: 0.7em;
     padding: 2px 6px; border-radius: 10px; font-weight: bold; margin-left: auto;
@@ -41,51 +40,56 @@
     display: flex; align-items: center; justify-content: space-between;
     padding: 6px 8px; background-color: #f9f9f9; border-radius: 6px; font-size: 0.95em;
 }
-.tp-participant.empty-slot { color: #999; font-style: italic; background-color: transparent; border: 1px dashed #ccc; }
 
-/* NOUVEAU : Styles pour l'affichage des joueurs dans l'activité */
+/* MODIFICATION POUR FIX 2 : Empty slot clickable */
+.tp-participant.empty-slot {
+    color: #999; font-style: italic; background-color: transparent; border: 1px dashed #ccc;
+    cursor: pointer; transition: all 0.2s;
+}
+.tp-participant.empty-slot:hover {
+    background-color: #f0f0f0; border-color: var(--secondary-color); color: var(--secondary-color);
+}
+
 .tp-participant-info { display: flex; align-items: center; gap: 8px; overflow: hidden; }
 .tp-player-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tp-player-cp { font-size: 1.1em; font-weight: 800; color: var(--primary-color); flex-shrink: 0; }
 
-/* NOUVEAU : Gestion Responsive des noms de classes */
 .short-name { display: inline; }
 .full-name { display: none; }
 @media (min-width: 769px) {
-    .short-name { display: none;
-        .full-name { display: inline; }
-    }
+    .short-name { display: none; }
+    .full-name { display: inline; }
+}
 
-    /* Bouton Ajouter un autre joueur [+] */
-    .tp-add-other-btn {
-        background: none; border: 2px solid var(--secondary-color); color: var(--secondary-color);
-        border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-weight: bold;
-        display: flex; align-items: center; justify-content: center; font-size: 1.2em; line-height: 1;
-        padding: 0; transition: all 0.2s;
-    }
-    .tp-add-other-btn:hover { background-color: var(--secondary-color); color: white; }
+.tp-add-other-btn {
+    background: none; border: 2px solid var(--secondary-color); color: var(--secondary-color);
+    border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-weight: bold;
+    display: flex; align-items: center; justify-content: center; font-size: 1.2em; line-height: 1;
+    padding: 0; transition: all 0.2s;
+}
+.tp-add-other-btn:hover { background-color: var(--secondary-color); color: white; }
 
-    .tp-notes-section { font-size: 0.9em; background-color: #fffbe0; padding: 10px; border-radius: 8px; }
-    .tp-notes-text { margin: 5px 0 0 0; white-space: pre-wrap; }
+.tp-notes-section { font-size: 0.9em; background-color: #fffbe0; padding: 10px; border-radius: 8px; }
+.tp-notes-text { margin: 5px 0 0 0; white-space: pre-wrap; }
 
-    .tp-warnings-section { display: flex; flex-direction: column; gap: 5px; }
-    .tp-warning { font-size: 0.85em; color: #d32f2f; background-color: #ffebee; padding: 5px 10px; border-radius: 5px; display: flex; align-items: center; gap: 5px; }
-    .tp-warning::before { content: '⚠️'; }
+.tp-warnings-section { display: flex; flex-direction: column; gap: 5px; }
+.tp-warning { font-size: 0.85em; color: #d32f2f; background-color: #ffebee; padding: 5px 10px; border-radius: 5px; display: flex; align-items: center; gap: 5px; }
+.tp-warning::before { content: '⚠️'; }
 
-    .tp-card-footer { padding: 15px; background-color: #f9f6f1; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; font-size: 0.9em; }
-    .tp-creator-info { opacity: 0.8; }
-    .tp-creator-name { font-weight: bold; }
+.tp-card-footer { padding: 15px; background-color: #f9f6f1; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; font-size: 0.9em; }
+.tp-creator-info { opacity: 0.8; }
+.tp-creator-name { font-weight: bold; }
 
-    .tp-create-modal-body { padding: 20px; max-height: 70vh; overflow-y: auto; }
-    .tp-create-modal-body .form-group { margin-bottom: 15px; }
-    .tp-create-modal-body label { display: block; margin-bottom: 5px; font-weight: bold; color: var(--primary-color); }
-    .tp-create-modal-body select, .tp-create-modal-body input, .tp-create-modal-body textarea { width: 100%; box-sizing: border-box; }
-    .tp-organizer-select-ui { display: flex; gap: 10px; }
-    #tp-organizer-display { flex-grow: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 10px; background-color: #f9f6f1; display: flex; align-items: center; }
-    .tp-datetime-inputs { display: flex; gap: 10px; }
-    .tp-datetime-inputs input { flex: 1; }
+.tp-create-modal-body { padding: 20px; max-height: 70vh; overflow-y: auto; }
+.tp-create-modal-body .form-group { margin-bottom: 15px; }
+.tp-create-modal-body label { display: block; margin-bottom: 5px; font-weight: bold; color: var(--primary-color); }
+.tp-create-modal-body select, .tp-create-modal-body input, .tp-create-modal-body textarea { width: 100%; box-sizing: border-box; }
+.tp-organizer-select-ui { display: flex; gap: 10px; }
+#tp-organizer-display { flex-grow: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 10px; background-color: #f9f6f1; display: flex; align-items: center; }
+.tp-datetime-inputs { display: flex; gap: 10px; }
+.tp-datetime-inputs input { flex: 1; }
 
-    @media (max-width: 768px) {
-        .tp-activities-list { grid-template-columns: 1fr; }
-        .tp-controls { flex-direction: column; align-items: flex-start; gap: 10px; }
-    }
+@media (max-width: 768px) {
+    .tp-activities-list { grid-template-columns: 1fr; }
+    .tp-controls { flex-direction: column; align-items: flex-start; gap: 10px; }
+}

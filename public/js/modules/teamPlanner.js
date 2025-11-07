@@ -36,7 +36,6 @@ export function initTeamPlanner(perilousTrialsList, currentCC) {
     if (perilousTrialsList && Array.isArray(perilousTrialsList)) {
         ACTIVITY_OPTIONS['Perilous Trial'].options = perilousTrialsList.map(pt => pt.name);
     }
-    // Logique simplifiée pour Dragon Hunt (à adapter si besoin de plus de précision sur les CC)
     if (currentCC < 1) ACTIVITY_OPTIONS['Dragon Hunt'].options = ACTIVITY_OPTIONS['Dragon Hunt'].options.slice(0, 1);
     else if (currentCC < 2) ACTIVITY_OPTIONS['Dragon Hunt'].options = ACTIVITY_OPTIONS['Dragon Hunt'].options.slice(0, 2);
 
@@ -103,7 +102,6 @@ function renderActivities() {
         card.querySelector('.tp-time-hour').textContent = actDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         card.querySelector('.tp-participant-count').textContent = `(${currentPlayers}/${maxPlayers})`;
 
-        // Bouton [+] pour ajouter d'autres joueurs
         if (currentPlayers < maxPlayers) {
             const addOtherBtn = document.createElement('button');
             addOtherBtn.className = 'tp-add-other-btn';
@@ -120,7 +118,6 @@ function renderActivities() {
             act.participants.forEach(p => {
                 const pEl = document.createElement('div');
                 pEl.className = 'tp-participant';
-                // Rendu amélioré : Guild + Nom + CP plus gros + Classes responsive
                 pEl.innerHTML = `
                     <div class="tp-participant-info">
                         <span class="class-tag class-${p.class.toLowerCase()}">
@@ -142,6 +139,9 @@ function renderActivities() {
             const empty = document.createElement('div');
             empty.className = 'tp-participant empty-slot';
             empty.textContent = 'Empty Slot';
+            // AJOUT : Rendre le slot vide cliquable pour ajouter un joueur
+            empty.title = 'Click to add a player to this slot';
+            empty.onclick = (e) => { e.stopPropagation(); handleAddOther(act.id); };
             participantsList.appendChild(empty);
         }
 
@@ -221,7 +221,6 @@ async function handleCreateSubmit(e) {
     } catch (err) { console.error(err); alert('Error creating activity.'); }
 }
 
-// Fonction commune pour rejoindre
 async function joinActivity(activityId, playerId) {
     try {
         const res = await fetch('/team-planner/join', {
@@ -233,7 +232,6 @@ async function joinActivity(activityId, playerId) {
     } catch (err) { console.error(err); }
 }
 
-// Rejoindre en tant que soi-même (bouton Join principal)
 function handleJoinAsSelf(activityId) {
     openPlayerSelectModal({ type: 'teamPlannerJoin' }, (playerId, playerName) => {
         if (playerId) {
@@ -243,7 +241,6 @@ function handleJoinAsSelf(activityId) {
     });
 }
 
-// Ajouter un AUTRE joueur (bouton +)
 function handleAddOther(activityId) {
     openPlayerSelectModal({ type: 'teamPlannerAddOther' }, (playerId, playerName) => {
         if (playerId) joinActivity(activityId, playerId);
