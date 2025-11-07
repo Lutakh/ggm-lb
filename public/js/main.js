@@ -465,17 +465,23 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // --- AJOUT : Initialisation du Team Planner ---
     const ptDataEl = document.getElementById('pt-data');
+    const ccDataEl = document.getElementById('cc-data'); // NOUVEAU
     let ptList = [];
+    let currentCC = 0; // Valeur par défaut
+
     try {
         ptList = ptDataEl ? JSON.parse(ptDataEl.textContent || '[]') : [];
+        // Lecture du CC actuel
+        if (ccDataEl && ccDataEl.textContent) {
+            currentCC = parseInt(ccDataEl.textContent, 10) || 0;
+        }
     } catch (e) {
-        console.error("Error parsing pt-data JSON:", e);
+        console.error("Error parsing initial data (PT or CC):", e);
     }
-    // On passe 0 comme niveau CC par défaut pour l'instant
-    initTeamPlanner(ptList, 0);
-    // ---------------------------------------------
+
+    console.log("Initializing Team Planner with CC level:", currentCC);
+    initTeamPlanner(ptList, currentCC); // Passer le vrai CC
 
     console.log("Main.js initialization complete.");
 });

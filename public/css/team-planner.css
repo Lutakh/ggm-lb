@@ -88,7 +88,21 @@
 #tp-organizer-display { flex-grow: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 10px; background-color: #f9f6f1; display: flex; align-items: center; }
 .tp-datetime-inputs { display: flex; gap: 10px; }
 .tp-datetime-inputs input { flex: 1; }
+/* FIX 1 : Z-Index Management */
+/* On force la modale de création TP à être "plus basse" que la modale générique de sélection de joueur */
+#tp-create-modal-backdrop { z-index: 1050 !important; }
+#tp-create-modal { z-index: 1051 !important; }
 
+/* La modale de sélection de joueur doit être au-dessus */
+#player-select-modal-backdrop { z-index: 1100 !important; }
+#player-select-modal { z-index: 1101 !important; }
+
+/* FIX 2 : Admin Kick Button Style */
+.tp-kick-btn {
+    background: none; border: none; cursor: pointer; font-size: 0.9em;
+    opacity: 0.5; margin-left: 5px; padding: 2px; line-height: 1;
+}
+.tp-kick-btn:hover { opacity: 1; }
 @media (max-width: 768px) {
     .tp-activities-list { grid-template-columns: 1fr; }
     .tp-controls { flex-direction: column; align-items: flex-start; gap: 10px; }

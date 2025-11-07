@@ -127,5 +127,20 @@ router.post('/team-planner/delete', async (req, res) => {
         res.status(500).json({ error: "Failed to delete activity." });
     }
 });
+router.post('/team-planner/kick', async (req, res) => {
+    const { activity_id, target_player_id, admin_password } = req.body;
 
+    // Vérification simple du mot de passe admin
+    if (admin_password !== process.env.ADMIN_PASSWORD) {
+        return res.status(403).json({ error: 'Incorrect admin password.' });
+    }
+
+    try {
+        await db.query(`DELETE FROM activity_participants WHERE activity_id = $1 AND player_id = $2`, [activity_id, target_player_id]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error("Error kicking player from activity:", err);
+        res.status(500).json({ error: "Failed to kick player." });
+    }
+});
 module.exports = router;

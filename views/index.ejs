@@ -174,5 +174,6 @@
 <script id="players-data" type="application/json"><%- JSON.stringify(players.map(p => ({id: p.id, name: p.name, class: p.class}))) %></script>
 <script id="player-selector-data" type="application/json"><%- JSON.stringify(playerListForSelectors) %></script>
 <script id="pt-data" type="application/json"><%- JSON.stringify(perilousTrials) %></script>
+<script id="cc-data" type="application/json"><%= currentCC %></script>
 
 <%- include('partials/footer') %>

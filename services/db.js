@@ -54,10 +54,6 @@ const initializeDb = async () => {
         );`);
 
 // --- TEAM PLANNER (FORCER LA RECRÉATION POUR CORRIGER LES BUGS) ---
-        // ON SUPPRIME D'ABORD POUR ÊTRE SÛR DE LA STRUCTURE (À retirer plus tard si besoin de persistance entre majs de schéma)
-        await client.query(`DROP TABLE IF EXISTS activity_participants;`);
-        await client.query(`DROP TABLE IF EXISTS planned_activities;`);
-
         await client.query(`
             CREATE TABLE planned_activities (
                 id SERIAL PRIMARY KEY,

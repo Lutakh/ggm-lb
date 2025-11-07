@@ -44,8 +44,7 @@ function populatePlayerList(filter = '') {
                 item.dataset.playerId = player.id;
                 item.dataset.playerName = player.name;
                 // MODIFICATION ICI : Utilisation du nom de classe complet (player.class) au lieu de substring
-                const playerClass = player.class ? `<span class="class-tag class-${player.class.toLowerCase()}">${player.class}</span>` : '';
-                item.innerHTML = `<span>${player.name}</span> ${playerClass}`;
+                const playerClass = player.class ? `<span class="class-tag class-${player.class.toLowerCase()}">${player.class}</span>` : '';                item.innerHTML = `<span>${player.name}</span> ${playerClass}`;
                 playerListContainer.appendChild(item);
             });
         activeSuggestionIndex = -1;
