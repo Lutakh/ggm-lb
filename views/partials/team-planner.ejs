@@ -1,0 +1,106 @@
+<div class="view-tabs">
+    <h2>Team Planner</h2>
+    <button id="tp-create-btn" class="action-btn-main">+ New Activity</button>
+</div>
+
+<div class="tp-controls">
+    <label class="tp-filter-checkbox">
+        <input type="checkbox" id="tp-filter-open" checked>
+        Show only with open spots
+    </label>
+</div>
+
+<div id="tp-activities-list" class="tp-activities-list">
+    <div class="tp-loading-placeholder">Loading activities...</div>
+</div>
+
+<template id="tp-activity-card-template">
+    <div class="tp-activity-card">
+        <div class="tp-card-header">
+            <div class="tp-header-main">
+                <h3 class="tp-activity-title">Activity Name</h3>
+                <span class="tp-activity-subtype">Subtype</span>
+            </div>
+            <div class="tp-activity-time">
+                <span class="tp-time-date">Date</span>
+                <span class="tp-time-hour">Hour</span>
+            </div>
+        </div>
+        <div class="tp-card-body">
+            <div class="tp-participants-section">
+                <div class="tp-participants-header">
+                    <span>Participants <span class="tp-participant-count">(0/4)</span></span>
+                </div>
+                <div class="tp-participants-list">
+                    </div>
+            </div>
+            <div class="tp-notes-section" style="display: none;">
+                <strong>Notes:</strong> <p class="tp-notes-text"></p>
+            </div>
+            <div class="tp-warnings-section"></div>
+        </div>
+        <div class="tp-card-footer">
+            <span class="tp-creator-info">Organized by <span class="tp-creator-name">Player</span></span>
+            <div class="tp-card-actions">
+                <button class="tp-join-btn action-btn-main">Join</button>
+                </div>
+        </div>
+    </div>
+</template>
+
+<div id="tp-create-modal-backdrop" class="player-select-modal-backdrop"></div>
+<div id="tp-create-modal" class="player-select-modal">
+    <div class="player-select-modal-header">
+        <h3>Plan New Activity</h3>
+        <button type="button" id="tp-create-close-btn" class="player-select-close-btn">&times;</button>
+    </div>
+    <div class="tp-create-modal-body">
+        <form id="tp-create-form">
+            <div class="form-group">
+                <label>Organizer:</label>
+                <div class="tp-organizer-select-ui">
+                    <div id="tp-organizer-display">-- Select Yourself --</div>
+                    <input type="hidden" id="tp-organizer-id" name="creator_id" required>
+                    <button type="button" id="tp-select-organizer-btn" class="action-btn-main">Select</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="tp-type-select">Activity Type:</label>
+                <select id="tp-type-select" name="activity_type" required>
+                    <option value="" disabled selected>Select Type</option>
+                    <optgroup label="4-Player">
+                        <option value="Perilous Trial">Perilous Trial</option>
+                        <option value="Wave of Horror">Wave of Horror</option>
+                        <option value="Echo of Battlefield">Echo of Battlefield</option>
+                    </optgroup>
+                    <optgroup label="6-Player">
+                        <option value="Echo of War">Echo of War</option>
+                        <option value="Dragon Hunt">Dragon Hunt</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div id="tp-subtype-container" class="form-group" style="display: none;">
+                <label id="tp-subtype-label">Details:</label>
+                <select id="tp-subtype-select" name="activity_subtype">
+                    </select>
+            </div>
+
+            <div class="form-group">
+                <label for="tp-date-input">Date & Time (Your Local Time):</label>
+                <div class="tp-datetime-inputs">
+                    <input type="date" id="tp-date-input" required>
+                    <input type="time" id="tp-time-input" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="tp-notes-input">Notes (Optional):</label>
+                <textarea id="tp-notes-input" name="notes" placeholder="E.g., 'Need big DPS', 'Chill run'..." rows="3"></textarea>
+            </div>
+
+            <button type="submit" class="action-btn-main" style="width: 100%; margin-top: 10px;">Create Activity</button>
+        </form>
+    </div>
+</div>
