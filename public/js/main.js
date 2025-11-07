@@ -7,7 +7,6 @@ import { initDailyQuests } from './modules/dailyQuests.js';
 import { initPlayerSelectModal } from './modules/playerSelectModal.js';
 import { updateTimers, formatCP, formatRelativeTimeShort, minutesToFormattedTime } from './modules/utils.js';
 import { initDiscordWidget } from './modules/discordWidget.js';
-// --- AJOUT : Import du Team Planner ---
 import { initTeamPlanner } from './modules/teamPlanner.js';
 
 // --- MODALE DES NOTES ---
@@ -22,7 +21,6 @@ function closeNotesModal() {
     if (notesBackdrop) notesBackdrop.style.display = 'none';
 }
 
-// Fonction globale pour afficher les notes complètes
 window.showFullNote = function(playerName, note) {
     if (!note || note.trim() === '' || note.trim() === '-') return;
     if (notesTitle) notesTitle.textContent = `Notes for ${playerName}`;
@@ -40,12 +38,9 @@ const playerDetailCloseBtn = document.getElementById('player-detail-modal-close-
 const initialPlayerModalZIndex = playerDetailModal?.style.zIndex || 1001;
 const initialPlayerBackdropZIndex = playerDetailBackdrop?.style.zIndex || 1000;
 
-// Map pour stocker les rangs des joueurs
 const playerRankMap = new Map();
-// Map pour stocker les données complètes des joueurs
 const allPlayersMap = new Map();
 
-// Fonction pour afficher les détails d'un joueur dans la modale mobile
 function showPlayerDetails(playerRow, isFromTeamModal = false) {
     if (!playerDetailModal || !playerRow || !playerRow.dataset) {
         console.error("Missing player detail modal or player row data.");
@@ -305,6 +300,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         name: playerName,
                         class: row.dataset.class,
                         combat_power: row.dataset.cp,
+                        // MODIFICATION : Stocker cp_last_updated
+                        cp_last_updated: row.dataset.cpUpdated,
                         team: row.dataset.team || 'No Team',
                         guild: row.dataset.guild || null,
                         notes: row.dataset.notes === '-' ? '' : row.dataset.notes,
@@ -466,9 +463,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     const ptDataEl = document.getElementById('pt-data');
-    const ccDataEl = document.getElementById('cc-data'); // NOUVEAU
+    const ccDataEl = document.getElementById('cc-data');
     let ptList = [];
-    let currentCC = 0; // Valeur par défaut
+    let currentCC = 0;
 
     try {
         ptList = ptDataEl ? JSON.parse(ptDataEl.textContent || '[]') : [];
@@ -481,7 +478,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     console.log("Initializing Team Planner with CC level:", currentCC);
-    initTeamPlanner(ptList, currentCC); // Passer le vrai CC
+    initTeamPlanner(ptList, currentCC);
 
     console.log("Main.js initialization complete.");
 });

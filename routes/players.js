@@ -61,9 +61,18 @@ router.post('/add-player', async (req, res) => {
             // Gérer la mise à jour de l'ID Discord : si une nouvelle valeur est fournie (même vide), elle prend le dessus
             const finalDiscordId = discord_user_id !== undefined ? discordId : existingPlayer.discord_user_id;
 
-            // Ajouter discord_user_id à l'UPDATE
+            // MODIFICATION : Ajouter la logique pour cp_last_updated
             await client.query(
-                `UPDATE players SET name = $1, class = $2, combat_power = $3, team = $4, guild = $5, notes = $6, discord_user_id = $7, updated_at = NOW()
+                `UPDATE players SET
+                                    name = $1,
+                                    class = $2,
+                                    cp_last_updated = CASE WHEN combat_power != $3 THEN NOW() ELSE cp_last_updated END,
+                                    combat_power = $3,
+                                    team = $4,
+                                    guild = $5,
+                                    notes = $6,
+                                    discord_user_id = $7,
+                                    updated_at = NOW()
                  WHERE id = $8`,
                 [name, finalClass, finalCp, finalTeam, finalGuild, finalNotes, finalDiscordId, playerId]
             );
@@ -81,11 +90,11 @@ router.post('/add-player', async (req, res) => {
             // Assurer que guild est null si vide
             const finalGuild = guild && guild.trim() ? guild.trim() : null;
 
-            // Ajouter discord_user_id à l'INSERT
+            // MODIFICATION : Ajouter cp_last_updated à l'INSERT (avec valeur par défaut NOW())
             const insertRes = await client.query(
-                `INSERT INTO players (name, class, combat_power, team, guild, notes, discord_user_id, updated_at)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, NOW()) RETURNING id`,
-                [name, pClass, combatPowerNumeric, team || 'No Team', finalGuild, notes || null, discordId] // Utiliser discordId nettoyé
+                `INSERT INTO players (name, class, combat_power, team, guild, notes, discord_user_id, updated_at, cp_last_updated)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW()) RETURNING id`,
+                [name, pClass, combatPowerNumeric, team || 'No Team', finalGuild, notes || null, discordId]
             );
             playerId = insertRes.rows[0].id;
 
