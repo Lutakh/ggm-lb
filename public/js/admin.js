@@ -23,9 +23,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (adminSettingsBtn) {
         adminSettingsBtn.addEventListener('click', () => {
             if (document.body.classList.contains('admin-mode')) {
+                // Si déjà admin, on ouvre directement
                 if (adminModal) adminModal.classList.add('active');
                 if (adminBackdrop) adminBackdrop.classList.add('active');
             } else {
+                // Sinon, on demande le mot de passe
                 const password = prompt("Enter Admin Password:");
                 if (password) {
                     fetch('/verify-admin', {
@@ -37,6 +39,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         .then(data => {
                             if (data.success) {
                                 activateAdminMode(password);
+                                // CORRECTION ICI : On ouvre la modale immédiatement après succès
+                                if (adminModal) adminModal.classList.add('active');
+                                if (adminBackdrop) adminBackdrop.classList.add('active');
                             } else {
                                 alert('Incorrect Password');
                             }
@@ -91,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const ptAdminForm = document.getElementById('pt-admin-form');
     if (ptAdminForm) {
         ptAdminForm.addEventListener('submit', async (e) => {
-            e.preventDefault(); // On intercepte la soumission
+            e.preventDefault();
 
             const ptId = ptAdminForm.querySelector('#pt-id-input').value;
             const rank = ptAdminForm.querySelector('#pt-team-rank').value;
@@ -115,7 +120,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 if (proceed) {
-                    // Cette méthode soumet le formulaire sans redéclencher cet écouteur d'événement.
                     ptAdminForm.submit();
                 }
             } catch (err) {
@@ -142,8 +146,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-
-// Fonctions globales pour les rendre accessibles depuis les attributs onclick
 window.deletePlayer = function(id) {
     const password = sessionStorage.getItem('adminPassword');
     if (password && confirm("Are you sure you want to delete this player? This action cannot be undone.")) {
