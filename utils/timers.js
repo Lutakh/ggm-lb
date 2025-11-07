@@ -7,7 +7,7 @@ function calculateClassChangeTimers(serverOpenDateStr, classChangeTimers) {
         const target = new Date(startDate.getTime());
         target.setUTCDate(target.getUTCDate() + weeks * 7);
         // L'heure cible réelle est 13h UTC pour les Class Changes
-        target.setUTCHours(13, 0, 0, 0);
+        target.setUTCHours(14, 0, 0, 0);
         return target;
     };
 
@@ -27,7 +27,7 @@ function calculateLevelCapTimers(serverOpenDateStr) {
     const serverOpenDate = new Date(serverOpenDateStr + 'T00:00:00Z'); // Assume server starts at UTC midnight
     const now = new Date();
     // Use the same 13:00 UTC time as Class Change for consistency
-    const unlockHourUTC = 13;
+    const unlockHourUTC = 14;
 
     // Define the level cap schedule with cumulative days
     const levelCapSchedule = [
