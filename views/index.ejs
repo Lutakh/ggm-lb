@@ -5,6 +5,11 @@
         <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
         <span>Home</span>
     </a>
+    <a href="#" class="sidebar-btn new-feature" data-target="team-planner-section">
+       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+       <span>Team Planner</span>
+       <span class="nav-badge">NEW</span>
+    </a>
     <a href="#" class="sidebar-btn" data-target="add-update-section">
         <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
         <span>Add / Update</span>
@@ -74,7 +79,6 @@
     <div id="players-leaderboard-section" class="main-section card">
         <%- include('partials/players-leaderboard') %>
     </div>
-
    <div id="teams-leaderboard-section" class="main-section card">
         <%- include('partials/teams-leaderboard') %>
     </div>
@@ -87,172 +91,89 @@
     <div id="daily-quests-section" class="main-section card">
         <%- include('partials/daily-quests') %>
     </div>
+    <div id="team-planner-section" class="main-section card">
+        <%- include('partials/team-planner') %>
+    </div>
 </main>
 
 <%# --- MODALS --- %>
-
 <div id="player-select-modal-backdrop" class="player-select-modal-backdrop"></div>
 <div id="player-select-modal" class="player-select-modal">
-    <div class="player-select-modal-header">
-        <h3>Select or Create a Player</h3>
-        <button type="button" class="player-select-close-btn">&times;</button>
-    </div>
+    <div class="player-select-modal-header"><h3>Select or Create a Player</h3><button type="button" class="player-select-close-btn">&times;</button></div>
      <div class="player-select-controls">
         <input type="text" id="player-filter-input" placeholder="Filter or type new name..." autocomplete="off">
         <button type="button" id="create-new-player-btn" class="action-btn-main">Create New</button>
     </div>
-    <div id="player-select-list" class="player-select-list">
-    </div>
+    <div id="player-select-list" class="player-select-list"></div>
 </div>
 
-<%# Admin Modal Structure - CORRECTION ICI : Suppression des conteneurs en double %>
 <%- include('partials/admin-modal') %>
 
-<%# Notes Modal Structure %>
 <div id="notes-modal-backdrop" class="player-select-modal-backdrop"></div>
 <div id="notes-modal" class="player-select-modal">
-    <div class="player-select-modal-header">
-        <h3 id="notes-modal-title">Notes</h3>
-        <button type="button" id="notes-modal-close-btn" class="player-select-close-btn">&times;</button>
-    </div>
-    <div id="notes-modal-body" style="padding: 20px 25px; white-space: pre-wrap; line-height: 1.6;">
-    </div>
+    <div class="player-select-modal-header"><h3 id="notes-modal-title">Notes</h3><button type="button" id="notes-modal-close-btn" class="player-select-close-btn">&times;</button></div>
+    <div id="notes-modal-body" style="padding: 20px 25px; white-space: pre-wrap; line-height: 1.6;"></div>
 </div>
 
-<%# Player Detail Modal Structure %>
 <div id="player-detail-modal-backdrop" class="player-select-modal-backdrop"></div>
 <div id="player-detail-modal" class="player-select-modal">
-    <div class="player-select-modal-header">
-        <h3 id="player-detail-modal-title">Player Details</h3>
-        <button type="button" id="player-detail-modal-close-btn" class="player-select-close-btn">&times;</button>
-    </div>
-    <div id="player-detail-modal-body">
-    </div>
+    <div class="player-select-modal-header"><h3 id="player-detail-modal-title">Player Details</h3><button type="button" id="player-detail-modal-close-btn" class="player-select-close-btn">&times;</button></div>
+    <div id="player-detail-modal-body"></div>
 </div>
 
-<%# Team Detail Modal Structure %>
 <div id="team-detail-modal-backdrop" class="player-select-modal-backdrop"></div>
 <div id="team-detail-modal" class="player-select-modal">
-    <div class="player-select-modal-header">
-        <h3 id="team-detail-modal-title">Team Details</h3>
-        <button type="button" id="team-detail-close-btn" class="player-select-close-btn">&times;</button>
-    </div>
-    <div id="team-detail-modal-body">
-    </div>
+    <div class="player-select-modal-header"><h3 id="team-detail-modal-title">Team Details</h3><button type="button" id="team-detail-close-btn" class="player-select-close-btn">&times;</button></div>
+    <div id="team-detail-modal-body"></div>
 </div>
 
-<%# Guild Detail Modal Structure %>
 <div id="guild-detail-modal-backdrop" class="player-select-modal-backdrop"></div>
 <div id="guild-detail-modal" class="player-select-modal">
-    <div class="player-select-modal-header">
-        <h3 id="guild-detail-modal-title">Guild Details</h3>
-        <button type="button" id="guild-detail-close-btn" class="player-select-close-btn">&times;</button>
-    </div>
-    <div id="guild-detail-modal-body">
-    </div>
+    <div class="player-select-modal-header"><h3 id="guild-detail-modal-title">Guild Details</h3><button type="button" id="guild-detail-close-btn" class="player-select-close-btn">&times;</button></div>
+    <div id="guild-detail-modal-body"></div>
 </div>
 
-<%# Nav Modal Structure %>
 <div id="nav-modal-backdrop" class="player-select-modal-backdrop"></div>
 <div id="nav-modal" class="player-select-modal">
-    <div class="player-select-modal-header">
-        <h3>Navigation</h3>
-        <button type="button" id="nav-modal-close-btn" class="player-select-close-btn">&times;</button>
-    </div>
-    <div id="nav-modal-content">
-    </div>
+    <div class="player-select-modal-header"><h3>Navigation</h3><button type="button" id="nav-modal-close-btn" class="player-select-close-btn">&times;</button></div>
+    <div id="nav-modal-content"></div>
 </div>
 
-<%# Filters Modal Structure %>
 <div id="filters-modal-backdrop" class="player-select-modal-backdrop"></div>
 <div id="filters-modal" class="player-select-modal">
-  <div class="player-select-modal-header">
-    <h3>Player Filters</h3>
-    <button type="button" id="filters-modal-close-btn" class="player-select-close-btn">&times;</button>
-    </div>
+  <div class="player-select-modal-header"><h3>Player Filters</h3><button type="button" id="filters-modal-close-btn" class="player-select-close-btn">&times;</button></div>
     <div class="filters-modal-body">
-        <%# Filters content here %>
-        <div class="filter-group-modal filters-modal-class-filter"> <%# ... %> </div>
-        <div class="filter-group-modal"> <%# ... CP ... %> </div>
-        <div class="filter-group-modal"> <%# ... Guild ... %> </div>
-        <div class="filter-group-modal"> <%# ... Team ... %> </div>
-        <div class="filter-group-modal"> <%# ... PT Progress ... %> </div>
+        <div class="filter-group-modal filters-modal-class-filter"></div>
+        <div class="filter-group-modal"></div>
+        <div class="filter-group-modal"></div>
+        <div class="filter-group-modal"></div>
+        <div class="filter-group-modal"></div>
     </div>
 </div>
 
-<%# PT Help Modal Structure %>
 <div id="pt-help-modal-backdrop" class="player-select-modal-backdrop"></div>
 <div id="pt-help-modal" class="player-select-modal">
-    <div class="player-select-modal-header">
-        <h3>Perilous Trial - Help</h3>
-        <button type="button" id="pt-help-close-btn" class="player-select-close-btn">&times;</button>
-    </div>
-    <div id="pt-help-modal-body"> <%# ... Help content ... %> </div>
+    <div class="player-select-modal-header"><h3>Perilous Trial - Help</h3><button type="button" id="pt-help-close-btn" class="player-select-close-btn">&times;</button></div>
+    <div id="pt-help-modal-body"></div>
 </div>
 
-<%# PT Filters Modal Structure %>
 <div id="pt-filters-modal-backdrop" class="player-select-modal-backdrop"></div>
 <div id="pt-filters-modal" class="player-select-modal">
-    <div class="player-select-modal-header">
-        <h3>PT Filters</h3>
-        <button type="button" id="pt-filters-modal-close-btn" class="player-select-close-btn">&times;</button>
-    </div>
-    <div class="filters-modal-body"> <%# ... PT Filters content ... %> </div>
+    <div class="player-select-modal-header"><h3>PT Filters</h3><button type="button" id="pt-filters-modal-close-btn" class="player-select-close-btn">&times;</button></div>
+    <div class="filters-modal-body"></div>
 </div>
 
-<%# DQ Help Modal Structure %>
 <div id="dq-help-modal-backdrop" class="player-select-modal-backdrop"></div>
 <div id="dq-help-modal" class="player-select-modal">
-    <div class="player-select-modal-header">
-        <h3>Daily Quests & Stamina - Help</h3>
-        <button type="button" id="dq-help-close-btn" class="player-select-close-btn">&times;</button>
-    </div>
+    <div class="player-select-modal-header"><h3>Daily Quests & Stamina - Help</h3><button type="button" id="dq-help-close-btn" class="player-select-close-btn">&times;</button></div>
     <div id="dq-help-modal-body">
-        <strong>Daily Quests</strong>
-        <p>This section allows you to track the completion of your daily quests for up to 3 characters. Simply check the box next to a quest when you complete it in-game. The status is saved per player for the current day (resets at 09:00 UTC).</p>
-
-        <strong>Stamina</strong>
-        <p>Stamina is required for various in-game activities. It regenerates over time.</p>
-        <ul>
-            <li><strong>Max Stamina:</strong> You can hold a maximum of 60 Stamina.</li>
-            <li><strong>Regeneration:</strong> You gain +1 Stamina every 24 minutes. Regeneration stops when you reach the maximum.</li>
-            <li><strong>Tracking:</strong> The tracker shows your current Stamina (calculated based on the last update) and allows you to manually input the current value if needed.</li>
-        </ul>
-
-        <strong>"Next in" Timer</strong>
-        <p>This timer shows the approximate time remaining (minutes and seconds) until you gain your next Stamina point. You can manually adjust this timer along with the current Stamina value for accurate tracking, especially after spending Stamina in-game.</p>
-        <ul>
-            <li>Enter the current Stamina value displayed in-game.</li>
-            <li>Enter the remaining minutes and seconds shown on the in-game timer until the next point.</li>
-            <li>The tracker will automatically calculate and display the current stamina and time remaining based on your inputs.</li>
-        </ul>
-
-        <strong>Discord Notifications</strong>
-        <p>You can receive Discord Direct Messages (DMs) when your Stamina reaches 40/60 and 60/60. This helps you avoid wasting regenerated Stamina.</p>
-        <p>To enable notifications:</p>
-        <ol>
-            <li>Add or Update your character using the "Add / Update" section.</li>
-            <li>Find your Discord User ID (see below).</li>
-            <li>Enter your Discord User ID into the corresponding field in the form and submit.</li>
-            <li>Ensure you allow Direct Messages from server members or the bot itself in your Discord privacy settings.</li>
-        </ol>
-
-        <strong>How to find your Discord User ID:</strong>
-        <ol>
-            <li>Open Discord.</li>
-            <li>Go to User Settings (gear icon near your username).</li>
-            <li>Go to the "Advanced" section.</li>
-            <li>Enable "Developer Mode".</li>
-            <li>Close settings.</li>
-            <li>Right-click (or tap and hold on mobile) on your own username in any chat or server list.</li>
-            <li>Select "Copy User ID".</li>
-            <li>Paste this ID (it's a long number) into the character form.</li>
-        </ol>
+        <strong>Daily Quests</strong><p>...</p><strong>Stamina</strong><ul>...</ul><strong>"Next in" Timer</strong><ul>...</ul><strong>Discord Notifications</strong><ol>...</ol><strong>How to find your Discord User ID:</strong><ol>...</ol>
     </div>
 </div>
 
-<%# --- SCRIPTS JSON DATA --- %>
 <script id="players-data" type="application/json"><%- JSON.stringify(players.map(p => ({id: p.id, name: p.name, class: p.class}))) %></script>
 <script id="player-selector-data" type="application/json"><%- JSON.stringify(playerListForSelectors) %></script>
+<script id="pt-data" type="application/json"><%- JSON.stringify(perilousTrials) %></script>
+<script id="cc-data" type="application/json"><%= currentCC %></script>
 
 <%- include('partials/footer') %>

@@ -24,6 +24,7 @@ const guildRoutes = require('./routes/guilds');
 const ptRoutes = require('./routes/perilousTrials');
 const adminRoutes = require('./routes/admin');
 const dailyQuestsRoutes = require('./routes/dailyQuests');
+const teamPlannerRoutes = require('./routes/teamPlanner'); // <-- AJOUT
 
 // Montage des routes
 app.use('/', mainRoutes);
@@ -32,7 +33,7 @@ app.use('/', guildRoutes);
 app.use('/', ptRoutes);
 app.use('/', adminRoutes);
 app.use('/', dailyQuestsRoutes);
-
+app.use('/', teamPlannerRoutes);
 
 // Initialiser le Bot Discord
 console.log("Attempting to initialize Discord Bot...");
