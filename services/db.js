@@ -53,9 +53,13 @@ const initializeDb = async () => {
             PRIMARY KEY (player_id, pt_id)
         );`);
 
-        // --- NOUVELLES TABLES POUR LE TEAM PLANNER ---
+// --- TEAM PLANNER (FORCER LA RECRÉATION POUR CORRIGER LES BUGS) ---
+        // ON SUPPRIME D'ABORD POUR ÊTRE SÛR DE LA STRUCTURE (À retirer plus tard si besoin de persistance entre majs de schéma)
+        await client.query(`DROP TABLE IF EXISTS activity_participants;`);
+        await client.query(`DROP TABLE IF EXISTS planned_activities;`);
+
         await client.query(`
-            CREATE TABLE IF NOT EXISTS planned_activities (
+            CREATE TABLE planned_activities (
                 id SERIAL PRIMARY KEY,
                 activity_type TEXT NOT NULL,
                 activity_subtype TEXT,
@@ -65,17 +69,15 @@ const initializeDb = async () => {
                 created_at TIMESTAMPTZ DEFAULT NOW()
             );
         `);
-
         await client.query(`
-            CREATE TABLE IF NOT EXISTS activity_participants (
+            CREATE TABLE activity_participants (
                 activity_id INTEGER REFERENCES planned_activities(id) ON DELETE CASCADE,
                 player_id INTEGER REFERENCES players(id) ON DELETE CASCADE,
                 joined_at TIMESTAMPTZ DEFAULT NOW(),
                 PRIMARY KEY (activity_id, player_id)
             );
         `);
-        console.log('✅ Team Planner tables ensured.');
-        // ---------------------------------------------
+        console.log('✅ Team Planner tables (re)created.');
 
         // Migration pt_leaderboard si nécessaire
         const checkColumn = await client.query(`

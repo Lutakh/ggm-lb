@@ -1,201 +1,91 @@
 /* public/css/team-planner.css */
 
-/* Badge "NEW" dans la sidebar */
+/* Badge NEW dans la sidebar */
 .nav-badge {
-    background-color: var(--accent-color);
-    color: white;
-    font-size: 0.7em;
-    padding: 2px 6px;
-    border-radius: 10px;
-    font-weight: bold;
-    margin-left: auto;
+    background-color: var(--accent-color); color: white; font-size: 0.7em;
+    padding: 2px 6px; border-radius: 10px; font-weight: bold; margin-left: auto;
 }
 
-/* Bannière Promo */
-.promo-banner {
-    background: linear-gradient(135deg, var(--surface-color), #fff5e6);
-    border: 2px solid var(--secondary-color);
-    position: relative;
-    margin-bottom: 30px;
-    animation: slideDown 0.5s ease-out;
-}
-@keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-.promo-content h3 { margin-top: 0; color: var(--primary-color); }
-.close-promo {
-    position: absolute; top: 10px; right: 15px;
-    background: none; border: none; font-size: 1.5em; cursor: pointer; color: var(--text-color); opacity: 0.5;
-}
-.close-promo:hover { opacity: 1; }
-
-/* Contrôles du Planner */
 .tp-controls {
-    margin-bottom: 20px;
-    padding: 15px;
-    background-color: #f9f6f1;
-    border-radius: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    margin-bottom: 20px; padding: 15px; background-color: #f9f6f1;
+    border-radius: 10px; display: flex; justify-content: space-between; align-items: center;
 }
-.tp-filter-checkbox {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: bold;
-    cursor: pointer;
-}
+.tp-filter-checkbox { display: flex; align-items: center; gap: 8px; font-weight: bold; cursor: pointer; }
 
-/* Grille des Activités */
-.tp-activities-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
-}
-.tp-loading-placeholder {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 40px;
-    font-style: italic;
-    opacity: 0.7;
-}
+.tp-activities-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+.tp-loading-placeholder { grid-column: 1 / -1; text-align: center; padding: 40px; font-style: italic; opacity: 0.7; }
 
-/* Carte d'Activité */
 .tp-activity-card {
-    background-color: #fff;
-    border: 1px solid var(--border-color);
-    border-radius: 15px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    transition: transform 0.2s, box-shadow 0.2s;
+    background-color: #fff; border: 1px solid var(--border-color); border-radius: 15px;
+    overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s;
 }
-.tp-activity-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
+.tp-activity-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
 .tp-card-header {
-    background-color: var(--primary-color);
-    color: white;
-    padding: 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+    background-color: var(--primary-color); color: white; padding: 15px;
+    display: flex; justify-content: space-between; align-items: flex-start;
 }
 .tp-header-main { flex-grow: 1; }
 .tp-activity-title { margin: 0; font-size: 1.2em; }
 .tp-activity-subtype { font-size: 0.9em; opacity: 0.9; font-weight: normal; }
-.tp-activity-time {
-    text-align: right;
-    display: flex;
-    flex-direction: column;
-    font-weight: bold;
-    font-size: 0.9em;
-    min-width: 80px;
-}
+.tp-activity-time { text-align: right; display: flex; flex-direction: column; font-weight: bold; font-size: 0.9em; min-width: 80px; }
 .tp-time-date { opacity: 0.9; font-size: 0.9em; }
 
 .tp-card-body { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; gap: 15px; }
 .tp-participants-header {
-    display: flex;
-    justify-content: space-between;
-    font-weight: bold;
-    margin-bottom: 10px;
-    color: var(--primary-color);
-    border-bottom: 1px solid #eee;
-    padding-bottom: 5px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-weight: bold; margin-bottom: 10px; color: var(--primary-color);
+    border-bottom: 1px solid #eee; padding-bottom: 5px;
 }
-.tp-participants-list {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
+.tp-participants-list { display: flex; flex-direction: column; gap: 5px; }
 .tp-participant {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 4px 8px;
-    background-color: #f9f9f9;
-    border-radius: 6px;
-    font-size: 0.95em;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 8px; background-color: #f9f9f9; border-radius: 6px; font-size: 0.95em;
 }
-.tp-participant.empty-slot {
-    color: #999;
-    font-style: italic;
-    background-color: transparent;
-    border: 1px dashed #ccc;
-}
+.tp-participant.empty-slot { color: #999; font-style: italic; background-color: transparent; border: 1px dashed #ccc; }
 
-.tp-notes-section {
-    font-size: 0.9em;
-    background-color: #fffbe0;
-    padding: 10px;
-    border-radius: 8px;
-}
-.tp-notes-text { margin: 5px 0 0 0; white-space: pre-wrap; }
+/* NOUVEAU : Styles pour l'affichage des joueurs dans l'activité */
+.tp-participant-info { display: flex; align-items: center; gap: 8px; overflow: hidden; }
+.tp-player-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tp-player-cp { font-size: 1.1em; font-weight: 800; color: var(--primary-color); flex-shrink: 0; }
 
-.tp-warnings-section {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-.tp-warning {
-    font-size: 0.85em;
-    color: #d32f2f;
-    background-color: #ffebee;
-    padding: 5px 10px;
-    border-radius: 5px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-.tp-warning::before { content: '⚠️'; }
+/* NOUVEAU : Gestion Responsive des noms de classes */
+.short-name { display: inline; }
+.full-name { display: none; }
+@media (min-width: 769px) {
+    .short-name { display: none;
+        .full-name { display: inline; }
+    }
 
-.tp-card-footer {
-    padding: 15px;
-    background-color: #f9f6f1;
-    border-top: 1px solid var(--border-color);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.9em;
-}
-.tp-creator-info { opacity: 0.8; }
-.tp-creator-name { font-weight: bold; }
+    /* Bouton Ajouter un autre joueur [+] */
+    .tp-add-other-btn {
+        background: none; border: 2px solid var(--secondary-color); color: var(--secondary-color);
+        border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-weight: bold;
+        display: flex; align-items: center; justify-content: center; font-size: 1.2em; line-height: 1;
+        padding: 0; transition: all 0.2s;
+    }
+    .tp-add-other-btn:hover { background-color: var(--secondary-color); color: white; }
 
-/* Modale de Création */
-.tp-create-modal-body {
-    padding: 20px;
-    max-height: 70vh;
-    overflow-y: auto;
-}
-.tp-create-modal-body .form-group { margin-bottom: 15px; }
-.tp-create-modal-body label { display: block; margin-bottom: 5px; font-weight: bold; color: var(--primary-color); }
-.tp-create-modal-body select,
-.tp-create-modal-body input,
-.tp-create-modal-body textarea {
-    width: 100%;
-    box-sizing: border-box;
-}
-.tp-organizer-select-ui {
-    display: flex;
-    gap: 10px;
-}
-#tp-organizer-display {
-    flex-grow: 1;
-    padding: 10px;
-    border: 1px solid var(--border-color);
-    border-radius: 10px;
-    background-color: #f9f6f1;
-    display: flex;
-    align-items: center;
-}
-.tp-datetime-inputs {
-    display: flex;
-    gap: 10px;
-}
-.tp-datetime-inputs input { flex: 1; }
+    .tp-notes-section { font-size: 0.9em; background-color: #fffbe0; padding: 10px; border-radius: 8px; }
+    .tp-notes-text { margin: 5px 0 0 0; white-space: pre-wrap; }
 
-@media (max-width: 768px) {
-    .tp-activities-list { grid-template-columns: 1fr; }
-    .tp-controls { flex-direction: column; align-items: flex-start; gap: 10px; }
-}
+    .tp-warnings-section { display: flex; flex-direction: column; gap: 5px; }
+    .tp-warning { font-size: 0.85em; color: #d32f2f; background-color: #ffebee; padding: 5px 10px; border-radius: 5px; display: flex; align-items: center; gap: 5px; }
+    .tp-warning::before { content: '⚠️'; }
+
+    .tp-card-footer { padding: 15px; background-color: #f9f6f1; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; font-size: 0.9em; }
+    .tp-creator-info { opacity: 0.8; }
+    .tp-creator-name { font-weight: bold; }
+
+    .tp-create-modal-body { padding: 20px; max-height: 70vh; overflow-y: auto; }
+    .tp-create-modal-body .form-group { margin-bottom: 15px; }
+    .tp-create-modal-body label { display: block; margin-bottom: 5px; font-weight: bold; color: var(--primary-color); }
+    .tp-create-modal-body select, .tp-create-modal-body input, .tp-create-modal-body textarea { width: 100%; box-sizing: border-box; }
+    .tp-organizer-select-ui { display: flex; gap: 10px; }
+    #tp-organizer-display { flex-grow: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 10px; background-color: #f9f6f1; display: flex; align-items: center; }
+    .tp-datetime-inputs { display: flex; gap: 10px; }
+    .tp-datetime-inputs input { flex: 1; }
+
+    @media (max-width: 768px) {
+        .tp-activities-list { grid-template-columns: 1fr; }
+        .tp-controls { flex-direction: column; align-items: flex-start; gap: 10px; }
+    }
