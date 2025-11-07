@@ -84,7 +84,7 @@ router.get('/', async (req, res) => {
         // TOUT est basé sur 09:00 UTC
         const getNextReset = (targetDay) => { // targetDay: 0=Dim, 1=Lun, 3=Mer
             const reset = new Date(now.getTime());
-            reset.setUTCHours(9, 0, 0, 0); // Heure du reset: 09:00 UTC
+            reset.setUTCHours(10, 0, 0, 0); // Heure du reset: 09:00 UTC
 
             if (targetDay !== undefined) {
                 // Calcule le nombre de jours jusqu'au prochain targetDay

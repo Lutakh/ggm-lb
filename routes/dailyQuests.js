@@ -27,7 +27,7 @@ const dailyQuestsList = [
 // Fonction pour calculer la date du dernier reset quotidien (09:00 UTC)
 const getLastDailyReset = () => {
     const now = new Date();
-    const reset = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 9, 0, 0, 0));
+    const reset = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 10, 0, 0, 0));
     if (now < reset) { // Si l'heure actuelle est avant 9h UTC
         reset.setUTCDate(reset.getUTCDate() - 1); // Prendre le reset de la veille
     }
