@@ -8,7 +8,6 @@ import { initPlayerSelectModal } from './modules/playerSelectModal.js';
 import { updateTimers, formatCP, formatRelativeTimeShort, minutesToFormattedTime } from './modules/utils.js';
 import { initDiscordWidget } from './modules/discordWidget.js';
 import { initTeamPlanner } from './modules/teamPlanner.js';
-// --- AJOUT : Import Guild Modal ---
 import { initGuildSelectModal } from './modules/guildSelectModal.js';
 
 // --- MODALE DES NOTES ---
@@ -270,10 +269,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Initialisation des Données ---
     const playersDataEl = document.getElementById('players-data');
     const playersSelectorDataEl = document.getElementById('player-selector-data');
-    const guildsDataEl = document.getElementById('guilds-data'); // NOUVEAU
+    const guildsDataEl = document.getElementById('guilds-data');
 
     let playersForModal = [];
-    let guildsForModal = []; // NOUVEAU
+    let guildsForModal = [];
 
     if (playersDataEl) {
         try {
@@ -288,7 +287,6 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error("Player data script tag not found!");
     }
 
-    // Récupération des données de guilde
     if (guildsDataEl) {
         try {
             guildsForModal = JSON.parse(guildsDataEl.textContent || '[]');
@@ -309,7 +307,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         name: playerName,
                         class: row.dataset.class,
                         combat_power: row.dataset.cp,
-                        cp_last_updated: row.dataset.cpUpdated, // Lecture du timestamp CP
+                        cp_last_updated: row.dataset.cpUpdated,
                         team: row.dataset.team || 'No Team',
                         guild: row.dataset.guild || null,
                         notes: row.dataset.notes === '-' ? '' : row.dataset.notes,
@@ -333,7 +331,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Initialisation des Modules ---
     initNavigation();
     initPlayerSelectModal(playersForModal);
-    initGuildSelectModal(guildsForModal); // AJOUT : Init de la modale de guilde
+    initGuildSelectModal(guildsForModal);
     initPlayerForm();
     initLeaderboardFilters();
     initPerilousTrials(showPlayerDetails, allPlayersMap);
@@ -356,6 +354,27 @@ document.addEventListener('DOMContentLoaded', function() {
         cell.textContent = (!isNaN(start) && !isNaN(end)) ? `${minutesToFormattedTime(start)} - ${minutesToFormattedTime(end)}` : '-';
     });
 
+    // --- Gestion des tooltips des timers sur Mobile (clic pour toggle) ---
+    if (window.innerWidth <= 768) {
+        document.querySelectorAll('.timer-entry').forEach(entry => {
+            entry.addEventListener('click', (e) => {
+                // Si l'entrée a un tooltip, on bascule la classe active
+                if (entry.querySelector('.timer-tooltip')) {
+                    e.stopPropagation(); // Empêche la fermeture immédiate par le listener global
+                    // Fermer les autres tooltips ouverts
+                    document.querySelectorAll('.timer-entry.active').forEach(other => {
+                        if (other !== entry) other.classList.remove('active');
+                    });
+                    entry.classList.toggle('active');
+                }
+            });
+        });
+
+        // Fermer les tooltips si on clique n'importe où ailleurs sur la page
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.timer-entry.active').forEach(el => el.classList.remove('active'));
+        });
+    }
 
     // --- Listeners Modales et Mobile ---
     if (notesCloseBtn) notesCloseBtn.addEventListener('click', closeNotesModal);
@@ -368,9 +387,25 @@ document.addEventListener('DOMContentLoaded', function() {
         playerTableBody.addEventListener('click', (e) => {
             if (window.innerWidth > 768) return;
             const playerRow = e.target.closest('tr');
-            if (!playerRow || e.target.closest('.notes-col') || e.target.closest('.admin-actions')) return;
+            // Ignorer les clics sur les notes, les actions admin, ou tout bouton/lien
+            if (!playerRow || e.target.closest('.notes-col') || e.target.closest('.admin-actions') || e.target.closest('a') || e.target.closest('button')) return;
+
             e.preventDefault();
-            showPlayerDetails(playerRow);
+            const playerName = playerRow.dataset.name;
+            // Utiliser allPlayersMap pour avoir les données les plus complètes
+            if (playerName && allPlayersMap.has(playerName)) {
+                const fullData = allPlayersMap.get(playerName);
+                // Fusionner les données du row et de la map pour être sûr d'avoir le rang et autres infos d'affichage
+                const mergedDataRow = {
+                    dataset: {
+                        ...playerRow.dataset,
+                        ...fullData,
+                        // Assurer que playSlots est une chaîne JSON pour showPlayerDetails
+                        playSlots: typeof fullData.play_slots === 'string' ? fullData.play_slots : JSON.stringify(fullData.play_slots || [])
+                    }
+                };
+                showPlayerDetails(mergedDataRow);
+            }
         });
     }
 

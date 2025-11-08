@@ -39,14 +39,12 @@
 <main>
     <%- include('partials/top-bar') %>
 
-    <%# --- PROMO CARD SUPPRIMÉE ICI --- %>
-
     <div id="add-update-section" class="main-section card">
         <h2>Add / Update a Character</h2>
         <form id="player-form" action="/add-player" method="POST">
             <div id="player-image-container"></div>
             <div class="form-step-1">
-                <div id="player-selection-ui">
+                 <div id="player-selection-ui">
                      <div id="player-name-display">No player selected</div>
                     <input type="hidden" name="name" id="name-input-hidden">
                 </div>
@@ -98,7 +96,6 @@
     </div>
 </main>
 
-<%# --- MODALS --- %>
 <div id="player-select-modal-backdrop" class="player-select-modal-backdrop"></div>
 <div id="player-select-modal" class="player-select-modal">
     <div class="player-select-modal-header"><h3>Select or Create a Player</h3><button type="button" class="player-select-close-btn">&times;</button></div>
@@ -114,7 +111,6 @@
     <div class="player-select-modal-header"><h3>Select or Create Guild</h3><button type="button" id="guild-select-close-btn" class="player-select-close-btn">&times;</button></div>
      <div class="player-select-controls">
         <input type="text" id="guild-filter-input" placeholder="Filter or type new name..." autocomplete="off">
-        <%# --- AJOUT DU BOUTON CREATE GUILD --- %>
         <button type="button" id="create-new-guild-btn" class="action-btn-main">Create New</button>
     </div>
     <div id="guild-select-list" class="player-select-list"></div>
@@ -156,11 +152,49 @@
 <div id="filters-modal" class="player-select-modal">
   <div class="player-select-modal-header"><h3>Player Filters</h3><button type="button" id="filters-modal-close-btn" class="player-select-close-btn">&times;</button></div>
     <div class="filters-modal-body">
-        <div class="filter-group-modal filters-modal-class-filter"></div>
-        <div class="filter-group-modal"></div>
-        <div class="filter-group-modal"></div>
-        <div class="filter-group-modal"></div>
-        <div class="filter-group-modal"></div>
+        <div class="filter-group-modal">
+            <h4>Classes</h4>
+            <div class="filters-modal-panel-grid two-cols" id="modal-class-filter-panel">
+                 <label><input type="checkbox" data-class="Swordbearer"> Swordbearer</label>
+                 <label><input type="checkbox" data-class="Acolyte"> Acolyte</label>
+                 <label><input type="checkbox" data-class="Wayfarer"> Wayfarer</label>
+                 <label><input type="checkbox" data-class="Scholar"> Scholar</label>
+                 <label><input type="checkbox" data-class="Shadowlash"> Shadowlash</label>
+            </div>
+        </div>
+        <div class="filter-group-modal">
+            <h4>Guilds</h4>
+             <div class="filter-modal-dropdown" data-filter-type="guild">
+                <button class="filter-modal-dropdown-btn" data-default-text="Select Guilds">Select Guilds</button>
+                <div class="filter-modal-dropdown-panel" id="modal-guild-filter-panel">
+                    <% guilds.sort().forEach(guildName => { %>
+                        <label><input type="checkbox" data-guild="<%= guildName %>"> <%= guildName %></label>
+                    <% }); %>
+                </div>
+            </div>
+        </div>
+        <div class="filter-group-modal">
+             <h4>Combat Power</h4>
+             <div class="filters-modal-panel-grid two-cols">
+                 <label>Min: <input type="text" id="filters-modal-cp-min" placeholder="e.g. 500k"></label>
+                 <label>Max: <input type="text" id="filters-modal-cp-max" placeholder="e.g. 1.5M"></label>
+             </div>
+        </div>
+        <div class="filter-group-modal">
+             <h4>Perilous Trial Tag</h4>
+             <div class="filters-modal-panel-grid two-cols">
+                 <select id="filters-modal-pt-tag-mode">
+                     <option value="has">Has Tag</option>
+                     <option value="missing">Missing Tag</option>
+                 </select>
+                 <select id="filters-modal-pt-tag-filter">
+                     <option value="">-- Any --</option>
+                     <% perilousTrials.forEach(pt => { %>
+                         <option value="<%= pt.name %>"><%= pt.name %></option>
+                     <% }); %>
+                 </select>
+             </div>
+        </div>
     </div>
 </div>
 
@@ -180,7 +214,11 @@
 <div id="dq-help-modal" class="player-select-modal">
     <div class="player-select-modal-header"><h3>Daily Quests & Stamina - Help</h3><button type="button" id="dq-help-close-btn" class="player-select-close-btn">&times;</button></div>
     <div id="dq-help-modal-body">
-        <strong>Daily Quests</strong><p>...</p><strong>Stamina</strong><ul>...</ul><strong>"Next in" Timer</strong><ul>...</ul><strong>Discord Notifications</strong><ol>...</ol><strong>How to find your Discord User ID:</strong><ol>...</ol>
+        <strong>Daily Quests</strong><p>Select up to 3 players to track. Check boxes to mark quests as complete for the day. Resets daily at 9:00 UTC.</p>
+        <strong>Stamina</strong><ul><li>Max stamina is 60. Regens 1 point every 24 minutes.</li><li>Enter current stamina to start the timer.</li></ul>
+        <strong>"Next in" Timer</strong><ul><li>Shows time until the next stamina point.</li><li>"Full in" shows time until 60/60.</li></ul>
+        <strong>Discord Notifications</strong><ol><li>Enter your Discord User ID in the "Add / Update" form.</li><li>The bot will DM you when stamina reaches 40 and 60.</li><li>You must share a server with the bot or have DMs open.</li></ol>
+        <strong>How to find your Discord User ID:</strong><ol><li>Enable Developer Mode in Discord (Settings > Advanced).</li><li>Right-click your profile and select "Copy User ID".</li></ol>
     </div>
 </div>
 

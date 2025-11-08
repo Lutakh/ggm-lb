@@ -1,8 +1,8 @@
 /* --- Player Leaderboard Filters --- */
-.leaderboard-filters { display: none; } /* Req 1 */
+.leaderboard-filters { display: none; }
 #open-filters-btn,
 #open-filters-btn-teams,
-#open-filters-btn-guilds { /* Req 1 */
+#open-filters-btn-guilds {
     display: none;
     width: 100%;
     margin-bottom: 15px;
@@ -39,7 +39,7 @@
 }
 
 /* --- Desktop Header Filters --- */
-.class-header-cell, .player-header-cell { position: relative; }
+.class-header-cell, .player-header-cell, .guild-header-cell { position: relative; }
 .header-content {
     display: flex;
     align-items: center;
@@ -73,7 +73,7 @@
     color: var(--accent-color);
 }
 .header-filter-btn.active svg { fill: var(--accent-color); }
-.class-header-cell .dropdown-panel, .player-header-cell .dropdown-panel {
+.class-header-cell .dropdown-panel, .player-header-cell .dropdown-panel, .guild-header-cell .dropdown-panel {
     top: 100%;
     left: 0;
     right: auto;
