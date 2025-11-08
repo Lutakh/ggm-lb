@@ -195,9 +195,8 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
         });
     }
 
-    // --- FORMULAIRE ADMIN (inchangé) ---
+    // --- FORMULAIRE ADMIN ---
     if (ptAdminForm) {
-        // ... (reste du code admin inchangé pour garder la réponse concise) ...
         const submitBtn = ptAdminForm.querySelector('button[type="submit"]');
         const ptIdInput = document.getElementById('pt-id-input');
         const ptRankInput = document.getElementById('pt-team-rank');
@@ -265,8 +264,29 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
                     const hour = String(d.getHours()).padStart(2, '0');
                     const min = String(d.getMinutes()).padStart(2, '0');
                     cpDateEl.textContent = `Last CP update: ${day}/${month} at ${hour}:${min}`;
+
+                    // --- NOUVEAU : Vérification des 24h ---
+                    const now = new Date();
+                    const hoursDiff = (now - d) / (1000 * 60 * 60);
+
+                    if (hoursDiff > 24) {
+                        // Plus de 24h : Rouge et gras
+                        cpDateEl.style.color = 'var(--accent-color)'; // Utilise la couleur rouge du thème (#e57373)
+                        cpDateEl.style.fontWeight = 'bold';
+                        cpDateEl.style.opacity = '1';
+                    } else {
+                        // Moins de 24h : Style normal
+                        cpDateEl.style.color = '#8c5a3a';
+                        cpDateEl.style.fontWeight = 'normal';
+                        cpDateEl.style.opacity = '0.8';
+                    }
+                    // --------------------------------------
+
                 } else {
                     cpDateEl.textContent = 'Last CP update: Never';
+                    cpDateEl.style.color = 'var(--accent-color)';
+                    cpDateEl.style.fontWeight = 'bold';
+                    cpDateEl.style.opacity = '1';
                 }
                 cpDateEl.style.display = 'block';
             } else {
