@@ -68,12 +68,6 @@
     <form id="pt-admin-form" action="/pt-leaderboard" method="POST">
         <input type="hidden" name="admin_password" class="admin-pass-input">
 
-        <datalist id="guild-datalist-pt">
-            <% guilds.forEach(guildName => { %>
-                <option value="<%= guildName %>">
-            <% }); %>
-        </datalist>
-
         <div class="pt-admin-form-row">
             <div class="filter-group" style="flex-grow: 1;">
                 <label for="pt-id-input">Perilous Trial</label>
@@ -108,7 +102,12 @@
                         <option value="Scholar">Scholar</option>
                         <option value="Shadowlash">Shadowlash</option>
                     </select>
-                    <input type="text" name="players[<%= i %>][guild]" class="guild-select-input" placeholder="Guild (Optional)" autocomplete="off" list="guild-datalist-pt">
+
+                    <div class="pt-guild-selection-ui" style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <div id="pt-guild-display-<%= i %>" class="pt-player-name-display" style="flex-grow: 1; font-style: italic;">Guild (Optional)</div>
+                        <input type="hidden" name="players[<%= i %>][guild]" id="pt-guild-hidden-<%= i %>">
+                        <button type="button" class="pt-select-guild-btn action-btn-main" data-player-index="<%= i %>">Select</button>
+                    </div>
 
                     <input type="text" name="players[<%= i %>][cp]" placeholder="CP (e.g., 1.2M)">
                 </div>

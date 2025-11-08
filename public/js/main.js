@@ -8,6 +8,8 @@ import { initPlayerSelectModal } from './modules/playerSelectModal.js';
 import { updateTimers, formatCP, formatRelativeTimeShort, minutesToFormattedTime } from './modules/utils.js';
 import { initDiscordWidget } from './modules/discordWidget.js';
 import { initTeamPlanner } from './modules/teamPlanner.js';
+// --- AJOUT : Import Guild Modal ---
+import { initGuildSelectModal } from './modules/guildSelectModal.js';
 
 // --- MODALE DES NOTES ---
 const notesModal = document.getElementById('notes-modal');
@@ -265,10 +267,13 @@ function closeDqHelpModal() {
 // --- DOMContentLoaded ---
 document.addEventListener('DOMContentLoaded', function() {
 
-    // --- Initialisation des Données Joueur ---
+    // --- Initialisation des Données ---
     const playersDataEl = document.getElementById('players-data');
     const playersSelectorDataEl = document.getElementById('player-selector-data');
+    const guildsDataEl = document.getElementById('guilds-data'); // NOUVEAU
+
     let playersForModal = [];
+    let guildsForModal = []; // NOUVEAU
 
     if (playersDataEl) {
         try {
@@ -281,6 +286,13 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (e) { console.error("Error parsing player-selector-data JSON:", e); }
     } else {
         console.error("Player data script tag not found!");
+    }
+
+    // Récupération des données de guilde
+    if (guildsDataEl) {
+        try {
+            guildsForModal = JSON.parse(guildsDataEl.textContent || '[]');
+        } catch (e) { console.error("Error parsing guilds-data JSON:", e); }
     }
 
     document.querySelectorAll('#leaderboard-table tbody tr').forEach((row, index) => {
@@ -297,7 +309,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         name: playerName,
                         class: row.dataset.class,
                         combat_power: row.dataset.cp,
-                        cp_last_updated: row.dataset.cpUpdated, // <-- AJOUT IMPORTANT ICI
+                        cp_last_updated: row.dataset.cpUpdated, // Lecture du timestamp CP
                         team: row.dataset.team || 'No Team',
                         guild: row.dataset.guild || null,
                         notes: row.dataset.notes === '-' ? '' : row.dataset.notes,
@@ -321,6 +333,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Initialisation des Modules ---
     initNavigation();
     initPlayerSelectModal(playersForModal);
+    initGuildSelectModal(guildsForModal); // AJOUT : Init de la modale de guilde
     initPlayerForm();
     initLeaderboardFilters();
     initPerilousTrials(showPlayerDetails, allPlayersMap);
