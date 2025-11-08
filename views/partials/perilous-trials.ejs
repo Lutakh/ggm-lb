@@ -2,7 +2,11 @@
 
 <div class="mobile-pt-controls">
     <button id="open-pt-filters-btn" class="action-btn-main">PT Filters</button>
-    <button id="pt-help-btn-mobile" class="help-button">Help</button>
+    <div style="display: flex; gap: 10px;">
+        <%# --- AJOUT BOUTON ADD TEAM (Mobile) --- %>
+        <button id="pt-add-team-btn-mobile" class="action-btn-main admin-only" style="display: none;">Add</button>
+        <button id="pt-help-btn-mobile" class="help-button">Help</button>
+    </div>
 </div>
 
 <div class="controls desktop-pt-controls">
@@ -11,8 +15,7 @@
         <option value="global" selected>Global PT Ranking</option>
         <% perilousTrials.forEach(pt => { %>
             <option value="<%= pt.id %>"><%= pt.name %></option>
-        <% });
-%>
+        <% }); %>
     </select>
     <div id="pt-global-mode-selector" style="display: none;">
         <label for="pt-global-mode" style="font-weight: bold;">Mode:</label>
@@ -21,14 +24,17 @@
             <option value="all">All Ranks</option>
         </select>
     </div>
-    <button id="pt-help-btn-desktop" class="help-button">Help</button>
+    <div style="margin-left: auto; display: flex; gap: 10px; align-items: center;">
+         <%# --- AJOUT BOUTON ADD TEAM (Desktop) --- %>
+        <button id="pt-add-team-btn-desktop" class="action-btn-main admin-only" style="display: none;">Add Team</button>
+        <button id="pt-help-btn-desktop" class="help-button" style="margin-left: 0;">Help</button>
+    </div>
 </div>
 
 <div class="leaderboard-legend">
     <div class="legend-item"><span class="class-tag class-swordbearer"></span> Sword</div>
     <div class="legend-item"><span class="class-tag class-acolyte"></span> Aco</div>
-    <div class="legend-item"><span
-class="class-tag class-wayfarer"></span> Way</div>
+    <div class="legend-item"><span class="class-tag class-wayfarer"></span> Way</div>
     <div class="legend-item"><span class="class-tag class-scholar"></span> Scho</div>
     <div class="legend-item"><span class="class-tag class-shadowlash"></span> Shadow</div>
 </div>
@@ -38,39 +44,39 @@ class="class-tag class-wayfarer"></span> Way</div>
     <tbody></tbody>
 </table>
 
-<table id="pt-global-leaderboard-table" style="display: none;"> <thead>
+<table id="pt-global-leaderboard-table" style="display: none;">
+    <thead>
         <tr>
             <th class="rank-col">Rank</th>
             <th class="player-header-cell pt-global-player-col">
-                 <div class="header-content">
-
-   <button id="pt-class-filter-btn" class="header-filter-btn dropdown-btn" title="Filter by class">
+                <div class="header-content">
+                    <button id="pt-class-filter-btn" class="header-filter-btn dropdown-btn" title="Filter by class">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10 18h4v-2h-4v2zm3 7h12v-2H6v2zM3 6v2h18V6H3z"/></svg>
                         <span>Player</span>
                     </button>
-
-   </div>
+                </div>
                 <div id="pt-class-filter-panel" class="dropdown-panel">
                     <label><input type="checkbox" data-class="Swordbearer"> Swordbearer</label>
                     <label><input type="checkbox" data-class="Acolyte"> Acolyte</label>
                     <label><input type="checkbox" data-class="Wayfarer"> Wayfarer</label>
-
-          <label><input type="checkbox" data-class="Scholar"> Scholar</label>
+                    <label><input type="checkbox" data-class="Scholar"> Scholar</label>
                     <label><input type="checkbox" data-class="Shadowlash"> Shadowlash</label>
                 </div>
             </th>
             <th class="pt-global-cp-col">CP</th>
             <th>Points</th>
         </tr>
-
-</thead>
+    </thead>
     <tbody>
-        </tbody>
+    </tbody>
 </table>
-<div class="admin-actions" id="pt-admin-form-container">
+
+<%# --- FORMULAIRE CACHÉ PAR DÉFAUT --- %>
+<div class="admin-actions" id="pt-admin-form-container" style="display: none;">
     <h3>Update Leaderboard</h3>
     <form id="pt-admin-form" action="/pt-leaderboard" method="POST">
         <input type="hidden" name="admin_password" class="admin-pass-input">
+
         <div class="pt-admin-form-row">
             <div class="filter-group" style="flex-grow: 1;">
                 <label for="pt-id-input">Perilous Trial</label>
@@ -105,11 +111,14 @@ class="class-tag class-wayfarer"></span> Way</div>
                         <option value="Scholar">Scholar</option>
                         <option value="Shadowlash">Shadowlash</option>
                     </select>
-                    <div class="custom-guild-select" data-guild-select-index="<%= i %>">
-                        <input type="text" name="players[<%= i %>][guild]" class="guild-select-input" placeholder="Guild (Optional)" autocomplete="off">
-                        <div class="guild-select-panel"></div>
+
+                    <div class="pt-guild-selection-ui" style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <div id="pt-guild-display-<%= i %>" class="pt-player-name-display" style="flex-grow: 1; font-style: italic;">Guild (Optional)</div>
+                        <input type="hidden" name="players[<%= i %>][guild]" id="pt-guild-hidden-<%= i %>">
+                        <button type="button" class="pt-select-guild-btn action-btn-main" data-player-index="<%= i %>">Select</button>
                     </div>
-                     <input type="text" name="players[<%= i %>][cp]" placeholder="CP (e.g., 1.2M)">
+
+                    <input type="text" name="players[<%= i %>][cp]" placeholder="CP (e.g., 1.2M)">
                 </div>
             </div>
             <% } %>

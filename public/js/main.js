@@ -7,8 +7,9 @@ import { initDailyQuests } from './modules/dailyQuests.js';
 import { initPlayerSelectModal } from './modules/playerSelectModal.js';
 import { updateTimers, formatCP, formatRelativeTimeShort, minutesToFormattedTime } from './modules/utils.js';
 import { initDiscordWidget } from './modules/discordWidget.js';
-// --- AJOUT : Import du Team Planner ---
 import { initTeamPlanner } from './modules/teamPlanner.js';
+// --- AJOUT : Import Guild Modal ---
+import { initGuildSelectModal } from './modules/guildSelectModal.js';
 
 // --- MODALE DES NOTES ---
 const notesModal = document.getElementById('notes-modal');
@@ -22,7 +23,6 @@ function closeNotesModal() {
     if (notesBackdrop) notesBackdrop.style.display = 'none';
 }
 
-// Fonction globale pour afficher les notes complètes
 window.showFullNote = function(playerName, note) {
     if (!note || note.trim() === '' || note.trim() === '-') return;
     if (notesTitle) notesTitle.textContent = `Notes for ${playerName}`;
@@ -40,17 +40,11 @@ const playerDetailCloseBtn = document.getElementById('player-detail-modal-close-
 const initialPlayerModalZIndex = playerDetailModal?.style.zIndex || 1001;
 const initialPlayerBackdropZIndex = playerDetailBackdrop?.style.zIndex || 1000;
 
-// Map pour stocker les rangs des joueurs
 const playerRankMap = new Map();
-// Map pour stocker les données complètes des joueurs
 const allPlayersMap = new Map();
 
-// Fonction pour afficher les détails d'un joueur dans la modale mobile
 function showPlayerDetails(playerRow, isFromTeamModal = false) {
-    if (!playerDetailModal || !playerRow || !playerRow.dataset) {
-        console.error("Missing player detail modal or player row data.");
-        return;
-    }
+    if (!playerDetailModal || !playerRow || !playerRow.dataset) return;
 
     if (isFromTeamModal) {
         playerDetailModal.style.zIndex = '1011';
@@ -273,10 +267,13 @@ function closeDqHelpModal() {
 // --- DOMContentLoaded ---
 document.addEventListener('DOMContentLoaded', function() {
 
-    // --- Initialisation des Données Joueur ---
+    // --- Initialisation des Données ---
     const playersDataEl = document.getElementById('players-data');
     const playersSelectorDataEl = document.getElementById('player-selector-data');
+    const guildsDataEl = document.getElementById('guilds-data'); // NOUVEAU
+
     let playersForModal = [];
+    let guildsForModal = []; // NOUVEAU
 
     if (playersDataEl) {
         try {
@@ -288,7 +285,14 @@ document.addEventListener('DOMContentLoaded', function() {
             console.warn("Using player-selector-data for modal; class info might be missing.");
         } catch (e) { console.error("Error parsing player-selector-data JSON:", e); }
     } else {
-        console.error("Player data script tag not found! Player selection and other features may fail.");
+        console.error("Player data script tag not found!");
+    }
+
+    // Récupération des données de guilde
+    if (guildsDataEl) {
+        try {
+            guildsForModal = JSON.parse(guildsDataEl.textContent || '[]');
+        } catch (e) { console.error("Error parsing guilds-data JSON:", e); }
     }
 
     document.querySelectorAll('#leaderboard-table tbody tr').forEach((row, index) => {
@@ -305,6 +309,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         name: playerName,
                         class: row.dataset.class,
                         combat_power: row.dataset.cp,
+                        cp_last_updated: row.dataset.cpUpdated, // Lecture du timestamp CP
                         team: row.dataset.team || 'No Team',
                         guild: row.dataset.guild || null,
                         notes: row.dataset.notes === '-' ? '' : row.dataset.notes,
@@ -315,24 +320,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     allPlayersMap.set(playerName, playerData);
                 } catch(e){ console.error("Error reconstructing player data from row dataset:", e, row.dataset); }
             }
-        } else { console.warn("Skipping table row due to missing data-name attribute:", row); }
+        }
     });
     playersForModal.forEach(p => {
         if (p && p.name && !allPlayersMap.has(p.name)) {
-            allPlayersMap.set(p.name, {
-                id: p.id,
-                name: p.name,
-                class: p.class || 'Unknown',
-            });
+            allPlayersMap.set(p.name, { id: p.id, name: p.name, class: p.class || 'Unknown' });
         }
     });
-    console.log(`Populated allPlayersMap with ${allPlayersMap.size} players.`);
-    console.log(`Populated playerRankMap with ${playerRankMap.size} initial ranks.`);
 
+    console.log(`Populated allPlayersMap with ${allPlayersMap.size} players.`);
 
     // --- Initialisation des Modules ---
     initNavigation();
     initPlayerSelectModal(playersForModal);
+    initGuildSelectModal(guildsForModal); // AJOUT : Init de la modale de guilde
     initPlayerForm();
     initLeaderboardFilters();
     initPerilousTrials(showPlayerDetails, allPlayersMap);
@@ -356,12 +357,12 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
 
-    // --- Attacher les Listeners pour les Modales et Interactions Mobiles ---
+    // --- Listeners Modales et Mobile ---
     if (notesCloseBtn) notesCloseBtn.addEventListener('click', closeNotesModal);
     if (notesBackdrop) notesBackdrop.addEventListener('click', closeNotesModal);
-
     if (playerDetailCloseBtn) playerDetailCloseBtn.addEventListener('click', closePlayerDetailModal);
     if (playerDetailBackdrop) playerDetailBackdrop.addEventListener('click', closePlayerDetailModal);
+
     const playerTableBody = document.querySelector('#leaderboard-table tbody');
     if (playerTableBody) {
         playerTableBody.addEventListener('click', (e) => {
@@ -406,7 +407,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (dqHelpCloseBtn) dqHelpCloseBtn.addEventListener('click', closeDqHelpModal);
     if (dqHelpBackdrop) dqHelpBackdrop.addEventListener('click', closeDqHelpModal);
 
-    // Filtre mobile pour les équipes
+    // Filtre mobile équipes
     const teamMobileFilter = document.getElementById('team-guild-filter-mobile');
     const allTeamRows = document.querySelectorAll('#teams-leaderboard-table tbody tr.team-data-row');
 
@@ -417,17 +418,10 @@ document.addEventListener('DOMContentLoaded', function() {
         allTeamRows.forEach(row => {
             const memberCount = parseInt(row.dataset.memberCountVal || 0, 10);
             const guildName = row.dataset.guildName;
-
-            const isVisible = (selectedValue === 'All') ||
-                (selectedValue === 'Incomplete' && memberCount < 4) ||
-                (guildName === selectedValue);
-
+            const isVisible = (selectedValue === 'All') || (selectedValue === 'Incomplete' && memberCount < 4) || (guildName === selectedValue);
             row.style.display = isVisible ? '' : 'none';
             const membersRow = row.nextElementSibling;
-            if (membersRow && membersRow.classList.contains('team-members-row')) {
-                membersRow.style.display = 'none';
-            }
-
+            if (membersRow && membersRow.classList.contains('team-members-row')) membersRow.style.display = 'none';
             if (isVisible) {
                 const rankCell = row.querySelector('.rank-col');
                 if (rankCell) rankCell.textContent = visibleRank;
@@ -440,48 +434,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (teamMobileFilter) {
         teamMobileFilter.addEventListener('change', applyTeamMobileFilter);
-        if (window.innerWidth <= 768) {
-            applyTeamMobileFilter();
-        }
+        if (window.innerWidth <= 768) applyTeamMobileFilter();
     }
 
     window.addEventListener('resize', () => {
-        if (window.innerWidth <= 768 && teamMobileFilter) {
-            applyTeamMobileFilter();
-        } else if (window.innerWidth > 768) {
+        if (window.innerWidth <= 768 && teamMobileFilter) applyTeamMobileFilter();
+        else if (window.innerWidth > 768) {
             allTeamRows.forEach(row => {
                 row.style.display = '';
                 const rankCell = row.querySelector('.rank-col');
-                if (rankCell && row.dataset.originalRank) {
-                    rankCell.textContent = row.dataset.originalRank;
-                }
+                if (rankCell && row.dataset.originalRank) rankCell.textContent = row.dataset.originalRank;
                 row.classList.remove('rank-1', 'rank-2', 'rank-3');
                 const originalRank = parseInt(row.dataset.originalRank || '999', 10);
                 if (originalRank <= 3) row.classList.add(`rank-${originalRank}`);
             });
-            document.querySelectorAll('#teams-leaderboard-table tbody tr.team-members-row').forEach(row => {
-                row.style.display = 'none';
-            });
+            document.querySelectorAll('#teams-leaderboard-table tbody tr.team-members-row').forEach(row => row.style.display = 'none');
         }
     });
 
     const ptDataEl = document.getElementById('pt-data');
-    const ccDataEl = document.getElementById('cc-data'); // NOUVEAU
+    const ccDataEl = document.getElementById('cc-data');
     let ptList = [];
-    let currentCC = 0; // Valeur par défaut
-
+    let currentCC = 0;
     try {
         ptList = ptDataEl ? JSON.parse(ptDataEl.textContent || '[]') : [];
-        // Lecture du CC actuel
-        if (ccDataEl && ccDataEl.textContent) {
-            currentCC = parseInt(ccDataEl.textContent, 10) || 0;
-        }
-    } catch (e) {
-        console.error("Error parsing initial data (PT or CC):", e);
-    }
+        if (ccDataEl && ccDataEl.textContent) currentCC = parseInt(ccDataEl.textContent, 10) || 0;
+    } catch (e) { console.error("Error parsing initial data:", e); }
 
-    console.log("Initializing Team Planner with CC level:", currentCC);
-    initTeamPlanner(ptList, currentCC); // Passer le vrai CC
-
+    console.log("Initializing Team Planner with CC:", currentCC);
+    initTeamPlanner(ptList, currentCC);
     console.log("Main.js initialization complete.");
 });

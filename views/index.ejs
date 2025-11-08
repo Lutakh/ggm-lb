@@ -39,6 +39,8 @@
 <main>
     <%- include('partials/top-bar') %>
 
+    <%# --- PROMO CARD SUPPRIMÉE ICI --- %>
+
     <div id="add-update-section" class="main-section card">
         <h2>Add / Update a Character</h2>
         <form id="player-form" action="/add-player" method="POST">
@@ -107,6 +109,17 @@
     <div id="player-select-list" class="player-select-list"></div>
 </div>
 
+<div id="guild-select-modal-backdrop" class="player-select-modal-backdrop"></div>
+<div id="guild-select-modal" class="player-select-modal">
+    <div class="player-select-modal-header"><h3>Select or Create Guild</h3><button type="button" id="guild-select-close-btn" class="player-select-close-btn">&times;</button></div>
+     <div class="player-select-controls">
+        <input type="text" id="guild-filter-input" placeholder="Filter or type new name..." autocomplete="off">
+        <%# --- AJOUT DU BOUTON CREATE GUILD --- %>
+        <button type="button" id="create-new-guild-btn" class="action-btn-main">Create New</button>
+    </div>
+    <div id="guild-select-list" class="player-select-list"></div>
+</div>
+
 <%- include('partials/admin-modal') %>
 
 <div id="notes-modal-backdrop" class="player-select-modal-backdrop"></div>
@@ -173,6 +186,7 @@
 
 <script id="players-data" type="application/json"><%- JSON.stringify(players.map(p => ({id: p.id, name: p.name, class: p.class}))) %></script>
 <script id="player-selector-data" type="application/json"><%- JSON.stringify(playerListForSelectors) %></script>
+<script id="guilds-data" type="application/json"><%- JSON.stringify(rankedGuilds) %></script>
 <script id="pt-data" type="application/json"><%- JSON.stringify(perilousTrials) %></script>
 <script id="cc-data" type="application/json"><%= currentCC %></script>
 
