@@ -1,3 +1,4 @@
+[original_file_id: "uploaded:lutakh/ggm-lb/ggm-lb-gemini/public/js/main.js"]
 // public/js/main.js
 import { initNavigation } from './modules/navigation.js';
 import { initPlayerForm } from './modules/playerForm.js';
@@ -30,7 +31,7 @@ window.showFullNote = function(playerName, note) {
     if (notesBackdrop) notesBackdrop.style.display = 'block';
 }
 
-// --- MODALE DE DÉTAIL DU JOUEUR (MOBILE) ---
+// --- MODALE DE DÉTAIL DU JOUEUR ---
 const playerDetailModal = document.getElementById('player-detail-modal');
 const playerDetailBackdrop = document.getElementById('player-detail-modal-backdrop');
 const playerDetailTitle = document.getElementById('player-detail-modal-title');
@@ -104,7 +105,7 @@ function closePlayerDetailModal() {
     if (playerDetailBackdrop) playerDetailBackdrop.style.display = 'none';
 }
 
-// --- MODALE DE DÉTAIL D'ÉQUIPE (MOBILE) ---
+// --- MODALE DE DÉTAIL D'ÉQUIPE ---
 const teamDetailModal = document.getElementById('team-detail-modal');
 const teamDetailBackdrop = document.getElementById('team-detail-modal-backdrop');
 const teamDetailTitle = document.getElementById('team-detail-modal-title');
@@ -186,7 +187,7 @@ function closeTeamDetailModal() {
     if (teamDetailBackdrop) teamDetailBackdrop.style.display = 'none';
 }
 
-// --- MODALE DE DÉTAIL DE GUILDE (MOBILE) ---
+// --- MODALE DE DÉTAIL DE GUILDE ---
 const guildDetailModal = document.getElementById('guild-detail-modal');
 const guildDetailBackdrop = document.getElementById('guild-detail-modal-backdrop');
 const guildDetailTitle = document.getElementById('guild-detail-modal-title');
@@ -232,7 +233,7 @@ function closeGuildDetailModal() {
     if (guildDetailBackdrop) guildDetailBackdrop.style.display = 'none';
 }
 
-// --- MODALE DE FILTRES JOUEURS (MOBILE) ---
+// --- MODALE DE FILTRES JOUEURS ---
 const filtersModal = document.getElementById('filters-modal');
 const filtersBackdrop = document.getElementById('filters-modal-backdrop');
 const openFiltersBtn = document.getElementById('open-filters-btn');
@@ -385,7 +386,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const playerTableBody = document.querySelector('#leaderboard-table tbody');
     if (playerTableBody) {
         playerTableBody.addEventListener('click', (e) => {
-            if (window.innerWidth > 768) return;
+            // MODIFICATION: Suppression de la condition de largeur d'écran pour activer sur PC aussi
+            // if (window.innerWidth > 768) return;
+
             const playerRow = e.target.closest('tr');
             // Ignorer les clics sur les notes, les actions admin, ou tout bouton/lien
             if (!playerRow || e.target.closest('.notes-col') || e.target.closest('.admin-actions') || e.target.closest('a') || e.target.closest('button')) return;
