@@ -1,11 +1,11 @@
 <div class="view-tabs"><h2>Players Leaderboard</h2></div>
 
 <div class="leaderboard-legend">
-    <div class="legend-item"><span class="class-tag class-swordbearer"></span> Sword</div>
-    <div class="legend-item"><span class="class-tag class-acolyte"></span> Aco</div>
-    <div class="legend-item"><span class="class-tag class-wayfarer"></span> Way</div>
-    <div class="legend-item"><span class="class-tag class-scholar"></span> Scho</div>
-    <div class="legend-item"><span class="class-tag class-shadowlash"></span> Shadow</div>
+    <div class="legend-item"><span class="class-tag class-swordbearer"></span> <span class="legend-full">Swordbearer</span><span class="legend-short">Swd</span></div>
+    <div class="legend-item"><span class="class-tag class-acolyte"></span> <span class="legend-full">Acolyte</span><span class="legend-short">Aco</span></div>
+    <div class="legend-item"><span class="class-tag class-wayfarer"></span> <span class="legend-full">Wayfarer</span><span class="legend-short">Way</span></div>
+    <div class="legend-item"><span class="class-tag class-scholar"></span> <span class="legend-full">Scholar</span><span class="legend-short">Sch</span></div>
+    <div class="legend-item"><span class="class-tag class-shadowlash"></span> <span class="legend-full">Shadowlash</span><span class="legend-short">Sha</span></div>
 </div>
 
 <button id="open-filters-btn" class="action-btn-main">Filters</button>
@@ -14,21 +14,7 @@
     <thead>
         <tr>
             <th class="rank-col">Rank</th>
-            <th class="player-header-cell">
-                <div class="header-content">
-                    <button id="class-filter-btn" class="header-filter-btn dropdown-btn" title="Filter by class">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>
-                        <span>Player</span>
-                    </button>
-                </div>
-                <div id="class-filter-panel" class="dropdown-panel">
-                    <label><input type="checkbox" data-class="Swordbearer"> Swordbearer</label>
-                    <label><input type="checkbox" data-class="Acolyte"> Acolyte</label>
-                    <label><input type="checkbox" data-class="Wayfarer"> Wayfarer</label>
-                    <label><input type="checkbox" data-class="Scholar"> Scholar</label>
-                    <label><input type="checkbox" data-class="Shadowlash"> Shadowlash</label>
-                </div>
-            </th>
+            <th>Player</th>
             <th>CP</th>
             <th>Play Hours <span id="table-timezone-note" class="timezone-header-note"></span></th>
             <th>Guild</th>
@@ -43,7 +29,7 @@
                 data-rank="<%= index + 1 %>"
                 data-name="<%= player.name %>"
                 data-cp="<%= player.combat_power %>"
-                data-cp-updated="<%= player.cp_last_updated || '' %>" <%# AJOUT ICI %>
+                data-cp-updated="<%= player.cp_last_updated || '' %>"
                 data-class="<%= player.class %>"
                 data-team="<%= player.team || 'No Team' %>"
                 data-guild="<%= player.guild || '' %>"
@@ -72,7 +58,7 @@
                     </div>
                 </td>
                 <td><%= player.guild || '-' %></td>
-                <td class="notes-col" onclick="showFullNote('<%= player.name %>', `<%= player.notes ? player.notes.replace(/[`"']/g, '\\$&') : '' %>`)">
+                <td class="notes-col" onclick="showFullFullNote('<%= player.name %>', `<%= player.notes ? player.notes.replace(/[`"']/g, '\\$&') : '' %>`)">
                     <%= player.notes || '-' %>
                 </td>
                 <td class="last-modified-col" data-timestamp="<%= player.updated_at %>"></td>

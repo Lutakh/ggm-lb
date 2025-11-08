@@ -39,15 +39,13 @@
 <main>
     <%- include('partials/top-bar') %>
 
-    <%# --- PROMO CARD SUPPRIMÉE ICI --- %>
-
     <div id="add-update-section" class="main-section card">
         <h2>Add / Update a Character</h2>
         <form id="player-form" action="/add-player" method="POST">
             <div id="player-image-container"></div>
             <div class="form-step-1">
-                <div id="player-selection-ui">
-                     <div id="player-name-display">No player selected</div>
+                 <div id="player-selection-ui">
+                      <div id="player-name-display">No player selected</div>
                     <input type="hidden" name="name" id="name-input-hidden">
                 </div>
                 <button type="button" id="open-player-select-btn" class="action-btn-main">Select Player</button>
@@ -98,7 +96,6 @@
     </div>
 </main>
 
-<%# --- MODALS --- %>
 <div id="player-select-modal-backdrop" class="player-select-modal-backdrop"></div>
 <div id="player-select-modal" class="player-select-modal">
     <div class="player-select-modal-header"><h3>Select or Create a Player</h3><button type="button" class="player-select-close-btn">&times;</button></div>
@@ -114,7 +111,6 @@
     <div class="player-select-modal-header"><h3>Select or Create Guild</h3><button type="button" id="guild-select-close-btn" class="player-select-close-btn">&times;</button></div>
      <div class="player-select-controls">
         <input type="text" id="guild-filter-input" placeholder="Filter or type new name..." autocomplete="off">
-        <%# --- AJOUT DU BOUTON CREATE GUILD --- %>
         <button type="button" id="create-new-guild-btn" class="action-btn-main">Create New</button>
     </div>
     <div id="guild-select-list" class="player-select-list"></div>
@@ -156,31 +152,121 @@
 <div id="filters-modal" class="player-select-modal">
   <div class="player-select-modal-header"><h3>Player Filters</h3><button type="button" id="filters-modal-close-btn" class="player-select-close-btn">&times;</button></div>
     <div class="filters-modal-body">
-        <div class="filter-group-modal filters-modal-class-filter"></div>
-        <div class="filter-group-modal"></div>
-        <div class="filter-group-modal"></div>
-        <div class="filter-group-modal"></div>
-        <div class="filter-group-modal"></div>
+        <div class="filter-group-modal">
+            <h4>Classes</h4>
+            <div class="filters-modal-panel-grid two-cols" id="modal-class-filter-panel">
+                 <label><input type="checkbox" data-class="Swordbearer"> Swordbearer</label>
+                 <label><input type="checkbox" data-class="Acolyte"> Acolyte</label>
+                 <label><input type="checkbox" data-class="Wayfarer"> Wayfarer</label>
+                  <label><input type="checkbox" data-class="Scholar"> Scholar</label>
+                 <label><input type="checkbox" data-class="Shadowlash"> Shadowlash</label>
+            </div>
+        </div>
+        <div class="filter-group-modal">
+            <h4>Guilds</h4>
+             <div class="filter-modal-dropdown" data-filter-type="guild">
+                <button class="filter-modal-dropdown-btn" data-default-text="Select Guilds">Select Guilds</button>
+                <div class="filter-modal-dropdown-panel" id="modal-guild-filter-panel">
+                    <% guilds.sort().forEach(guildName => { %>
+                        <label><input type="checkbox" data-guild="<%= guildName %>"> <%= guildName %></label>
+                    <% }); %>
+                </div>
+            </div>
+        </div>
+        <div class="filter-group-modal">
+             <h4>Combat Power</h4>
+             <div class="filters-modal-panel-grid two-cols">
+                 <label>Min: <input type="text" id="filters-modal-cp-min" placeholder="e.g. 500k"></label>
+                  <label>Max: <input type="text" id="filters-modal-cp-max" placeholder="e.g. 1.5M"></label>
+             </div>
+        </div>
+        <div class="filter-group-modal">
+             <h4>Perilous Trial Tag</h4>
+             <div class="filters-modal-panel-grid two-cols">
+                 <select id="filters-modal-pt-tag-mode">
+                      <option value="has">Has Tag</option>
+                     <option value="missing">Missing Tag</option>
+                 </select>
+                 <select id="filters-modal-pt-tag-filter">
+                     <option value="">-- Any --</option>
+                     <% perilousTrials.forEach(pt => { %>
+                         <option value="<%= pt.name %>"><%= pt.name %></option>
+                     <% }); %>
+                 </select>
+             </div>
+        </div>
     </div>
 </div>
 
 <div id="pt-help-modal-backdrop" class="player-select-modal-backdrop"></div>
 <div id="pt-help-modal" class="player-select-modal">
     <div class="player-select-modal-header"><h3>Perilous Trial - Help</h3><button type="button" id="pt-help-close-btn" class="player-select-close-btn">&times;</button></div>
-    <div id="pt-help-modal-body"></div>
+    <div id="pt-help-modal-body">
+        <strong>Perilous Trials (PT) Leaderboards</strong>
+        <p>View top performing teams for each specific Trial, or check the Global Ranking.</p>
+        <ul>
+            <li><strong>Individual PT Ranking:</strong> Shows the best teams for a selected trial.</li>
+            <li><strong>Global Ranking:</strong> Aggregates scores from all PTs to rank players overall.</li>
+        </ul>
+        <strong>Global Ranking Modes:</strong>
+        <ul>
+            <li><strong>Best Rank/PT:</strong> Calculates points based on your <em>single best rank</em> achieved for each PT, regardless of how many teams you are in.</li>
+            <li><strong>All Ranks:</strong> Sums up points from <em>all</em> your ranked teams across all PTs. Being in multiple top teams yields more points here.</li>
+        </ul>
+        <p><em>Tip: Use filters to see rankings for specific classes in the Global view.</em></p>
+    </div>
 </div>
 
 <div id="pt-filters-modal-backdrop" class="player-select-modal-backdrop"></div>
 <div id="pt-filters-modal" class="player-select-modal">
-    <div class="player-select-modal-header"><h3>PT Filters</h3><button type="button" id="pt-filters-modal-close-btn" class="player-select-close-btn">&times;</button></div>
-    <div class="filters-modal-body"></div>
+    <div class="player-select-modal-header"><h3>PT Global Filters</h3><button type="button" id="pt-filters-modal-close-btn" class="player-select-close-btn">&times;</button></div>
+    <div class="filters-modal-body">
+         <div class="filter-group-modal">
+            <h4>Classes</h4>
+            <div class="filters-modal-panel-grid two-cols" id="pt-modal-class-filter-panel">
+                 <label><input type="checkbox" data-class="Swordbearer"> Swordbearer</label>
+                 <label><input type="checkbox" data-class="Acolyte"> Acolyte</label>
+                 <label><input type="checkbox" data-class="Wayfarer"> Wayfarer</label>
+                  <label><input type="checkbox" data-class="Scholar"> Scholar</label>
+                 <label><input type="checkbox" data-class="Shadowlash"> Shadowlash</label>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div id="dq-help-modal-backdrop" class="player-select-modal-backdrop"></div>
 <div id="dq-help-modal" class="player-select-modal">
     <div class="player-select-modal-header"><h3>Daily Quests & Stamina - Help</h3><button type="button" id="dq-help-close-btn" class="player-select-close-btn">&times;</button></div>
     <div id="dq-help-modal-body">
-        <strong>Daily Quests</strong><p>...</p><strong>Stamina</strong><ul>...</ul><strong>"Next in" Timer</strong><ul>...</ul><strong>Discord Notifications</strong><ol>...</ol><strong>How to find your Discord User ID:</strong><ol>...</ol>
+        <strong>Daily Quests</strong><p>Select up to 3 players to track. Check boxes to mark quests as complete for the day. Resets daily at 9:00 UTC.</p>
+        <strong>Stamina</strong><ul><li>Max stamina is 60. Regens 1 point every 24 minutes.</li><li>Enter current stamina to start the timer.</li></ul>
+        <strong>"Next in" Timer</strong><ul><li>Shows time until the next stamina point.</li><li>"Full in" shows time until 60/60.</li></ul>
+        <strong>Discord Notifications</strong><ol><li>Enter your Discord User ID in the "Add / Update" form.</li><li>The bot will DM you when stamina reaches 40 and 60.</li><li>You must share a server with the bot or have DMs open.</li></ol>
+        <strong>How to find your Discord User ID:</strong><ol><li>Enable Developer Mode in Discord (Settings > Advanced).</li><li>Right-click your profile and select "Copy User ID".</li></ol>
+    </div>
+</div>
+
+<div id="tp-help-modal-backdrop" class="player-select-modal-backdrop"></div>
+<div id="tp-help-modal" class="player-select-modal">
+    <div class="player-select-modal-header"><h3>Team Planner - Help</h3><button type="button" id="tp-help-close-btn" class="player-select-close-btn">&times;</button></div>
+    <div id="tp-help-modal-body" style="padding: 20px 25px; line-height: 1.6;">
+        <strong>📅 Organizing Activities</strong>
+        <p>Plan your team runs (PTs, Dragon Hunt, etc.) easily. Click <em>+ New Activity</em> to start.</p>
+
+        <strong>🌍 Automatic Timezone Conversion</strong>
+        <p style="color: var(--primary-color); font-weight: bold;">IMPORTANT: All times are automatically converted to YOUR local time.</p>
+        <ul>
+            <li>When creating an activity, enter the date and time <strong>in your local time</strong>.</li>
+            <li>Other players will see the activity listed in <strong>their own local time</strong> automatically.</li>
+            <li>No need to calculate time differences!</li>
+        </ul>
+
+        <strong>👥 Joining & Managing</strong>
+        <ul>
+            <li>Click <strong>Join</strong> to sign up for an activity.</li>
+            <li>Organizers can add other players manually using the <strong>+</strong> button on empty slots.</li>
+            <li>Use the checkbox to filter and see only upcoming activities with open spots.</li>
+        </ul>
     </div>
 </div>
 

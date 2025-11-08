@@ -8,7 +8,6 @@ import { initPlayerSelectModal } from './modules/playerSelectModal.js';
 import { updateTimers, formatCP, formatRelativeTimeShort, minutesToFormattedTime } from './modules/utils.js';
 import { initDiscordWidget } from './modules/discordWidget.js';
 import { initTeamPlanner } from './modules/teamPlanner.js';
-// --- AJOUT : Import Guild Modal ---
 import { initGuildSelectModal } from './modules/guildSelectModal.js';
 
 // --- MODALE DES NOTES ---
@@ -31,7 +30,7 @@ window.showFullNote = function(playerName, note) {
     if (notesBackdrop) notesBackdrop.style.display = 'block';
 }
 
-// --- MODALE DE DÉTAIL DU JOUEUR (MOBILE) ---
+// --- MODALE DE DÉTAIL DU JOUEUR ---
 const playerDetailModal = document.getElementById('player-detail-modal');
 const playerDetailBackdrop = document.getElementById('player-detail-modal-backdrop');
 const playerDetailTitle = document.getElementById('player-detail-modal-title');
@@ -233,7 +232,7 @@ function closeGuildDetailModal() {
     if (guildDetailBackdrop) guildDetailBackdrop.style.display = 'none';
 }
 
-// --- MODALE DE FILTRES JOUEURS (MOBILE) ---
+// --- MODALE DE FILTRES JOUEURS ---
 const filtersModal = document.getElementById('filters-modal');
 const filtersBackdrop = document.getElementById('filters-modal-backdrop');
 const openFiltersBtn = document.getElementById('open-filters-btn');
@@ -248,21 +247,26 @@ function closeFiltersModal() {
     if (filtersBackdrop) filtersBackdrop.style.display = 'none';
 }
 
-// --- MODALE D'AIDE DAILY QUESTS ---
+// --- MODALES D'AIDE (DQ, PT, TP) ---
 const dqHelpModal = document.getElementById('dq-help-modal');
 const dqHelpBackdrop = document.getElementById('dq-help-modal-backdrop');
 const dqHelpBtn = document.getElementById('dq-help-btn');
 const dqHelpCloseBtn = document.getElementById('dq-help-close-btn');
 
-function openDqHelpModal() {
-    if (dqHelpModal) dqHelpModal.style.display = 'flex';
-    if (dqHelpBackdrop) dqHelpBackdrop.style.display = 'block';
+const tpHelpModal = document.getElementById('tp-help-modal');
+const tpHelpBackdrop = document.getElementById('tp-help-modal-backdrop');
+const tpHelpBtn = document.getElementById('tp-help-btn');
+const tpHelpCloseBtn = document.getElementById('tp-help-close-btn');
+
+function openHelpModal(modal, backdrop) {
+    if (modal) modal.style.display = 'flex';
+    if (backdrop) backdrop.style.display = 'block';
+}
+function closeHelpModal(modal, backdrop) {
+    if (modal) modal.style.display = 'none';
+    if (backdrop) backdrop.style.display = 'none';
 }
 
-function closeDqHelpModal() {
-    if (dqHelpModal) dqHelpModal.style.display = 'none';
-    if (dqHelpBackdrop) dqHelpBackdrop.style.display = 'none';
-}
 
 // --- DOMContentLoaded ---
 document.addEventListener('DOMContentLoaded', function() {
@@ -270,10 +274,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Initialisation des Données ---
     const playersDataEl = document.getElementById('players-data');
     const playersSelectorDataEl = document.getElementById('player-selector-data');
-    const guildsDataEl = document.getElementById('guilds-data'); // NOUVEAU
+    const guildsDataEl = document.getElementById('guilds-data');
 
     let playersForModal = [];
-    let guildsForModal = []; // NOUVEAU
+    let guildsForModal = [];
 
     if (playersDataEl) {
         try {
@@ -288,7 +292,6 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error("Player data script tag not found!");
     }
 
-    // Récupération des données de guilde
     if (guildsDataEl) {
         try {
             guildsForModal = JSON.parse(guildsDataEl.textContent || '[]');
@@ -309,7 +312,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         name: playerName,
                         class: row.dataset.class,
                         combat_power: row.dataset.cp,
-                        cp_last_updated: row.dataset.cpUpdated, // Lecture du timestamp CP
+                        cp_last_updated: row.dataset.cpUpdated,
                         team: row.dataset.team || 'No Team',
                         guild: row.dataset.guild || null,
                         notes: row.dataset.notes === '-' ? '' : row.dataset.notes,
@@ -333,7 +336,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Initialisation des Modules ---
     initNavigation();
     initPlayerSelectModal(playersForModal);
-    initGuildSelectModal(guildsForModal); // AJOUT : Init de la modale de guilde
+    initGuildSelectModal(guildsForModal);
     initPlayerForm();
     initLeaderboardFilters();
     initPerilousTrials(showPlayerDetails, allPlayersMap);
@@ -356,8 +359,29 @@ document.addEventListener('DOMContentLoaded', function() {
         cell.textContent = (!isNaN(start) && !isNaN(end)) ? `${minutesToFormattedTime(start)} - ${minutesToFormattedTime(end)}` : '-';
     });
 
+    // --- Gestion des tooltips des timers sur Mobile (clic pour toggle) ---
+    if (window.innerWidth <= 768) {
+        document.querySelectorAll('.timer-entry').forEach(entry => {
+            entry.addEventListener('click', (e) => {
+                // Si l'entrée a un tooltip, on bascule la classe active
+                if (entry.querySelector('.timer-tooltip')) {
+                    e.stopPropagation(); // Empêche la fermeture immédiate par le listener global
+                    // Fermer les autres tooltips ouverts
+                    document.querySelectorAll('.timer-entry.active').forEach(other => {
+                        if (other !== entry) other.classList.remove('active');
+                    });
+                    entry.classList.toggle('active');
+                }
+            });
+        });
 
-    // --- Listeners Modales et Mobile ---
+        // Fermer les tooltips si on clique n'importe où ailleurs sur la page
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.timer-entry.active').forEach(el => el.classList.remove('active'));
+        });
+    }
+
+    // --- Listeners Modales et Clics Tableau ---
     if (notesCloseBtn) notesCloseBtn.addEventListener('click', closeNotesModal);
     if (notesBackdrop) notesBackdrop.addEventListener('click', closeNotesModal);
     if (playerDetailCloseBtn) playerDetailCloseBtn.addEventListener('click', closePlayerDetailModal);
@@ -366,11 +390,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const playerTableBody = document.querySelector('#leaderboard-table tbody');
     if (playerTableBody) {
         playerTableBody.addEventListener('click', (e) => {
-            if (window.innerWidth > 768) return;
             const playerRow = e.target.closest('tr');
-            if (!playerRow || e.target.closest('.notes-col') || e.target.closest('.admin-actions')) return;
+            // Ignorer les clics sur les notes, les actions admin, ou tout bouton/lien
+            if (!playerRow || e.target.closest('.notes-col') || e.target.closest('.admin-actions') || e.target.closest('a') || e.target.closest('button')) return;
+
             e.preventDefault();
-            showPlayerDetails(playerRow);
+            const playerName = playerRow.dataset.name;
+            // Utiliser allPlayersMap pour avoir les données les plus complètes
+            if (playerName && allPlayersMap.has(playerName)) {
+                const fullData = allPlayersMap.get(playerName);
+                // Fusionner les données du row et de la map pour être sûr d'avoir le rang et autres infos d'affichage
+                const mergedDataRow = {
+                    dataset: {
+                        ...playerRow.dataset,
+                        ...fullData,
+                        // Assurer que playSlots est une chaîne JSON pour showPlayerDetails
+                        playSlots: typeof fullData.play_slots === 'string' ? fullData.play_slots : JSON.stringify(fullData.play_slots || [])
+                    }
+                };
+                showPlayerDetails(mergedDataRow);
+            }
         });
     }
 
@@ -403,9 +442,14 @@ document.addEventListener('DOMContentLoaded', function() {
             showGuildDetails(guildRow);
         });
     }
-    if (dqHelpBtn) dqHelpBtn.addEventListener('click', openDqHelpModal);
-    if (dqHelpCloseBtn) dqHelpCloseBtn.addEventListener('click', closeDqHelpModal);
-    if (dqHelpBackdrop) dqHelpBackdrop.addEventListener('click', closeDqHelpModal);
+    if (dqHelpBtn) dqHelpBtn.addEventListener('click', () => openHelpModal(dqHelpModal, dqHelpBackdrop));
+    if (dqHelpCloseBtn) dqHelpCloseBtn.addEventListener('click', () => closeHelpModal(dqHelpModal, dqHelpBackdrop));
+    if (dqHelpBackdrop) dqHelpBackdrop.addEventListener('click', () => closeHelpModal(dqHelpModal, dqHelpBackdrop));
+
+    // Listeners pour la nouvelle modale Team Planner Help
+    if (tpHelpBtn) tpHelpBtn.addEventListener('click', () => openHelpModal(tpHelpModal, tpHelpBackdrop));
+    if (tpHelpCloseBtn) tpHelpCloseBtn.addEventListener('click', () => closeHelpModal(tpHelpModal, tpHelpBackdrop));
+    if (tpHelpBackdrop) tpHelpBackdrop.addEventListener('click', () => closeHelpModal(tpHelpModal, tpHelpBackdrop));
 
     // Filtre mobile équipes
     const teamMobileFilter = document.getElementById('team-guild-filter-mobile');

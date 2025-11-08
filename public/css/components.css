@@ -94,9 +94,16 @@
     z-index: 100;
     width: 280px;
     border: 1px solid var(--border-color);
-    pointer-events: none;
+    /* pointer-events: none; Retiré pour permettre l'interaction si nécessaire sur mobile */
 }
-.timer-entry:hover .timer-tooltip { display: block; }
+
+/* Affichage au survol uniquement sur Desktop */
+@media (min-width: 769px) {
+    .timer-entry:hover .timer-tooltip { display: block; }
+}
+/* Affichage au clic (classe .active) pour Mobile (et Desktop si cliqué) */
+.timer-entry.active .timer-tooltip { display: block; }
+
 .tooltip-title {
     font-weight: bold;
     color: var(--primary-color);

@@ -11,216 +11,361 @@
     }
     .card { padding: 15px; }
 
-    /* MODIFIÉ: Mise en page mobile du Header (Refonte) */
+    /* --- Header Mobile Refondu --- */
     header {
-        padding-left: 0; /* Annule le décalage desktop si appliqué */
+        padding-left: 0; /* Annule le décalage desktop */
         display: flex;
-        flex-wrap: nowrap; /* MODIFIÉ: Forcer une seule ligne */
-        justify-content: space-between; /* MODIFIÉ: Espacer les 3 éléments */
+        flex-wrap: nowrap; /* Forcer une seule ligne */
+        justify-content: space-between; /* Espacer les éléments */
         align-items: center;
-        gap: 10px; /* Espace entre les éléments */
+        gap: 10px;
     }
     header h1 {
-        font-size: 1.2em; /* MODIFIÉ: Taille réduite */
-        gap: 5px; /* MODIFIÉ: Espace réduit */
-        order: 2; /* Mettre le titre au milieu */
-        flex-basis: auto; /* MODIFIÉ: Taille auto */
-        flex-grow: 0; /* MODIFIÉ: Ne pas grandir */
-        flex-shrink: 1; /* MODIFIÉ: Peut rétrécir */
+        font-size: 1.2em;
+        gap: 5px;
+        order: 2; /* Titre au milieu */
+        flex-basis: auto;
+        flex-grow: 0;
+        flex-shrink: 1;
         text-align: center;
         margin: 0;
-        white-space: nowrap; /* Empêche le titre de passer à la ligne */
+        white-space: nowrap;
     }
-    /* MODIFIÉ: Styles pour les éléments latéraux DANS le header */
     header .discord-section {
-        order: 1; /* Mettre Discord à gauche */
-        flex-grow: 0; /* MODIFIÉ: Ne pas grandir */
+        order: 1; /* Discord à gauche */
+        flex-grow: 0;
         justify-content: flex-start;
-        /* NOUVEAU: Aligner l'icône et le compteur */
         display: flex;
         align-items: center;
     }
     header .guides-section {
-        order: 3; /* Mettre Guides à droite */
-        flex-grow: 0; /* MODIFIÉ: Ne pas grandir */
+        order: 3; /* Guides à droite */
+        flex-grow: 0;
         justify-content: flex-end;
     }
-    /* MODIFIÉ: Ajuster la taille des icônes/texte dans le header mobile */
     header .top-bar-section {
-        gap: 5px; /* MODIFIÉ: Espace entre icône et compteur */
+        gap: 5px;
     }
     header .top-bar-section svg {
-        width: 24px; /* MODIFIÉ: Icônes plus petites */
+        width: 24px;
         height: 24px;
     }
-
-    /* MODIFIÉ: Cacher "Join Discord" et "Guides", mais afficher le compteur */
-    header .discord-info span, /* Cache "Join Discord" */
-    header .guides-section span { /* Cache "Guides" */
-        display: none;
+    header .discord-info span,
+    header .guides-section span {
+        display: none; /* Cacher les textes longs */
     }
-
-    /* NOUVEAU: Style pour le compteur de stats sur mobile */
     header .discord-stats {
         font-size: 0.85em;
         opacity: 1;
-        gap: 4px; /* Espace entre point et nombre */
+        gap: 4px;
         font-weight: bold;
         color: var(--text-color);
-        /* S'assurer que le flex est là (normalement hérité) */
         display: flex;
         align-items: center;
-        /* Empêcher le retour à la ligne du compteur */
         white-space: nowrap;
     }
-    /* NOUVEAU: S'assurer que le point de statut est de la bonne taille */
     header #discord-online-count .status-dot {
         width: 7px;
         height: 7px;
         margin-right: 3px;
     }
 
-
-    /* NOUVEAU: Cacher le logo et le titre long sur mobile */
+    /* Visibilité des éléments de titre/logo */
     .logo-desktop { display: none; }
     .title-full-text { display: none; }
     .title-mobile-short {
         display: block;
-        font-size: 1.15em; /* Ajustement taille titre mobile */
+        font-size: 1.15em;
         white-space: nowrap;
     }
-
-
-    /* Le bouton admin est position: fixed, pas besoin de le réorganiser */
-    #admin-settings-btn { width: 40px; height: 40px; top: 10px; right: 10px; }
-    #admin-settings-btn svg { width: 20px; height: 20px; }
-
-
     .logo { width: 35px; height: 35px; }
 
-    /* --- NOUVEAU: Gestion Sidebar/Bouton Nav --- */
-    #desktop-sidebar {
-        display: none; /* Cacher la sidebar sur mobile */
+    /* Boutons fixes */
+    #admin-settings-btn {
+        width: 40px;
+        height: 40px;
+        top: 10px;
+        right: 10px;
     }
+    #admin-settings-btn svg { width: 20px; height: 20px; }
+
+    /* --- Navigation Mobile --- */
+    #desktop-sidebar { display: none; }
     #home-nav-btn {
-        display: flex; /* Afficher le bouton flottant sur mobile */
-        top: 10px; /* Positionnement ajusté */
-        left: 10px; /* Positionnement ajusté */
+        display: flex;
+        top: 10px;
+        left: 10px;
         width: 40px;
         height: 40px;
     }
     #home-nav-btn svg { width: 20px; height: 20px; }
-    /* --- Fin Nouveau --- */
 
-
-    /* Cacher la top bar si une section est active */
-    body.section-active .top-bar {
-        display: none;
+    /* --- Top Bar (Timers) --- */
+    body.section-active .top-bar { display: none; }
+    .top-bar {
+        flex-wrap: wrap;
+        padding: 10px;
+        gap: 15px;
     }
-
-    .top-bar { flex-wrap: wrap; padding: 10px; gap: 15px; }
-
-    /* MODIFIÉ: Ces règles ne s'appliquent qu'aux minuteurs dans la top-bar */
     .top-bar .top-bar-section { gap: 10px; }
     .top-bar .top-bar-section svg { width: 28px; height: 28px; }
-
-    .timers-list { flex-wrap: wrap; gap: 10px; justify-content: center; width: 100%; order: 3; }
-    .timer-entry { flex-direction: row; gap: 8px; background-color: #f9f6f1; padding: 8px 12px; border-radius: 8px; width: 100%; box-sizing: border-box; }
-    .timer-label { font-size: 0.8em; text-align: left; flex-grow: 1; opacity: 0.8; }
-    .timer-value { font-size: 0.85em; }
-    .timers-section {
-        flex-basis: 100%;
-        width: 100%; /* S'assurer que la section minuteur prend toute la largeur */
+    .timers-list {
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        width: 100%;
+        order: 3;
     }
+    .timer-entry {
+        flex-direction: row;
+        gap: 8px;
+        background-color: #f9f6f1;
+        padding: 8px 12px;
+        border-radius: 8px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .timer-label {
+        font-size: 0.8em;
+        text-align: left;
+        flex-grow: 1;
+        opacity: 0.8;
+    }
+    .timer-value { font-size: 0.85em; }
+    .timers-section { flex-basis: 100%; width: 100%; }
 
-    /* MODIFIÉ: SUPPRESSION de la règle qui cachait les tooltips sur mobile */
-    /* .timer-entry:hover .timer-tooltip { display: none; } */
-
-    /* --- Formulaire d'ajout (mobile) --- */
+    /* --- Formulaire d'ajout --- */
     #player-form { grid-template-columns: 1fr; }
     #player-image-container { grid-row: auto; }
     .form-step-1, #form-details { grid-column: 1 / -1; }
 
-    /* --- Filtres --- */
-    #open-filters-btn { /* Bouton filtre joueurs */
+    /* --- Filtres Généraux --- */
+    #open-filters-btn {
         display: block;
         width: 100%;
         margin-bottom: 15px;
     }
-    #teams-filters { display: none; } /* Cacher l'ancien dropdown desktop des équipes */
-    #team-guild-filter-mobile { /* Nouveau dropdown mobile équipes */
+    #teams-filters { display: none; }
+    #team-guild-filter-mobile {
         display: block;
         width: 100%;
         margin-bottom: 15px;
     }
     .filters-modal-class-filter { display: block; }
 
-
-    /* --- Players Leaderboard Table (Mobile) --- */
+    /* --- Players Leaderboard Table --- */
     #leaderboard-table thead { display: none; }
-    #leaderboard-table tbody tr { display: flex; align-items: center; width: 100%; padding: 10px 0; cursor: pointer; }
+    #leaderboard-table tbody tr {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 10px 0;
+        cursor: pointer;
+    }
     #leaderboard-table tbody tr:hover { background-color: #f9f6f1; }
-    #leaderboard-table td { display: none; border: none; padding: 5px; }
-    #leaderboard-table td:nth-child(1) { display: block; width: 40px; text-align: center; flex-shrink: 0; } /* Rank */
-    #leaderboard-table td:nth-child(2) { display: block; flex-grow: 1; width: auto; } /* Player */
-    #leaderboard-table td:nth-child(3) { display: block; width: 60px; font-size: 0.9em; text-align: right; font-weight: bold; color: var(--primary-color); flex-shrink: 0; padding: 5px 0; } /* CP */
+    #leaderboard-table td {
+        display: none;
+        border: none;
+        padding: 5px;
+    }
+    /* Rank */
+    #leaderboard-table td:nth-child(1) {
+        display: block;
+        width: 40px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+    /* Player Name */
+    #leaderboard-table td:nth-child(2) {
+        display: block;
+        flex-grow: 1;
+        width: auto;
+    }
+    /* CP (Centré) */
+    #leaderboard-table td:nth-child(3) {
+        display: block;
+        width: 70px;
+        font-size: 0.9em;
+        text-align: center;
+        font-weight: bold;
+        color: var(--primary-color);
+        flex-shrink: 0;
+        padding: 5px 0;
+    }
     .player-name-cell .class-tag { font-size: 1em; }
-    #leaderboard-table th:nth-child(7), #leaderboard-table td:nth-child(7) { display: none; } /* Updated */
-    #leaderboard-table th:nth-child(4), #leaderboard-table td:nth-child(4), /* Play Hours */
-    #leaderboard-table th:nth-child(5), #leaderboard-table td:nth-child(5), /* Guild */
-    #leaderboard-table th:nth-child(6), #leaderboard-table td:nth-child(6), /* Notes */
-    #leaderboard-table th:nth-child(8), #leaderboard-table td:nth-child(8) { display: none; } /* Actions */
 
-
-    /* --- Teams Leaderboard Table (Mobile) --- */
+    /* --- Teams Leaderboard Table --- */
     #teams-leaderboard-table thead { display: none; }
-    #teams-leaderboard-table tbody tr.team-data-row { display: flex; align-items: center; width: 100%; padding: 10px 0; cursor: pointer; }
+    #teams-leaderboard-table tbody tr.team-data-row {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 10px 0;
+        cursor: pointer;
+    }
     #teams-leaderboard-table tbody tr.team-data-row:hover { background-color: #f9f6f1; }
     #teams-leaderboard-table td { display: none; border: none; padding: 5px; }
-    #teams-leaderboard-table td:nth-child(1) { display: block; width: 40px; text-align: center; flex-shrink: 0; } /* Rank */
-    #teams-leaderboard-table td:nth-child(2) { display: block; flex-grow: 1; width: auto; font-size: 0.9em; line-height: 1.3; } /* Team + Guild */
-    #teams-leaderboard-table td:nth-child(2) .guild-name { font-size: 0.8em; opacity: 0.7; }
-    #teams-leaderboard-table td:nth-child(3) { display: block; width: 60px; font-size: 0.9em; text-align: right; font-weight: bold; color: var(--primary-color); flex-shrink: 0; padding: 5px 0; } /* CP */
-    #teams-leaderboard-table td:nth-child(4) { display: block; width: 50px; font-size: 0.9em; text-align: center; flex-shrink: 0; } /* Members */
-    #teams-leaderboard-table td:nth-child(5) { display: none; } /* Class Distrib */
+    /* Rank */
+    #teams-leaderboard-table td:nth-child(1) {
+        display: block;
+        width: 40px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+    /* Team Name */
+    #teams-leaderboard-table td:nth-child(2) {
+        display: block;
+        flex-grow: 1;
+        width: auto;
+        font-size: 0.9em;
+        line-height: 1.3;
+    }
+    #teams-leaderboard-table td:nth-child(2) .guild-name {
+        font-size: 0.8em;
+        opacity: 0.7;
+    }
+    /* Total CP */
+    #teams-leaderboard-table td:nth-child(3) {
+        display: block;
+        width: 60px;
+        font-size: 0.9em;
+        text-align: right;
+        font-weight: bold;
+        color: var(--primary-color);
+        flex-shrink: 0;
+        padding: 5px 0;
+    }
+    /* Members count */
+    #teams-leaderboard-table td:nth-child(4) {
+        display: block;
+        width: 50px;
+        font-size: 0.9em;
+        text-align: center;
+        flex-shrink: 0;
+    }
 
-
-    /* --- Guilds Leaderboard Table (Mobile) --- */
+    /* --- Guilds Leaderboard Table --- */
     .guild-leaderboard-table thead { display: none; }
-    .guild-leaderboard-table tbody tr { display: flex; align-items: center; width: 100%; padding: 10px 0; cursor: pointer; }
+    .guild-leaderboard-table tbody tr {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 10px 0;
+        cursor: pointer;
+    }
     .guild-leaderboard-table tbody tr:hover { background-color: #f9f6f1; }
     .guild-leaderboard-table td { display: none; border: none; padding: 5px; }
-    .guild-leaderboard-table td:nth-child(1) { display: block; width: 40px; text-align: center; flex-shrink: 0; } /* Rank */
-    .guild-leaderboard-table td:nth-child(2) { display: block; flex-grow: 1; width: auto; } /* Guild */
-    .guild-leaderboard-table td:nth-child(3) { display: block; width: 70px; /* Plus large pour centrer */ font-size: 0.9em; text-align: center; /* Centré */ font-weight: bold; color: var(--primary-color); flex-shrink: 0; padding: 5px 0; } /* CP */
-    .guild-leaderboard-table td:nth-child(4) { display: none; } /* Members */
-    .guild-leaderboard-table td:nth-child(5) { display: none; } /* Class Distrib */
+    /* Rank */
+    .guild-leaderboard-table td:nth-child(1) {
+        display: block;
+        width: 40px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+    /* Guild Name */
+    .guild-leaderboard-table td:nth-child(2) {
+        display: block;
+        flex-grow: 1;
+        width: auto;
+    }
+    /* Total CP */
+    .guild-leaderboard-table td:nth-child(3) {
+        display: block;
+        width: 70px;
+        font-size: 0.9em;
+        text-align: center;
+        font-weight: bold;
+        color: var(--primary-color);
+        flex-shrink: 0;
+        padding: 5px 0;
+    }
 
-    /* --- Perilous Trials (Mobile) --- */
+    /* --- Perilous Trials --- */
     #perilous-trials-section .desktop-pt-controls { display: none; }
-    #perililous-trials-section .mobile-pt-controls { display: flex; gap: 10px; margin-bottom: 15px; }
-    #perilous-trials-section .mobile-pt-controls .action-btn-main { flex-grow: 1; }
+    #perilous-trials-section .mobile-pt-controls {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    #perilous-trials-section .mobile-pt-controls #open-pt-filters-btn {
+        flex: 1 1 auto;
+        margin-bottom: 0;
+    }
+    #perilous-trials-section .mobile-pt-controls .pt-mobile-actions-right {
+        display: flex;
+        gap: 10px;
+        flex-shrink: 0;
+    }
 
-    /* Tableau Global PT (Mobile) */
+    /* PT Global Table */
     #pt-global-leaderboard-table thead { display: none; }
-    #pt-global-leaderboard-table tbody tr { display: flex; align-items: center; width: 100%; padding: 10px 0; cursor: pointer; /* Rendre cliquable */ }
+    #pt-global-leaderboard-table tbody tr {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 10px 0;
+        cursor: pointer;
+    }
     #pt-global-leaderboard-table tbody tr:hover { background-color: #f9f6f1; }
     #pt-global-leaderboard-table td { display: none; border: none; padding: 5px; }
-
-    #pt-global-leaderboard-table td:nth-child(1) { display: block; width: 40px; text-align: center; flex-shrink: 0; } /* Rank */
-    #pt-global-leaderboard-table td:nth-child(2) { display: block; flex-grow: 1; width: auto; } /* Player */
-    #pt-global-leaderboard-table td:nth-child(4) { display: block; width: 80px; font-size: 1em; text-align: right; font-weight: bold; color: var(--primary-color); flex-shrink: 0; padding: 5px 0; } /* Points */
-
-    /* Cacher CP (col 3) et l'en-tête de colonne joueur */
+    /* Rank */
+    #pt-global-leaderboard-table td:nth-child(1) {
+        display: block;
+        width: 40px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+    /* Player Name */
+    #pt-global-leaderboard-table td:nth-child(2) {
+        display: block;
+        flex-grow: 1;
+        width: auto;
+    }
+    /* Points (Centré) */
+    #pt-global-leaderboard-table td:nth-child(4) {
+        display: block;
+        width: 80px;
+        font-size: 1em;
+        text-align: center;
+        font-weight: bold;
+        color: var(--primary-color);
+        flex-shrink: 0;
+        padding: 5px 0;
+    }
+    /* Cacher la colonne CP dans le tableau global mobile */
     #pt-global-leaderboard-table .pt-global-cp-col { display: none; }
 
-
-    /* Tableau PT Individuel (Mobile) */
+    /* PT Individual Table */
     #pt-leaderboard-table thead { display: none; }
-    #pt-leaderboard-table tbody tr { display: flex; align-items: center; width: 100%; padding: 10px 0; }
-    #pt-leaderboard-table td { display: block; border: none; padding: 5px; }
-    #pt-leaderboard-table td:nth-child(1) { width: 40px; text-align: center; flex-shrink: 0; } /* Rank */
-    #pt-leaderboard-table td:nth-child(2) { flex-grow: 1; width: auto; } /* Team */
+    #pt-leaderboard-table tbody tr {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 10px 0;
+    }
+    #pt-leaderboard-table td {
+        display: block;
+        border: none;
+        padding: 5px;
+    }
+    #pt-leaderboard-table td:nth-child(1) {
+        width: 40px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+    #pt-leaderboard-table td:nth-child(2) {
+        flex-grow: 1;
+        width: auto;
+    }
     .pt-leaderboard-team { gap: 10px; }
-    .pt-leaderboard-player .class-tag { font-size: 0.9em; padding: 4px 8px; }
+    .pt-leaderboard-player .class-tag {
+        font-size: 0.9em;
+        padding: 4px 8px;
+    }
+
+    /* --- Légende (Mobile) --- */
+    .legend-full { display: none; }
+    .legend-short { display: inline; }
 }
