@@ -2,7 +2,11 @@
 
 <div class="mobile-pt-controls">
     <button id="open-pt-filters-btn" class="action-btn-main">PT Filters</button>
-    <button id="pt-help-btn-mobile" class="help-button">Help</button>
+    <div style="display: flex; gap: 10px;">
+        <%# --- AJOUT BOUTON ADD TEAM (Mobile) --- %>
+        <button id="pt-add-team-btn-mobile" class="action-btn-main admin-only" style="display: none;">Add</button>
+        <button id="pt-help-btn-mobile" class="help-button">Help</button>
+    </div>
 </div>
 
 <div class="controls desktop-pt-controls">
@@ -20,7 +24,11 @@
             <option value="all">All Ranks</option>
         </select>
     </div>
-    <button id="pt-help-btn-desktop" class="help-button">Help</button>
+    <div style="margin-left: auto; display: flex; gap: 10px; align-items: center;">
+         <%# --- AJOUT BOUTON ADD TEAM (Desktop) --- %>
+        <button id="pt-add-team-btn-desktop" class="action-btn-main admin-only" style="display: none;">Add Team</button>
+        <button id="pt-help-btn-desktop" class="help-button" style="margin-left: 0;">Help</button>
+    </div>
 </div>
 
 <div class="leaderboard-legend">
@@ -63,7 +71,8 @@
     </tbody>
 </table>
 
-<div class="admin-actions" id="pt-admin-form-container">
+<%# --- FORMULAIRE CACHÉ PAR DÉFAUT --- %>
+<div class="admin-actions" id="pt-admin-form-container" style="display: none;">
     <h3>Update Leaderboard</h3>
     <form id="pt-admin-form" action="/pt-leaderboard" method="POST">
         <input type="hidden" name="admin_password" class="admin-pass-input">

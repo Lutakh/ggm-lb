@@ -173,3 +173,9 @@ tr.rank-3, .team-entry.rank-3, tr.rank-3 {
     background-color: transparent;
     padding: 2px 0;
 }
+.admin-only {
+    display: none !important;
+}
+body.admin-mode .admin-only {
+    display: inline-block !important;
+}

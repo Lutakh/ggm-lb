@@ -6,6 +6,7 @@ let backdrop = null;
 let filterInput = null;
 let listContainer = null;
 let closeBtn = null;
+let createBtn = null; // NOUVEAU
 
 let allGuilds = [];
 let activeIndex = -1;
@@ -27,12 +28,11 @@ function populateList(filter = '') {
 
     allGuilds
         .filter(g => g.name.toLowerCase().includes(query))
-        .sort((a, b) => b.total_cp - a.total_cp) // Tri par CP décroissant par défaut
+        .sort((a, b) => b.total_cp - a.total_cp)
         .forEach(guild => {
             const item = document.createElement('div');
             item.className = 'suggestion-item';
             item.dataset.guildName = guild.name;
-
             item.innerHTML = `
                 <span class="guild-item-name">${guild.name}</span>
                 <span class="guild-item-info">${guild.member_count}/120 - ${formatCP(guild.total_cp)} CP</span>
@@ -51,10 +51,20 @@ function closeModal() {
 }
 
 function selectGuild(guildName) {
-    if (currentCallback) {
-        currentCallback(guildName);
-    }
+    if (currentCallback) currentCallback(guildName);
     closeModal();
+}
+
+// NOUVEAU : Fonction de création
+function handleCreate() {
+    const newName = filterInput.value.trim();
+    if (!newName) { alert("Please enter a guild name."); return; }
+    // Vérifier si elle existe déjà (insensible à la casse)
+    if (allGuilds.some(g => g.name.toLowerCase() === newName.toLowerCase())) {
+        alert("This guild already exists. Please select it from the list.");
+        return;
+    }
+    selectGuild(newName); // On passe le nouveau nom, le backend gérera la création si nécessaire
 }
 
 export function openGuildModal(callback) {
@@ -73,8 +83,9 @@ export function initGuildSelectModal(guildsData) {
     filterInput = document.getElementById('guild-filter-input');
     listContainer = document.getElementById('guild-select-list');
     closeBtn = document.getElementById('guild-select-close-btn');
+    createBtn = document.getElementById('create-new-guild-btn'); // NOUVEAU
 
-    if (!modal || !backdrop || !filterInput || !listContainer || !closeBtn) {
+    if (!modal || !backdrop || !filterInput || !listContainer || !closeBtn || !createBtn) {
         console.error("[Guild Modal Init] Missing elements.");
         return;
     }
@@ -83,12 +94,18 @@ export function initGuildSelectModal(guildsData) {
 
     closeBtn.addEventListener('click', closeModal);
     backdrop.addEventListener('click', closeModal);
+    createBtn.addEventListener('click', handleCreate); // NOUVEAU
 
     filterInput.addEventListener('input', () => populateList(filterInput.value));
 
     filterInput.addEventListener('keydown', (e) => {
         const items = listContainer.querySelectorAll('.suggestion-item');
-        if (items.length === 0 && e.key !== 'Enter') return;
+        // Si la liste est vide et qu'on appuie sur Entrée, on essaie de créer
+        if (items.length === 0 && e.key === 'Enter') {
+            e.preventDefault();
+            handleCreate();
+            return;
+        }
 
         switch (e.key) {
             case 'ArrowDown':
@@ -105,11 +122,9 @@ export function initGuildSelectModal(guildsData) {
                 e.preventDefault();
                 if (activeIndex >= 0 && activeIndex < items.length) {
                     selectGuild(items[activeIndex].dataset.guildName);
-                } else if (items.length > 0 && activeIndex === -1) {
-                    // Si rien n'est sélectionné mais qu'on fait Entrée, on prend le premier si filtre actif,
-                    // ou on valide ce qu'on a tapé si c'est une nouvelle guilde potentielle (optionnel, ici on force la liste)
-                    // Pour l'instant, forçons la sélection dans la liste.
-                    selectGuild(items[0].dataset.guildName);
+                } else if (filterInput.value.trim() !== '') {
+                    // Si rien n'est sélectionné mais qu'il y a du texte, on tente la création
+                    handleCreate();
                 }
                 break;
         }
@@ -117,8 +132,6 @@ export function initGuildSelectModal(guildsData) {
 
     listContainer.addEventListener('click', (e) => {
         const item = e.target.closest('.suggestion-item');
-        if (item && item.dataset.guildName) {
-            selectGuild(item.dataset.guildName);
-        }
+        if (item && item.dataset.guildName) selectGuild(item.dataset.guildName);
     });
 }

@@ -1,13 +1,17 @@
 // public/js/modules/perilousTrials.js
 import { formatCP } from './utils.js';
 import { openModal } from './playerSelectModal.js';
-import { openGuildModal } from './guildSelectModal.js'; // Import de la nouvelle modale
+import { openGuildModal } from './guildSelectModal.js';
 
 export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
     let fullGlobalLeaderboard = [];
 
     // --- SÉLECTEURS DU DOM ---
     const helpBtns = document.querySelectorAll('#pt-help-btn-desktop, #pt-help-btn-mobile');
+    // NOUVEAU : Boutons Add Team
+    const addTeamBtns = document.querySelectorAll('#pt-add-team-btn-desktop, #pt-add-team-btn-mobile');
+    const adminFormContainer = document.getElementById('pt-admin-form-container');
+
     const helpModal = document.getElementById('pt-help-modal');
     const helpBackdrop = document.getElementById('pt-help-modal-backdrop');
     const helpCloseBtn = document.getElementById('pt-help-close-btn');
@@ -53,6 +57,19 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
     };
     if (helpCloseBtn) helpCloseBtn.addEventListener('click', closeHelpModal);
     if (helpBackdrop) helpBackdrop.addEventListener('click', closeHelpModal);
+
+    // --- NOUVEAU : GESTION DU BOUTON ADD TEAM ---
+    if (addTeamBtns.length > 0 && adminFormContainer) {
+        addTeamBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Toggle visibility
+                const isHidden = adminFormContainer.style.display === 'none';
+                adminFormContainer.style.display = isHidden ? 'block' : 'none';
+                // Scroll to form if showing it
+                if (isHidden) adminFormContainer.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+    }
 
     // --- GESTION DE LA MODALE DE FILTRES PT ---
     const openPtFiltersModal = () => {
@@ -221,7 +238,6 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
             const nameHidden = document.getElementById(`pt-player-name-hidden-${index}`);
             const container = document.getElementById(`pt-new-player-fields-${index}`);
             const classSelect = container.querySelector(`select[name="players[${index}][class]"]`);
-            // Gestion de la guilde via le nouveau système
             const guildDisplay = document.getElementById(`pt-guild-display-${index}`);
             const guildHidden = document.getElementById(`pt-guild-hidden-${index}`);
             const cpInput = container.querySelector(`input[name="players[${index}][cp]"]`);
@@ -230,7 +246,6 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
             nameHidden.value = playerName;
             container.style.display = 'grid';
 
-            // Date CP
             let cpDateEl = container.querySelector('.cp-date-info');
             if (!cpDateEl) {
                 cpDateEl = document.createElement('div');
@@ -239,11 +254,10 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
                 cpInput.parentNode.insertBefore(cpDateEl, cpInput.nextSibling);
             }
 
-            if (player) { // Joueur existant
+            if (player) {
                 classSelect.style.display = 'none'; classSelect.required = false; classSelect.value = "";
                 cpInput.required = false; cpInput.value = formatCP(player.combat_power); cpInput.placeholder = 'CP (e.g., 1.2M)';
 
-                // Pré-remplir la guilde
                 if (player.guild) {
                     guildDisplay.textContent = player.guild;
                     guildDisplay.style.fontStyle = 'normal';
@@ -254,7 +268,7 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
                     guildHidden.value = "";
                 }
 
-                // Date CP avec Heure
+                // NOUVEAU : Format de date avec heure
                 if (player.cp_last_updated) {
                     const d = new Date(player.cp_last_updated);
                     const day = String(d.getDate()).padStart(2, '0');
@@ -266,7 +280,7 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
                     cpDateEl.textContent = 'Last CP update: Never';
                 }
                 cpDateEl.style.display = 'block';
-            } else { // Nouveau joueur
+            } else {
                 classSelect.style.display = 'block'; classSelect.required = true;
                 cpInput.required = true; cpInput.value = ''; cpInput.placeholder = 'CP (e.g., 1.2M)';
                 guildDisplay.textContent = "Guild (Optional)"; guildDisplay.style.fontStyle = 'italic'; guildHidden.value = "";
@@ -279,7 +293,6 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
             btn.addEventListener('click', (e) => openModal({ type: 'ptAdmin', index: parseInt(e.currentTarget.dataset.playerIndex, 10), allowCreation: true }, handlePtPlayerSelection));
         });
 
-        // Écouteurs pour les boutons "Select Guild"
         ptAdminForm.querySelectorAll('.pt-select-guild-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const index = e.currentTarget.dataset.playerIndex;
@@ -313,7 +326,6 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
         findNextAvailableRank(ptIdInput.value);
     }
 
-    // Initialisation
     const initialPtId = new URLSearchParams(window.location.search).get('pt_id') || 'global';
     if (ptSelect) ptSelect.value = initialPtId;
     if (ptFiltersModalSelect) ptFiltersModalSelect.value = initialPtId;
