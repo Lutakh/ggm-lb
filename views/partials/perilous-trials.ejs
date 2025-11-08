@@ -11,8 +11,7 @@
         <option value="global" selected>Global PT Ranking</option>
         <% perilousTrials.forEach(pt => { %>
             <option value="<%= pt.id %>"><%= pt.name %></option>
-        <% });
-%>
+        <% }); %>
     </select>
     <div id="pt-global-mode-selector" style="display: none;">
         <label for="pt-global-mode" style="font-weight: bold;">Mode:</label>
@@ -27,8 +26,7 @@
 <div class="leaderboard-legend">
     <div class="legend-item"><span class="class-tag class-swordbearer"></span> Sword</div>
     <div class="legend-item"><span class="class-tag class-acolyte"></span> Aco</div>
-    <div class="legend-item"><span
-class="class-tag class-wayfarer"></span> Way</div>
+    <div class="legend-item"><span class="class-tag class-wayfarer"></span> Way</div>
     <div class="legend-item"><span class="class-tag class-scholar"></span> Scho</div>
     <div class="legend-item"><span class="class-tag class-shadowlash"></span> Shadow</div>
 </div>
@@ -38,39 +36,44 @@ class="class-tag class-wayfarer"></span> Way</div>
     <tbody></tbody>
 </table>
 
-<table id="pt-global-leaderboard-table" style="display: none;"> <thead>
+<table id="pt-global-leaderboard-table" style="display: none;">
+    <thead>
         <tr>
             <th class="rank-col">Rank</th>
             <th class="player-header-cell pt-global-player-col">
-                 <div class="header-content">
-
-   <button id="pt-class-filter-btn" class="header-filter-btn dropdown-btn" title="Filter by class">
+                <div class="header-content">
+                    <button id="pt-class-filter-btn" class="header-filter-btn dropdown-btn" title="Filter by class">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10 18h4v-2h-4v2zm3 7h12v-2H6v2zM3 6v2h18V6H3z"/></svg>
                         <span>Player</span>
                     </button>
-
-   </div>
+                </div>
                 <div id="pt-class-filter-panel" class="dropdown-panel">
                     <label><input type="checkbox" data-class="Swordbearer"> Swordbearer</label>
                     <label><input type="checkbox" data-class="Acolyte"> Acolyte</label>
                     <label><input type="checkbox" data-class="Wayfarer"> Wayfarer</label>
-
-          <label><input type="checkbox" data-class="Scholar"> Scholar</label>
+                    <label><input type="checkbox" data-class="Scholar"> Scholar</label>
                     <label><input type="checkbox" data-class="Shadowlash"> Shadowlash</label>
                 </div>
             </th>
             <th class="pt-global-cp-col">CP</th>
             <th>Points</th>
         </tr>
-
-</thead>
+    </thead>
     <tbody>
-        </tbody>
+    </tbody>
 </table>
+
 <div class="admin-actions" id="pt-admin-form-container">
     <h3>Update Leaderboard</h3>
     <form id="pt-admin-form" action="/pt-leaderboard" method="POST">
         <input type="hidden" name="admin_password" class="admin-pass-input">
+
+        <datalist id="guild-datalist-pt">
+            <% guilds.forEach(guildName => { %>
+                <option value="<%= guildName %>">
+            <% }); %>
+        </datalist>
+
         <div class="pt-admin-form-row">
             <div class="filter-group" style="flex-grow: 1;">
                 <label for="pt-id-input">Perilous Trial</label>
@@ -105,11 +108,9 @@ class="class-tag class-wayfarer"></span> Way</div>
                         <option value="Scholar">Scholar</option>
                         <option value="Shadowlash">Shadowlash</option>
                     </select>
-                    <div class="custom-guild-select" data-guild-select-index="<%= i %>">
-                        <input type="text" name="players[<%= i %>][guild]" class="guild-select-input" placeholder="Guild (Optional)" autocomplete="off">
-                        <div class="guild-select-panel"></div>
-                    </div>
-                     <input type="text" name="players[<%= i %>][cp]" placeholder="CP (e.g., 1.2M)">
+                    <input type="text" name="players[<%= i %>][guild]" class="guild-select-input" placeholder="Guild (Optional)" autocomplete="off" list="guild-datalist-pt">
+
+                    <input type="text" name="players[<%= i %>][cp]" placeholder="CP (e.g., 1.2M)">
                 </div>
             </div>
             <% } %>

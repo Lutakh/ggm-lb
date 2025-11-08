@@ -2,7 +2,6 @@
 const { Pool } = require('pg');
 
 const pool = new Pool({
-    // Assurez-vous que ceux-ci correspondent à votre fichier .env ou aux variables d'environnement
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
@@ -11,16 +10,15 @@ const pool = new Pool({
 });
 
 const initializeDb = async () => {
-    let client; // Définir client en dehors du bloc try pour accès dans finally
+    let client;
     try {
-        client = await pool.connect(); // Assigner client ici
+        client = await pool.connect();
         console.log('🚀 Checking and initializing database schema...');
         await client.query('BEGIN');
 
-        // Création des tables existantes
         await client.query(`CREATE TABLE IF NOT EXISTS guilds (id SERIAL PRIMARY KEY, name TEXT NOT NULL UNIQUE);`);
 
-        // Table players
+        // Table players avec la nouvelle colonne cp_last_updated
         await client.query(`
             CREATE TABLE IF NOT EXISTS players (
                                                    id SERIAL PRIMARY KEY,
@@ -34,14 +32,18 @@ const initializeDb = async () => {
                                                    stamina INTEGER DEFAULT 0,
                                                    stamina_last_updated TIMESTAMPTZ DEFAULT NOW(),
                                                    discord_user_id TEXT NULL,
-                                                   last_stamina_notification_level INTEGER DEFAULT 0
+                                                   last_stamina_notification_level INTEGER DEFAULT 0,
+                                                   cp_last_updated TIMESTAMPTZ DEFAULT NOW()
             );
         `);
-        // Assurer l'existence des colonnes pour les anciennes installations
+
+        // Mises à jour de schéma pour les installations existantes
         await client.query(`ALTER TABLE players ADD COLUMN IF NOT EXISTS discord_user_id TEXT NULL;`);
         await client.query(`ALTER TABLE players ADD COLUMN IF NOT EXISTS last_stamina_notification_level INTEGER DEFAULT 0;`);
         await client.query(`ALTER TABLE players ADD COLUMN IF NOT EXISTS stamina INTEGER DEFAULT 0;`);
         await client.query(`ALTER TABLE players ADD COLUMN IF NOT EXISTS stamina_last_updated TIMESTAMPTZ DEFAULT NOW();`);
+        // AJOUT IMPORTANT ICI :
+        await client.query(`ALTER TABLE players ADD COLUMN IF NOT EXISTS cp_last_updated TIMESTAMPTZ DEFAULT NOW();`);
 
         await client.query(`CREATE TABLE IF NOT EXISTS play_slots (id SERIAL PRIMARY KEY, player_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE, start_minutes INTEGER NOT NULL, end_minutes INTEGER NOT NULL);`);
         await client.query(`CREATE TABLE IF NOT EXISTS perilous_trials (id SERIAL PRIMARY KEY, name TEXT NOT NULL UNIQUE);`);
@@ -53,31 +55,27 @@ const initializeDb = async () => {
                                                                           PRIMARY KEY (player_id, pt_id)
                             );`);
 
-        // --- TEAM PLANNER (VERSION SÛRE : NE SUPPRIME PAS LES DONNÉES) ---
-        // On utilise IF NOT EXISTS pour ne créer que si nécessaire.
         await client.query(`
             CREATE TABLE IF NOT EXISTS planned_activities (
-                                                              id SERIAL PRIMARY KEY,
-                                                              activity_type TEXT NOT NULL,
-                                                              activity_subtype TEXT,
-                                                              scheduled_time TIMESTAMPTZ NOT NULL,
-                                                              creator_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
-                                                              notes TEXT,
-                                                              created_at TIMESTAMPTZ DEFAULT NOW()
+                  id SERIAL PRIMARY KEY,
+                  activity_type TEXT NOT NULL,
+                  activity_subtype TEXT,
+                  scheduled_time TIMESTAMPTZ NOT NULL,
+                  creator_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
+                  notes TEXT,
+                  created_at TIMESTAMPTZ DEFAULT NOW()
             );
         `);
         await client.query(`
             CREATE TABLE IF NOT EXISTS activity_participants (
-                                                                 activity_id INTEGER REFERENCES planned_activities(id) ON DELETE CASCADE,
-                                                                 player_id INTEGER REFERENCES players(id) ON DELETE CASCADE,
-                                                                 joined_at TIMESTAMPTZ DEFAULT NOW(),
-                                                                 PRIMARY KEY (activity_id, player_id)
+                 activity_id INTEGER REFERENCES planned_activities(id) ON DELETE CASCADE,
+                 player_id INTEGER REFERENCES players(id) ON DELETE CASCADE,
+                 joined_at TIMESTAMPTZ DEFAULT NOW(),
+                 PRIMARY KEY (activity_id, player_id)
             );
         `);
-        console.log('✅ Team Planner tables ensured (data preserved).');
-        // ---------------------------------------------
 
-        // Migration pt_leaderboard si nécessaire
+        // Migration pt_leaderboard
         const checkColumn = await client.query(`
             SELECT 1 FROM information_schema.columns
             WHERE table_name='pt_leaderboard' AND column_name='player1_id'
@@ -86,50 +84,38 @@ const initializeDb = async () => {
             console.log('⚠️ Old "pt_leaderboard" structure detected. Recreating table...');
             await client.query(`DROP TABLE IF EXISTS pt_leaderboard CASCADE;`);
             await client.query(`CREATE TABLE pt_leaderboard (
-                                                                id SERIAL PRIMARY KEY,
-                                                                pt_id INTEGER NOT NULL REFERENCES perilous_trials(id) ON DELETE CASCADE,
-                                                                rank INTEGER NOT NULL,
-                                                                player1_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
-                                                                player2_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
-                                                                player3_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
-                                                                player4_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
-                                                                player1_name TEXT, player2_name TEXT, player3_name TEXT, player4_name TEXT,
-                                                                UNIQUE(pt_id, rank)
-                                );`);
-            console.log('✅ Table "pt_leaderboard" recreated with new structure.');
+                id SERIAL PRIMARY KEY,
+                pt_id INTEGER NOT NULL REFERENCES perilous_trials(id) ON DELETE CASCADE,
+                rank INTEGER NOT NULL,
+                player1_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
+                player2_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
+                player3_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
+                player4_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
+                player1_name TEXT, player2_name TEXT, player3_name TEXT, player4_name TEXT,
+                UNIQUE(pt_id, rank)
+            );`);
         } else {
-            // Assurer que la table existe même si la structure était correcte
             await client.query(`CREATE TABLE IF NOT EXISTS pt_leaderboard (
-                                                                              id SERIAL PRIMARY KEY,
-                                                                              pt_id INTEGER NOT NULL REFERENCES perilous_trials(id) ON DELETE CASCADE,
-                                                                              rank INTEGER NOT NULL,
-                                                                              player1_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
-                                                                              player2_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
-                                                                              player3_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
-                                                                              player4_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
-                                                                              player1_name TEXT, player2_name TEXT, player3_name TEXT, player4_name TEXT,
-                                                                              UNIQUE(pt_id, rank)
-                                );`);
+                id SERIAL PRIMARY KEY,
+                pt_id INTEGER NOT NULL REFERENCES perilous_trials(id) ON DELETE CASCADE,
+                rank INTEGER NOT NULL,
+                player1_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
+                player2_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
+                player3_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
+                player4_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
+                player1_name TEXT, player2_name TEXT, player3_name TEXT, player4_name TEXT,
+                UNIQUE(pt_id, rank)
+            );`);
         }
 
-        // Table daily_quest_status
         await client.query(`
             CREATE TABLE IF NOT EXISTS daily_quest_status (
                                                               player_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
                                                               quest_key TEXT NOT NULL,
-                                                              completed_at TIMESTAMPTZ NOT NULL
+                                                              completed_at TIMESTAMPTZ NOT NULL,
+                                                              PRIMARY KEY (player_id, quest_key)
             );
         `);
-        const constraintExists = await client.query(`
-            SELECT 1 FROM pg_constraint
-            WHERE conname = 'daily_quest_status_pkey' AND conrelid = 'daily_quest_status'::regclass;
-        `);
-        if (constraintExists.rowCount === 0) {
-            await client.query(`
-                ALTER TABLE daily_quest_status
-                    ADD CONSTRAINT daily_quest_status_pkey PRIMARY KEY (player_id, quest_key);
-            `);
-        }
 
         // Trigger updated_at
         await client.query(`
@@ -150,14 +136,13 @@ const initializeDb = async () => {
             EXECUTE FUNCTION update_updated_at_column();
         `);
 
-        // Peuplement initial
+        // Data init
         const ptCountRes = await client.query('SELECT COUNT(*) FROM perilous_trials');
         if (parseInt(ptCountRes.rows[0].count, 10) === 0) {
             for (let i = 1; i <= 8; i++) {
                 await client.query('INSERT INTO perilous_trials (name) VALUES ($1) ON CONFLICT (name) DO NOTHING', [`PT${i}`]);
             }
         }
-
         const ccCountRes = await client.query('SELECT COUNT(*) FROM class_change_timers');
         if (parseInt(ccCountRes.rows[0].count, 10) === 0) {
             const defaultTimers = [
@@ -171,7 +156,6 @@ const initializeDb = async () => {
                 await client.query('INSERT INTO class_change_timers (label, weeks_after_start) VALUES ($1, $2) ON CONFLICT DO NOTHING', [timer.label, timer.weeks]);
             }
         }
-
         await client.query(`INSERT INTO server_settings (key, value) VALUES ('server_name', 'SXX') ON CONFLICT (key) DO NOTHING;`);
         await client.query(`INSERT INTO server_settings (key, value) VALUES ('server_open_date', '${new Date().toISOString().split('T')[0]}') ON CONFLICT (key) DO NOTHING;`);
 
@@ -179,19 +163,15 @@ const initializeDb = async () => {
         console.log('✅ Database schema initialization/check complete.');
     } catch (err) {
         console.error('❌ Error during database schema initialization:', err);
-        if (client) {
-            try { await client.query('ROLLBACK'); } catch (rollbackErr) { console.error('Error rolling back transaction:', rollbackErr); }
-        }
+        if (client) { try { await client.query('ROLLBACK'); } catch (rollbackErr) { console.error('Rollback error:', rollbackErr); } }
         throw err;
     } finally {
         if (client) client.release();
     }
 };
 
-initializeDb().then(() => {
-    console.log('Database initialization successful.');
-}).catch(err => {
-    console.error("CRITICAL: Database initialization failed. Exiting.", err);
+initializeDb().catch(err => {
+    console.error("CRITICAL: Database initialization failed.", err);
     process.exit(1);
 });
 
