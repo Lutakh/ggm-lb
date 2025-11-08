@@ -22,32 +22,24 @@ export function initLeaderboardFilters() {
     const openFiltersBtnMobile = document.getElementById('open-filters-btn');
     const memberRows = document.querySelectorAll('#leaderboard-table tbody tr');
 
-    // Synchronise les checkboxes jumelles (PC <-> Mobile) avant d'appliquer les filtres
-    function handleCheckboxChange(e) {
-        const changedCb = e.target;
-        const type = changedCb.dataset.class ? 'class' : (changedCb.dataset.guild ? 'guild' : null);
-        const value = changedCb.dataset.class || changedCb.dataset.guild;
-
-        if (type && value) {
-            // Trouver toutes les checkboxes correspondantes (PC et Mobile) et les mettre à jour
-            const selector = type === 'class' ? `#class-filter-panel input[data-class="${value}"], #modal-class-filter-panel input[data-class="${value}"]`
-                : `#guild-filter-panel input[data-guild="${value}"], #modal-guild-filter-panel input[data-guild="${value}"]`;
-            document.querySelectorAll(selector).forEach(cb => {
-                cb.checked = changedCb.checked;
-            });
-        }
-        applyFilters();
-    }
-
     function applyFilters() {
         const cpMin = cpMinFilter ? parseCpFilter(cpMinFilter.value) : 0;
         const cpMax = cpMaxFilter ? (parseCpFilter(cpMaxFilter.value) || Infinity) : Infinity;
         const selectedPtTag = ptTagFilter ? ptTagFilter.value : '';
         const ptMode = ptTagMode ? ptTagMode.value : 'has';
 
-        // Lecture des filtres actifs (on peut lire juste un set car ils sont synchronisés)
-        const selectedClasses = Array.from(modalClassCheckboxes).filter(c => c.checked).map(c => c.dataset.class);
-        const selectedGuilds = Array.from(modalGuildCheckboxes).filter(c => c.checked).map(c => c.dataset.guild);
+        // Fusion des sélections Desktop et Mobile
+        const selectedClasses = [
+            ...Array.from(desktopClassCheckboxes).filter(c => c.checked).map(c => c.dataset.class),
+            ...Array.from(modalClassCheckboxes).filter(c => c.checked).map(c => c.dataset.class)
+        ];
+        const uniqueSelectedClasses = [...new Set(selectedClasses)];
+
+        const selectedGuilds = [
+            ...Array.from(desktopGuildCheckboxes).filter(c => c.checked).map(c => c.dataset.guild),
+            ...Array.from(modalGuildCheckboxes).filter(c => c.checked).map(c => c.dataset.guild)
+        ];
+        const uniqueSelectedGuilds = [...new Set(selectedGuilds)];
 
         // Application aux lignes
         let visibleRank = 1;
@@ -57,8 +49,8 @@ export function initLeaderboardFilters() {
             const rowGuild = row.dataset.guild || '';
             const rowPtTags = row.dataset.ptTags || '[]';
 
-            const classMatch = selectedClasses.length === 0 || selectedClasses.includes(rowClass);
-            const guildMatch = selectedGuilds.length === 0 || selectedGuilds.includes(rowGuild);
+            const classMatch = uniqueSelectedClasses.length === 0 || uniqueSelectedClasses.includes(rowClass);
+            const guildMatch = uniqueSelectedGuilds.length === 0 || uniqueSelectedGuilds.includes(rowGuild);
             const cpMatch = rowCP >= cpMin && rowCP <= cpMax;
 
             let ptMatch = true;
@@ -82,7 +74,19 @@ export function initLeaderboardFilters() {
             }
         });
 
-        updateFilterIndicators(selectedClasses, selectedGuilds, cpMin, cpMax, selectedPtTag);
+        // Synchronisation visuelle (optionnelle mais recommandée)
+        syncCheckboxes(desktopClassCheckboxes, uniqueSelectedClasses, 'class');
+        syncCheckboxes(modalClassCheckboxes, uniqueSelectedClasses, 'class');
+        syncCheckboxes(desktopGuildCheckboxes, uniqueSelectedGuilds, 'guild');
+        syncCheckboxes(modalGuildCheckboxes, uniqueSelectedGuilds, 'guild');
+
+        updateFilterIndicators(uniqueSelectedClasses, uniqueSelectedGuilds, cpMin, cpMax, selectedPtTag);
+    }
+
+    function syncCheckboxes(checkboxList, selectedValues, dataAttr) {
+        checkboxList.forEach(cb => {
+            cb.checked = selectedValues.includes(cb.dataset[dataAttr]);
+        });
     }
 
     function updateFilterIndicators(classes, guilds, cpMin, cpMax, ptTag) {
@@ -147,14 +151,22 @@ export function initLeaderboardFilters() {
     });
 
     // Attacher les listeners aux inputs
-    const allCheckboxes = [...desktopClassCheckboxes, ...desktopGuildCheckboxes, ...modalClassCheckboxes, ...modalGuildCheckboxes];
-    allCheckboxes.forEach(el => el.addEventListener('change', handleCheckboxChange));
+    const allInputs = [
+        ...desktopClassCheckboxes, ...desktopGuildCheckboxes,
+        ...modalClassCheckboxes, ...modalGuildCheckboxes,
+        cpMinFilter, cpMaxFilter, ptTagFilter, ptTagMode
+    ];
 
-    const otherInputs = [cpMinFilter, cpMaxFilter, ptTagFilter, ptTagMode];
-    otherInputs.forEach(el => {
+    allInputs.forEach(el => {
         if (!el) return;
         el.addEventListener('change', applyFilters);
-        if (el.tagName === 'INPUT') el.addEventListener('input', applyFilters);
+        if (el.tagName === 'INPUT' && (el.type === 'text' || el.type === 'number')) {
+            el.addEventListener('input', applyFilters);
+        }
+        if (el.closest('.dropdown-panel') || el.closest('.filter-modal-dropdown-panel')) {
+            el.addEventListener('click', e => e.stopPropagation());
+            if (el.parentElement.tagName === 'LABEL') el.parentElement.addEventListener('click', e => e.stopPropagation());
+        }
     });
 
     applyFilters(); // Initial application

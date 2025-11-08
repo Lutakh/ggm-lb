@@ -3,7 +3,7 @@
 #open-filters-btn,
 #open-filters-btn-teams,
 #open-filters-btn-guilds {
-    /* display: none;  <-- SUPPRIMÉ pour afficher sur PC */
+    display: none;
     width: 100%;
     margin-bottom: 15px;
     background-color: var(--primary-color);
