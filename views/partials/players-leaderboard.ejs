@@ -8,42 +8,17 @@
     <div class="legend-item"><span class="class-tag class-shadowlash"></span> Shadow</div>
 </div>
 
+<%# Ce bouton est maintenant visible sur Desktop grâce au CSS mis à jour %>
 <button id="open-filters-btn" class="action-btn-main">Filters</button>
 
 <table id="leaderboard-table">
     <thead>
         <tr>
             <th class="rank-col">Rank</th>
-            <th class="player-header-cell">
-                <div class="header-content">
-                    <button id="class-filter-btn" class="header-filter-btn dropdown-btn" title="Filter by class">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>
-                        <span>Player</span>
-                    </button>
-                </div>
-                <div id="class-filter-panel" class="dropdown-panel">
-                    <label><input type="checkbox" data-class="Swordbearer"> Swordbearer</label>
-                    <label><input type="checkbox" data-class="Acolyte"> Acolyte</label>
-                    <label><input type="checkbox" data-class="Wayfarer"> Wayfarer</label>
-                    <label><input type="checkbox" data-class="Scholar"> Scholar</label>
-                    <label><input type="checkbox" data-class="Shadowlash"> Shadowlash</label>
-                </div>
-            </th>
+            <th>Player</th> <%# En-tête simplifié %>
             <th>CP</th>
             <th>Play Hours <span id="table-timezone-note" class="timezone-header-note"></span></th>
-            <th class="guild-header-cell">
-                <div class="header-content">
-                    <button id="guild-filter-btn" class="header-filter-btn dropdown-btn" title="Filter by guild">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>
-                        <span>Guild</span>
-                    </button>
-                </div>
-                <div id="guild-filter-panel" class="dropdown-panel">
-                    <% guilds.sort().forEach(guildName => { %>
-                        <label><input type="checkbox" data-guild="<%= guildName %>"> <%= guildName %></label>
-                    <% }); %>
-                </div>
-            </th>
+            <th>Guild</th> <%# En-tête simplifié %>
             <th>Notes</th>
             <th class="last-modified-col">Updated</th>
             <th class="admin-only-header">Actions</th>
@@ -69,7 +44,7 @@
                     <span class="class-tag class-<%= player.class.toLowerCase() %>"><%= player.name %></span>
                     <% if (player.pt_tags && player.pt_tags.length > 0) {
                         const maxPt = Math.max(...player.pt_tags.map(tag => parseInt(tag.replace('PT', ''))));
-%>
+                    %>
                         <span class="pt-tag">PT<%= maxPt %></span>
                     <% } %>
                 </td>
@@ -78,7 +53,7 @@
                     <div class="play-hours-container">
                         <% if (player.play_slots && player.play_slots.length > 0) { %>
                             <% player.play_slots.forEach(slot => { %>
-                                 <div class="play-hours-cell" data-start-minutes="<%= slot.start_minutes %>" data-end-minutes="<%= slot.end_minutes %>"></div>
+                                <div class="play-hours-cell" data-start-minutes="<%= slot.start_minutes %>" data-end-minutes="<%= slot.end_minutes %>"></div>
                             <% }); %>
                         <% } else { %> - <% } %>
                     </div>

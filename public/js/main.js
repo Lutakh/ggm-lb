@@ -30,7 +30,7 @@ window.showFullNote = function(playerName, note) {
     if (notesBackdrop) notesBackdrop.style.display = 'block';
 }
 
-// --- MODALE DE DÉTAIL DU JOUEUR (MOBILE) ---
+// --- MODALE DE DÉTAIL DU JOUEUR ---
 const playerDetailModal = document.getElementById('player-detail-modal');
 const playerDetailBackdrop = document.getElementById('player-detail-modal-backdrop');
 const playerDetailTitle = document.getElementById('player-detail-modal-title');
@@ -232,7 +232,7 @@ function closeGuildDetailModal() {
     if (guildDetailBackdrop) guildDetailBackdrop.style.display = 'none';
 }
 
-// --- MODALE DE FILTRES JOUEURS (MOBILE) ---
+// --- MODALE DE FILTRES JOUEURS ---
 const filtersModal = document.getElementById('filters-modal');
 const filtersBackdrop = document.getElementById('filters-modal-backdrop');
 const openFiltersBtn = document.getElementById('open-filters-btn');
@@ -376,7 +376,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- Listeners Modales et Mobile ---
+    // --- Listeners Modales et Clics Tableau ---
     if (notesCloseBtn) notesCloseBtn.addEventListener('click', closeNotesModal);
     if (notesBackdrop) notesBackdrop.addEventListener('click', closeNotesModal);
     if (playerDetailCloseBtn) playerDetailCloseBtn.addEventListener('click', closePlayerDetailModal);
@@ -385,7 +385,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const playerTableBody = document.querySelector('#leaderboard-table tbody');
     if (playerTableBody) {
         playerTableBody.addEventListener('click', (e) => {
-            if (window.innerWidth > 768) return;
+            // REMOVED MOBILE-ONLY RESTRICTION HERE
             const playerRow = e.target.closest('tr');
             // Ignorer les clics sur les notes, les actions admin, ou tout bouton/lien
             if (!playerRow || e.target.closest('.notes-col') || e.target.closest('.admin-actions') || e.target.closest('a') || e.target.closest('button')) return;
@@ -418,7 +418,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const teamTableBody = document.getElementById('teams-tbody');
     if (teamTableBody) {
         teamTableBody.addEventListener('click', (e) => {
-            if (window.innerWidth > 768) return;
+            if (window.innerWidth > 768) return; // Keep team details mobile-only for now if desired, or remove this too
             const teamRow = e.target.closest('.team-data-row');
             if (!teamRow) return;
             e.preventDefault();
@@ -431,7 +431,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const guildTableBody = document.getElementById('guilds-tbody');
     if (guildTableBody) {
         guildTableBody.addEventListener('click', (e) => {
-            if (window.innerWidth > 768) return;
+            if (window.innerWidth > 768) return; // Keep guild details mobile-only for now if desired
             const guildRow = e.target.closest('tr');
             if (!guildRow) return;
             e.preventDefault();

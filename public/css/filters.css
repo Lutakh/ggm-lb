@@ -1,14 +1,19 @@
 /* --- Player Leaderboard Filters --- */
-.leaderboard-filters { display: none; }
+/* .leaderboard-filters { display: none; }  <-- Supprimé car potentiellement inutilisé maintenant */
+
 #open-filters-btn,
 #open-filters-btn-teams,
 #open-filters-btn-guilds {
-    display: none;
+    display: block; /* MODIFIÉ : Visible par défaut (PC et Mobile) */
     width: 100%;
     margin-bottom: 15px;
     background-color: var(--primary-color);
     color: white;
     font-size: 1.1em;
+    padding: 10px; /* Ajouté pour une meilleure apparence par défaut */
+    border-radius: 10px; /* Ajouté */
+    border: none; /* Ajouté */
+    cursor: pointer; /* Ajouté */
 }
 #open-filters-btn.active,
 #open-filters-btn-teams.active,
@@ -28,57 +33,7 @@
     cursor: pointer;
 }
 #cp-min, #cp-max { width: 140px; }
-.dropdown-filter { position: relative; }
-.dropdown-btn {
-    padding: 12px;
-    border-radius: 10px;
-    border: 1px solid var(--border-color);
-    background-color: #f9f6f1;
-    cursor: pointer;
-    font-weight: 700;
-}
+/* .dropdown-filter, .dropdown-btn et styles desktop associés SUPPRIMÉS car plus utilisés */
 
-/* --- Desktop Header Filters --- */
-.class-header-cell, .player-header-cell, .guild-header-cell { position: relative; }
-.header-content {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.header-filter-btn {
-    background: none;
-    border: 1px solid transparent;
-    border-radius: 6px;
-    cursor: pointer;
-    padding: 4px;
-    display: inline-flex;
-    align-items: center;
-    transition: background-color 0.2s, border-color 0.2s;
-    gap: 8px;
-    color: var(--text-color);
-    font-weight: 800;
-}
-.header-filter-btn svg {
-    width: 18px;
-    height: 18px;
-    fill: var(--text-color);
-}
-.header-filter-btn:hover {
-    background-color: #f0e6d6;
-    border-color: var(--border-color);
-}
-.header-filter-btn.active {
-    background-color: #f0e6d6;
-    border-color: var(--secondary-color);
-    color: var(--accent-color);
-}
-.header-filter-btn.active svg { fill: var(--accent-color); }
-.class-header-cell .dropdown-panel, .player-header-cell .dropdown-panel, .guild-header-cell .dropdown-panel {
-    top: 100%;
-    left: 0;
-    right: auto;
-    margin-top: 5px;
-}
-
-/* Cacher le filtre de classe mobile sur desktop */
-.filters-modal-class-filter { display: none; }
+/* Cacher le filtre de classe mobile sur desktop ? NON, on veut la même modale partout maintenant. */
+/* .filters-modal-class-filter { display: none; } <-- Supprimé */

@@ -3,52 +3,24 @@
 
     /* --- Navigation --- */
     #desktop-sidebar {
-        display: flex; /* Afficher la sidebar sur desktop */
+        display: flex;
     }
 
     #home-nav-btn {
-        display: none; /* Cacher le bouton flottant sur desktop */
+        display: none;
     }
 
     body {
-        /* Ajouter un padding à gauche égal à la largeur de la sidebar + marge */
-        padding-left: 230px; /* 210px (width) + 20px (marge souhaitée) */
-        padding-top: 20px; /* Rétablir le padding haut standard */
-    }
-
-    main {
-        /* S'assurer que main ne va pas sous la sidebar */
-        /* max-width et margin: auto restent pour centrer le contenu dans l'espace restant */
+        padding-left: 230px;
+        padding-top: 20px;
     }
 
     header {
-        /* Si le header doit s'étendre sur toute la largeur malgré la sidebar : */
-        /* position: fixed; */
-        /* left: 210px; /* Largeur sidebar */
-        /* width: calc(100% - 210px); */
-        /* top: 0; */
-        /* background: var(--bg-color); */ /* Pour éviter transparence */
-        /* z-index: 950; */ /* Au dessus de la sidebar mais sous les modales */
-        /* padding: 10px 20px; */ /* Ajuster padding */
-
-        /* Ou plus simple, laisser le padding du body le décaler */
-        margin-left: 0; /* Annuler marge si besoin */
-        width: auto; /* S'adapte à l'espace restant */
+        margin-left: 0;
+        width: auto;
     }
-
-    /* --- Top Bar --- */
-    /* Assurer que la top bar ne va pas sous la sidebar */
-    .top-bar {
-        /* Si vous voulez qu'elle prenne toute la largeur restante */
-        /* width: 100%; */
-        /* box-sizing: border-box; */
-    }
-
-    /* --- Ajustements Tableaux (si nécessaire) --- */
-    /* S'assurer que les tableaux utilisent bien l'espace */
 
     /* --- Filtres (Desktop) --- */
-    /* Assurer la visibilité des filtres desktop si masqués par défaut */
     #perilous-trials-section .desktop-pt-controls {
         display: flex;
     }
@@ -58,13 +30,8 @@
     #teams-leaderboard-section #team-guild-filter-mobile {
         display: none;
     }
-    #players-leaderboard-section #open-filters-btn {
-        display: none;
-    }
 
-    /* S'assurer que les dropdowns du header sont visibles si cachés par défaut */
-    .player-header-cell .dropdown-btn {
-        display: inline-flex;
-    }
+    /* MODIFICATION ICI : On ne cache PLUS le bouton de filtre principal sur Desktop */
+    /* #players-leaderboard-section #open-filters-btn { display: none; }  <-- SUPPRIMÉ */
 
 }
