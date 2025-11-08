@@ -3,9 +3,13 @@ const parseCombatPower = (cpString) => {
     const text = String(cpString).trim().toUpperCase();
     const value = parseFloat(text.replace(/[^0-9.]/g, ''));
     if (isNaN(value)) return 0;
-    if (text.endsWith('M')) return value * 1000000;
-    if (text.endsWith('K')) return value * 1000;
-    return value;
+
+    let multiplier = 1;
+    if (text.endsWith('M')) multiplier = 1000000;
+    else if (text.endsWith('K')) multiplier = 1000;
+
+    // Utilisation de Math.round() pour garantir un entier compatible avec BIGINT
+    return Math.round(value * multiplier);
 };
 
 const timeToMinutes = (timeStr) => {
