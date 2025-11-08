@@ -3,7 +3,6 @@
 <div class="mobile-pt-controls">
     <button id="open-pt-filters-btn" class="action-btn-main">PT Filters</button>
     <div style="display: flex; gap: 10px;">
-        <%# --- AJOUT BOUTON ADD TEAM (Mobile) --- %>
         <button id="pt-add-team-btn-mobile" class="action-btn-main admin-only" style="display: none;">Add</button>
         <button id="pt-help-btn-mobile" class="help-button">Help</button>
     </div>
@@ -24,8 +23,9 @@
             <option value="all">All Ranks</option>
         </select>
     </div>
+    <button id="open-pt-filters-btn-desktop" class="action-btn-main" style="display: none;">Filters</button>
+
     <div style="margin-left: auto; display: flex; gap: 10px; align-items: center;">
-         <%# --- AJOUT BOUTON ADD TEAM (Desktop) --- %>
         <button id="pt-add-team-btn-desktop" class="action-btn-main admin-only" style="display: none;">Add Team</button>
         <button id="pt-help-btn-desktop" class="help-button" style="margin-left: 0;">Help</button>
     </div>
@@ -48,21 +48,7 @@
     <thead>
         <tr>
             <th class="rank-col">Rank</th>
-            <th class="player-header-cell pt-global-player-col">
-                <div class="header-content">
-                    <button id="pt-class-filter-btn" class="header-filter-btn dropdown-btn" title="Filter by class">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10 18h4v-2h-4v2zm3 7h12v-2H6v2zM3 6v2h18V6H3z"/></svg>
-                        <span>Player</span>
-                    </button>
-                </div>
-                <div id="pt-class-filter-panel" class="dropdown-panel">
-                    <label><input type="checkbox" data-class="Swordbearer"> Swordbearer</label>
-                    <label><input type="checkbox" data-class="Acolyte"> Acolyte</label>
-                    <label><input type="checkbox" data-class="Wayfarer"> Wayfarer</label>
-                    <label><input type="checkbox" data-class="Scholar"> Scholar</label>
-                    <label><input type="checkbox" data-class="Shadowlash"> Shadowlash</label>
-                </div>
-            </th>
+            <th class="pt-global-player-col">Player</th>
             <th class="pt-global-cp-col">CP</th>
             <th>Points</th>
         </tr>
@@ -71,7 +57,6 @@
     </tbody>
 </table>
 
-<%# --- FORMULAIRE CACHÉ PAR DÉFAUT --- %>
 <div class="admin-actions" id="pt-admin-form-container" style="display: none;">
     <h3>Update Leaderboard</h3>
     <form id="pt-admin-form" action="/pt-leaderboard" method="POST">

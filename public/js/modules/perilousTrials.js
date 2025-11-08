@@ -8,7 +8,6 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
 
     // --- SÉLECTEURS DU DOM ---
     const helpBtns = document.querySelectorAll('#pt-help-btn-desktop, #pt-help-btn-mobile');
-    // NOUVEAU : Boutons Add Team
     const addTeamBtns = document.querySelectorAll('#pt-add-team-btn-desktop, #pt-add-team-btn-mobile');
     const adminFormContainer = document.getElementById('pt-admin-form-container');
 
@@ -20,22 +19,22 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
     const ptSelect = document.getElementById('pt-select');
     const ptGlobalModeSelector = document.getElementById('pt-global-mode-selector');
     const ptGlobalMode = document.getElementById('pt-global-mode');
+    // NOUVEAU : Bouton filtre Desktop
+    const openPtFiltersBtnDesktop = document.getElementById('open-pt-filters-btn-desktop');
 
-    // Filtres Modale Mobile
-    const openPtFiltersBtn = document.getElementById('open-pt-filters-btn');
+    // Filtres Modale Mobile & PC (unifiés)
+    const openPtFiltersBtn = document.getElementById('open-pt-filters-btn'); // Mobile button
     const ptFiltersModal = document.getElementById('pt-filters-modal');
     const ptFiltersBackdrop = document.getElementById('pt-filters-modal-backdrop');
     const ptFiltersCloseBtn = document.getElementById('pt-filters-modal-close-btn');
-    const ptFiltersModalSelect = document.getElementById('pt-filters-modal-select');
-    const ptFiltersModalMode = document.getElementById('pt-filters-modal-mode');
-    const ptFiltersModalModeSelector = document.getElementById('pt-filters-modal-mode-selector');
 
     // Tableaux
     const ptTable = document.getElementById('pt-leaderboard-table');
     const ptTableBody = ptTable?.querySelector('tbody');
     const ptGlobalTable = document.getElementById('pt-global-leaderboard-table');
     const ptGlobalTableBody = ptGlobalTable?.querySelector('tbody');
-    const ptClassFilters = document.querySelectorAll('#pt-class-filter-panel input');
+    // MODIFICATION : Cible désormais les inputs DANS la modale
+    const ptClassFilters = document.querySelectorAll('#pt-modal-class-filter-panel input');
 
     // Admin
     const ptAdminForm = document.getElementById('pt-admin-form');
@@ -58,14 +57,12 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
     if (helpCloseBtn) helpCloseBtn.addEventListener('click', closeHelpModal);
     if (helpBackdrop) helpBackdrop.addEventListener('click', closeHelpModal);
 
-    // --- NOUVEAU : GESTION DU BOUTON ADD TEAM ---
+    // --- GESTION DU BOUTON ADD TEAM ---
     if (addTeamBtns.length > 0 && adminFormContainer) {
         addTeamBtns.forEach(btn => {
             btn.addEventListener('click', () => {
-                // Toggle visibility
                 const isHidden = adminFormContainer.style.display === 'none';
                 adminFormContainer.style.display = isHidden ? 'block' : 'none';
-                // Scroll to form if showing it
                 if (isHidden) adminFormContainer.scrollIntoView({ behavior: 'smooth' });
             });
         });
@@ -82,42 +79,20 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
     };
 
     if (openPtFiltersBtn) openPtFiltersBtn.addEventListener('click', openPtFiltersModal);
+    // NOUVEAU : Listener pour le bouton desktop
+    if (openPtFiltersBtnDesktop) openPtFiltersBtnDesktop.addEventListener('click', openPtFiltersModal);
+
     if (ptFiltersCloseBtn) ptFiltersCloseBtn.addEventListener('click', closePtFiltersModal);
     if (ptFiltersBackdrop) ptFiltersBackdrop.addEventListener('click', closePtFiltersModal);
 
-    // Synchronisation des filtres
-    if (ptFiltersModalSelect) {
-        ptFiltersModalSelect.addEventListener('change', () => {
-            const newPtId = ptFiltersModalSelect.value;
-            if (ptSelect) ptSelect.value = newPtId;
-            loadPtLeaderboard(newPtId);
-            if (ptAdminForm) {
-                document.getElementById('pt-id-input').value = newPtId;
-                findNextAvailableRank(newPtId);
-            }
-            closePtFiltersModal();
-        });
-    }
-
-    if (ptFiltersModalMode) {
-        ptFiltersModalMode.addEventListener('change', () => {
-            if (ptGlobalMode) ptGlobalMode.value = ptFiltersModalMode.value;
-            if (ptSelect.value === 'global') loadPtLeaderboard('global');
-            closePtFiltersModal();
-        });
-    }
-
-    const syncFiltersToModal = () => {
-        if (ptSelect && ptFiltersModalSelect) ptFiltersModalSelect.value = ptSelect.value;
-        if (ptGlobalMode && ptFiltersModalMode) ptFiltersModalMode.value = ptGlobalMode.value;
-        if (ptFiltersModalModeSelector) ptFiltersModalModeSelector.style.display = (ptSelect && ptSelect.value === 'global') ? 'block' : 'none';
-    };
 
     // --- GESTION DES CLASSEMENTS ---
     function applyGlobalPtFilters() {
         if (!ptGlobalTableBody) return;
+        // Utilise maintenant les filtres de la modale
         const selectedClasses = Array.from(ptClassFilters).filter(c => c.checked).map(c => c.dataset.class);
         const filteredLeaderboard = fullGlobalLeaderboard.filter(player => selectedClasses.length === 0 || selectedClasses.includes(player.class));
+
         ptGlobalTableBody.innerHTML = '';
         if (filteredLeaderboard.length === 0) {
             ptGlobalTableBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No data for the global ranking yet.</td></tr>';
@@ -127,15 +102,21 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
             const row = document.createElement('tr');
             row.classList.add('podium');
             if (rank <= 3) row.classList.add(`rank-${rank}`);
+            // Permet le clic pour voir les détails
             row.dataset.playerName = player.name;
-            row.innerHTML = `<td class="rank-col">${rank}</td><td class="player-name-cell pt-global-player-col"><span class="class-tag class-${String(player.class || 'unknown').toLowerCase()}">${player.name}</span></td><td class="cp-display pt-global-cp-col" data-cp="${player.combat_power}">${formatCP(player.combat_power)}</td><td>${player.points}</td>`;
+            row.innerHTML = `<td class="rank-col">${rank}</td><td class="pt-global-player-col"><span class="class-tag class-${String(player.class || 'unknown').toLowerCase()}">${player.name}</span></td><td class="cp-display pt-global-cp-col" data-cp="${player.combat_power}">${formatCP(player.combat_power)}</td><td>${player.points}</td>`;
             ptGlobalTableBody.appendChild(row);
         });
-        const ptFilterBtn = document.getElementById('pt-class-filter-btn');
-        if (ptFilterBtn) {
-            const span = ptFilterBtn.querySelector('span');
-            if (span) span.textContent = selectedClasses.length > 0 ? `Player (${selectedClasses.length})` : 'Player';
-            ptFilterBtn.classList.toggle('active', selectedClasses.length > 0);
+
+        // Mise à jour visuelle des boutons Filtres (optionnel, indique qu'un filtre est actif)
+        const active = selectedClasses.length > 0;
+        if (openPtFiltersBtn) {
+            openPtFiltersBtn.classList.toggle('active', active);
+            openPtFiltersBtn.textContent = active ? `PT Filters (${selectedClasses.length})` : 'PT Filters';
+        }
+        if (openPtFiltersBtnDesktop) {
+            openPtFiltersBtnDesktop.classList.toggle('active', active);
+            openPtFiltersBtnDesktop.textContent = active ? `Filters (${selectedClasses.length})` : 'Filters';
         }
     }
 
@@ -145,7 +126,9 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
         ptTable.style.display = isGlobal ? 'none' : 'table';
         ptGlobalTable.style.display = isGlobal ? 'table' : 'none';
         if (ptGlobalModeSelector) ptGlobalModeSelector.style.display = isGlobal ? 'flex' : 'none';
-        syncFiltersToModal();
+        // Afficher le bouton de filtre desktop seulement si on est en mode Global
+        if (openPtFiltersBtnDesktop) openPtFiltersBtnDesktop.style.display = isGlobal ? 'block' : 'none';
+
 
         if (isGlobal) {
             const mode = ptGlobalMode ? ptGlobalMode.value : 'all';
@@ -190,14 +173,20 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
     if (ptGlobalMode) {
         ptGlobalMode.addEventListener('change', () => {
             if (ptSelect.value === 'global') loadPtLeaderboard('global');
-            syncFiltersToModal();
         });
     }
+    // Attache les listeners aux nouveaux inputs de la modale
     ptClassFilters.forEach(input => input.addEventListener('change', applyGlobalPtFilters));
+
+    // Clic sur le tableau global pour voir les détails du joueur
     if (ptGlobalTableBody) {
         ptGlobalTableBody.addEventListener('click', (e) => {
             const playerRow = e.target.closest('tr');
-            if (!playerRow || !playerRow.dataset.playerName || !e.target.closest('.pt-global-player-col')) return;
+            // Modifié pour permettre le clic sur toute la ligne si désiré, ou garder restriction
+            if (!playerRow || !playerRow.dataset.playerName) return;
+            // Optionnel : restreindre au clic sur le nom seulement si préféré
+            // if (!e.target.closest('.pt-global-player-col')) return;
+
             e.preventDefault();
             const player = allPlayersMap.get(playerRow.dataset.playerName);
             if (player && showPlayerDetails) {
@@ -206,8 +195,9 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
         });
     }
 
-    // --- FORMULAIRE ADMIN ---
+    // --- FORMULAIRE ADMIN (inchangé) ---
     if (ptAdminForm) {
+        // ... (reste du code admin inchangé pour garder la réponse concise) ...
         const submitBtn = ptAdminForm.querySelector('button[type="submit"]');
         const ptIdInput = document.getElementById('pt-id-input');
         const ptRankInput = document.getElementById('pt-team-rank');
@@ -268,7 +258,6 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
                     guildHidden.value = "";
                 }
 
-                // NOUVEAU : Format de date avec heure
                 if (player.cp_last_updated) {
                     const d = new Date(player.cp_last_updated);
                     const day = String(d.getDate()).padStart(2, '0');
@@ -328,7 +317,6 @@ export function initPerilousTrials(showPlayerDetails, allPlayersMap) {
 
     const initialPtId = new URLSearchParams(window.location.search).get('pt_id') || 'global';
     if (ptSelect) ptSelect.value = initialPtId;
-    if (ptFiltersModalSelect) ptFiltersModalSelect.value = initialPtId;
     loadPtLeaderboard(initialPtId);
     if (ptAdminForm && document.getElementById('pt-id-input')) {
         document.getElementById('pt-id-input').value = initialPtId;
