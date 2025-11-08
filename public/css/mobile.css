@@ -196,6 +196,9 @@
     .guild-leaderboard-table td:nth-child(4) { display: none; } /* Members */
     .guild-leaderboard-table td:nth-child(5) { display: none; } /* Class Distrib */
 
+    .legend-full { display: none; }
+    .legend-short { display: inline; }
+
     /* --- Perilous Trials (Mobile) --- */
     #perilous-trials-section .desktop-pt-controls { display: none; }
     #perililous-trials-section .mobile-pt-controls { display: flex; gap: 10px; margin-bottom: 15px; }

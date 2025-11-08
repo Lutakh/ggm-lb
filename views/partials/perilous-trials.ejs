@@ -2,7 +2,8 @@
 
 <div class="mobile-pt-controls">
     <button id="open-pt-filters-btn" class="action-btn-main">PT Filters</button>
-    <div style="display: flex; gap: 10px;">
+    <div style="display: flex; gap: 10px; flex-grow: 1; justify-content: flex-end;">
+        <%# --- BOUTONS ADD & HELP (MOBILE) --- %>
         <button id="pt-add-team-btn-mobile" class="action-btn-main admin-only" style="display: none;">Add</button>
         <button id="pt-help-btn-mobile" class="help-button">Help</button>
     </div>
@@ -32,11 +33,11 @@
 </div>
 
 <div class="leaderboard-legend">
-    <div class="legend-item"><span class="class-tag class-swordbearer"></span> Sword</div>
-    <div class="legend-item"><span class="class-tag class-acolyte"></span> Aco</div>
-    <div class="legend-item"><span class="class-tag class-wayfarer"></span> Way</div>
-    <div class="legend-item"><span class="class-tag class-scholar"></span> Scho</div>
-    <div class="legend-item"><span class="class-tag class-shadowlash"></span> Shadow</div>
+    <div class="legend-item"><span class="class-tag class-swordbearer"></span> <span class="legend-full">Swordbearer</span><span class="legend-short">Swd</span></div>
+    <div class="legend-item"><span class="class-tag class-acolyte"></span> <span class="legend-full">Acolyte</span><span class="legend-short">Aco</span></div>
+    <div class="legend-item"><span class="class-tag class-wayfarer"></span> <span class="legend-full">Wayfarer</span><span class="legend-short">Way</span></div>
+    <div class="legend-item"><span class="class-tag class-scholar"></span> <span class="legend-full">Scholar</span><span class="legend-short">Sch</span></div>
+    <div class="legend-item"><span class="class-tag class-shadowlash"></span> <span class="legend-full">Shadowlash</span><span class="legend-short">Sha</span></div>
 </div>
 
 <table id="pt-leaderboard-table">

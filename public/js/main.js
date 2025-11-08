@@ -247,21 +247,26 @@ function closeFiltersModal() {
     if (filtersBackdrop) filtersBackdrop.style.display = 'none';
 }
 
-// --- MODALE D'AIDE DAILY QUESTS ---
+// --- MODALES D'AIDE (DQ, PT, TP) ---
 const dqHelpModal = document.getElementById('dq-help-modal');
 const dqHelpBackdrop = document.getElementById('dq-help-modal-backdrop');
 const dqHelpBtn = document.getElementById('dq-help-btn');
 const dqHelpCloseBtn = document.getElementById('dq-help-close-btn');
 
-function openDqHelpModal() {
-    if (dqHelpModal) dqHelpModal.style.display = 'flex';
-    if (dqHelpBackdrop) dqHelpBackdrop.style.display = 'block';
+const tpHelpModal = document.getElementById('tp-help-modal');
+const tpHelpBackdrop = document.getElementById('tp-help-modal-backdrop');
+const tpHelpBtn = document.getElementById('tp-help-btn');
+const tpHelpCloseBtn = document.getElementById('tp-help-close-btn');
+
+function openHelpModal(modal, backdrop) {
+    if (modal) modal.style.display = 'flex';
+    if (backdrop) backdrop.style.display = 'block';
+}
+function closeHelpModal(modal, backdrop) {
+    if (modal) modal.style.display = 'none';
+    if (backdrop) backdrop.style.display = 'none';
 }
 
-function closeDqHelpModal() {
-    if (dqHelpModal) dqHelpModal.style.display = 'none';
-    if (dqHelpBackdrop) dqHelpBackdrop.style.display = 'none';
-}
 
 // --- DOMContentLoaded ---
 document.addEventListener('DOMContentLoaded', function() {
@@ -385,7 +390,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const playerTableBody = document.querySelector('#leaderboard-table tbody');
     if (playerTableBody) {
         playerTableBody.addEventListener('click', (e) => {
-            // REMOVED MOBILE-ONLY RESTRICTION HERE
             const playerRow = e.target.closest('tr');
             // Ignorer les clics sur les notes, les actions admin, ou tout bouton/lien
             if (!playerRow || e.target.closest('.notes-col') || e.target.closest('.admin-actions') || e.target.closest('a') || e.target.closest('button')) return;
@@ -418,7 +422,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const teamTableBody = document.getElementById('teams-tbody');
     if (teamTableBody) {
         teamTableBody.addEventListener('click', (e) => {
-            if (window.innerWidth > 768) return; // Keep team details mobile-only for now if desired, or remove this too
+            if (window.innerWidth > 768) return;
             const teamRow = e.target.closest('.team-data-row');
             if (!teamRow) return;
             e.preventDefault();
@@ -431,16 +435,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const guildTableBody = document.getElementById('guilds-tbody');
     if (guildTableBody) {
         guildTableBody.addEventListener('click', (e) => {
-            if (window.innerWidth > 768) return; // Keep guild details mobile-only for now if desired
+            if (window.innerWidth > 768) return;
             const guildRow = e.target.closest('tr');
             if (!guildRow) return;
             e.preventDefault();
             showGuildDetails(guildRow);
         });
     }
-    if (dqHelpBtn) dqHelpBtn.addEventListener('click', openDqHelpModal);
-    if (dqHelpCloseBtn) dqHelpCloseBtn.addEventListener('click', closeDqHelpModal);
-    if (dqHelpBackdrop) dqHelpBackdrop.addEventListener('click', closeDqHelpModal);
+    if (dqHelpBtn) dqHelpBtn.addEventListener('click', () => openHelpModal(dqHelpModal, dqHelpBackdrop));
+    if (dqHelpCloseBtn) dqHelpCloseBtn.addEventListener('click', () => closeHelpModal(dqHelpModal, dqHelpBackdrop));
+    if (dqHelpBackdrop) dqHelpBackdrop.addEventListener('click', () => closeHelpModal(dqHelpModal, dqHelpBackdrop));
+
+    // Listeners pour la nouvelle modale Team Planner Help
+    if (tpHelpBtn) tpHelpBtn.addEventListener('click', () => openHelpModal(tpHelpModal, tpHelpBackdrop));
+    if (tpHelpCloseBtn) tpHelpCloseBtn.addEventListener('click', () => closeHelpModal(tpHelpModal, tpHelpBackdrop));
+    if (tpHelpBackdrop) tpHelpBackdrop.addEventListener('click', () => closeHelpModal(tpHelpModal, tpHelpBackdrop));
 
     // Filtre mobile équipes
     const teamMobileFilter = document.getElementById('team-guild-filter-mobile');

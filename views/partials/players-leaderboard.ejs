@@ -1,24 +1,23 @@
 <div class="view-tabs"><h2>Players Leaderboard</h2></div>
 
 <div class="leaderboard-legend">
-    <div class="legend-item"><span class="class-tag class-swordbearer"></span> Sword</div>
-    <div class="legend-item"><span class="class-tag class-acolyte"></span> Aco</div>
-    <div class="legend-item"><span class="class-tag class-wayfarer"></span> Way</div>
-    <div class="legend-item"><span class="class-tag class-scholar"></span> Scho</div>
-    <div class="legend-item"><span class="class-tag class-shadowlash"></span> Shadow</div>
+    <div class="legend-item"><span class="class-tag class-swordbearer"></span> <span class="legend-full">Swordbearer</span><span class="legend-short">Swd</span></div>
+    <div class="legend-item"><span class="class-tag class-acolyte"></span> <span class="legend-full">Acolyte</span><span class="legend-short">Aco</span></div>
+    <div class="legend-item"><span class="class-tag class-wayfarer"></span> <span class="legend-full">Wayfarer</span><span class="legend-short">Way</span></div>
+    <div class="legend-item"><span class="class-tag class-scholar"></span> <span class="legend-full">Scholar</span><span class="legend-short">Sch</span></div>
+    <div class="legend-item"><span class="class-tag class-shadowlash"></span> <span class="legend-full">Shadowlash</span><span class="legend-short">Sha</span></div>
 </div>
 
-<%# Ce bouton est maintenant visible sur Desktop grâce au CSS mis à jour %>
 <button id="open-filters-btn" class="action-btn-main">Filters</button>
 
 <table id="leaderboard-table">
     <thead>
         <tr>
             <th class="rank-col">Rank</th>
-            <th>Player</th> <%# En-tête simplifié %>
+            <th>Player</th>
             <th>CP</th>
             <th>Play Hours <span id="table-timezone-note" class="timezone-header-note"></span></th>
-            <th>Guild</th> <%# En-tête simplifié %>
+            <th>Guild</th>
             <th>Notes</th>
             <th class="last-modified-col">Updated</th>
             <th class="admin-only-header">Actions</th>
@@ -59,7 +58,7 @@
                     </div>
                 </td>
                 <td><%= player.guild || '-' %></td>
-                <td class="notes-col" onclick="showFullNote('<%= player.name %>', `<%= player.notes ? player.notes.replace(/[`"']/g, '\\$&') : '' %>`)">
+                <td class="notes-col" onclick="showFullFullNote('<%= player.name %>', `<%= player.notes ? player.notes.replace(/[`"']/g, '\\$&') : '' %>`)">
                     <%= player.notes || '-' %>
                 </td>
                 <td class="last-modified-col" data-timestamp="<%= player.updated_at %>"></td>

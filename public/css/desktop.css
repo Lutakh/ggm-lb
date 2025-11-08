@@ -31,7 +31,8 @@
         display: none;
     }
 
-    /* MODIFICATION ICI : On ne cache PLUS le bouton de filtre principal sur Desktop */
-    /* #players-leaderboard-section #open-filters-btn { display: none; }  <-- SUPPRIMÉ */
+    /* --- Légende des classes (Desktop) --- */
+    .legend-full { display: inline; }
+    .legend-short { display: none; }
 
 }

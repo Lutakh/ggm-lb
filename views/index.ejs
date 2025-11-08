@@ -201,7 +201,15 @@
 <div id="pt-help-modal-backdrop" class="player-select-modal-backdrop"></div>
 <div id="pt-help-modal" class="player-select-modal">
     <div class="player-select-modal-header"><h3>Perilous Trial - Help</h3><button type="button" id="pt-help-close-btn" class="player-select-close-btn">&times;</button></div>
-    <div id="pt-help-modal-body"></div>
+    <div id="pt-help-modal-body">
+        <strong>Perilous Trials (PT) Leaderboards</strong>
+        <p>View top performing teams for each specific Trial, or check the Global Ranking.</p>
+        <ul>
+            <li><strong>Individual PT Ranking:</strong> Shows the best teams for a selected trial.</li>
+            <li><strong>Global Ranking:</strong> Aggregates scores from all PTs to rank players overall.</li>
+        </ul>
+        <p><em>Tip: Use filters to see rankings for specific classes in the Global view.</em></p>
+    </div>
 </div>
 
 <div id="pt-filters-modal-backdrop" class="player-select-modal-backdrop"></div>
@@ -230,6 +238,31 @@
         <strong>"Next in" Timer</strong><ul><li>Shows time until the next stamina point.</li><li>"Full in" shows time until 60/60.</li></ul>
         <strong>Discord Notifications</strong><ol><li>Enter your Discord User ID in the "Add / Update" form.</li><li>The bot will DM you when stamina reaches 40 and 60.</li><li>You must share a server with the bot or have DMs open.</li></ol>
         <strong>How to find your Discord User ID:</strong><ol><li>Enable Developer Mode in Discord (Settings > Advanced).</li><li>Right-click your profile and select "Copy User ID".</li></ol>
+    </div>
+</div>
+
+<%# --- NOUVEAU : Modale d'aide Team Planner --- %>
+<div id="tp-help-modal-backdrop" class="player-select-modal-backdrop"></div>
+<div id="tp-help-modal" class="player-select-modal">
+    <div class="player-select-modal-header"><h3>Team Planner - Help</h3><button type="button" id="tp-help-close-btn" class="player-select-close-btn">&times;</button></div>
+    <div id="tp-help-modal-body" style="padding: 20px 25px; line-height: 1.6;">
+        <strong>📅 Organizing Activities</strong>
+        <p>Plan your team runs (PTs, Dragon Hunt, etc.) easily. Click <em>+ New Activity</em> to start.</p>
+
+        <strong>🌍 Automatic Timezone Conversion</strong>
+        <p style="color: var(--primary-color); font-weight: bold;">IMPORTANT: All times are automatically converted to YOUR local time.</p>
+        <ul>
+            <li>When creating an activity, enter the date and time <strong>in your local time</strong>.</li>
+            <li>Other players will see the activity listed in <strong>their own local time</strong> automatically.</li>
+            <li>No need to calculate time differences!</li>
+        </ul>
+
+        <strong>👥 Joining & Managing</strong>
+        <ul>
+            <li>Click <strong>Join</strong> to sign up for an activity.</li>
+            <li>Organizers can add other players manually using the <strong>+</strong> button on empty slots.</li>
+            <li>Use the checkbox to filter and see only upcoming activities with open spots.</li>
+        </ul>
     </div>
 </div>
 
