@@ -1,5 +1,24 @@
 <div class="view-tabs"><h2>Perilous Trial Leaderboards</h2></div>
 
+<div class="pt-main-controls">
+    <div class="pt-selector-group">
+        <label for="pt-select">Trial:</label>
+        <select id="pt-select">
+            <option value="global" selected>Global Ranking</option>
+            <% perilousTrials.forEach(pt => { %>
+                <option value="<%= pt.id %>"><%= pt.name %></option>
+            <% }); %>
+        </select>
+    </div>
+    <div id="pt-global-mode-selector" class="pt-selector-group" style="display: none;">
+        <label for="pt-global-mode">Mode:</label>
+        <select id="pt-global-mode">
+            <option value="best" selected>Best Rank/PT</option>
+            <option value="all">All Ranks</option>
+        </select>
+    </div>
+</div>
+
 <div class="mobile-pt-controls">
     <button id="open-pt-filters-btn" class="action-btn-main">PT Filters</button>
     <div class="pt-mobile-actions-right">
@@ -9,20 +28,6 @@
 </div>
 
 <div class="controls desktop-pt-controls">
-    <label for="pt-select" style="font-weight: bold;">Select a Trial to View:</label>
-    <select id="pt-select">
-        <option value="global" selected>Global PT Ranking</option>
-        <% perilousTrials.forEach(pt => { %>
-            <option value="<%= pt.id %>"><%= pt.name %></option>
-        <% }); %>
-    </select>
-    <div id="pt-global-mode-selector" style="display: none;">
-        <label for="pt-global-mode" style="font-weight: bold;">Mode:</label>
-        <select id="pt-global-mode">
-            <option value="best" selected>Best Rank/PT</option>
-            <option value="all">All Ranks</option>
-        </select>
-    </div>
     <button id="open-pt-filters-btn-desktop" class="action-btn-main" style="display: none;">Filters</button>
 
     <div style="margin-left: auto; display: flex; gap: 10px; align-items: center;">

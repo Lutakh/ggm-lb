@@ -260,14 +260,21 @@ async function showGuildDetails(guildRow) {
                         const d = new Date(member.cp_last_updated);
                         const now = new Date();
                         const hoursDiff = (now - d) / (1000 * 60 * 60);
-                        // Si > 24h, on peut afficher en rouge par exemple, ou juste le texte relatif
                         cpDateText = formatRelativeTimeShort(member.cp_last_updated);
                         if (hoursDiff > 24) cpDateText = `<span style="color: var(--accent-color); font-weight: bold;">${cpDateText}</span>`;
                     }
 
+                    // Noms de classe responsive
+                    const shortClass = member.class?.substring(0, 3) || '???';
+                    const fullClass = member.class || 'Unknown';
+                    const classNameLower = (member.class || 'unknown').toLowerCase();
+
                     li.innerHTML = `
                         <div class="guild-member-info">
-                            <span class="class-tag class-${(member.class || 'unknown').toLowerCase()}">${member.class?.substring(0,3) || '???'}</span>
+                            <span class="class-tag class-${classNameLower}">
+                                <span class="short-name">${shortClass}</span>
+                                <span class="full-name">${fullClass}</span>
+                            </span>
                             <span class="guild-member-name">${member.name}</span>
                         </div>
                         <div class="guild-member-details">
@@ -276,13 +283,40 @@ async function showGuildDetails(guildRow) {
                         </div>
                     `;
 
+                    // Click listener pour afficher les détails du joueur
+                    li.addEventListener('click', (e) => {
+                        if (e.target.closest('.remove-from-guild-btn')) return; // Ignorer si clic sur Remove
+
+                        const fullPlayerData = allPlayersMap.get(member.name);
+                        if (fullPlayerData) {
+                            const fakeRow = {
+                                dataset: {
+                                    name: fullPlayerData.name,
+                                    class: fullPlayerData.class,
+                                    cp: fullPlayerData.combat_power,
+                                    guild: fullPlayerData.guild,
+                                    team: fullPlayerData.team,
+                                    notes: fullPlayerData.notes,
+                                    updated: fullPlayerData.updated_at,
+                                    playSlots: JSON.stringify(fullPlayerData.play_slots || '[]'),
+                                    rank: playerRankMap.get(member.name) || 'N/A',
+                                    ptTags: JSON.stringify(fullPlayerData.pt_tags || '[]')
+                                }
+                            };
+                            showPlayerDetails(fakeRow, true); // true pour gestion z-index
+                        }
+                    });
+
                     // Bouton Admin "Remove"
                     if (isAdmin) {
                         const removeBtn = document.createElement('button');
                         removeBtn.className = 'remove-from-guild-btn';
                         removeBtn.textContent = 'Remove';
                         removeBtn.title = `Remove ${member.name} from guild`;
-                        removeBtn.onclick = () => handleRemoveFromGuild(member.id, member.name, guildName, li);
+                        removeBtn.onclick = (e) => {
+                            e.stopPropagation(); // Empêcher l'ouverture de la modale joueur
+                            handleRemoveFromGuild(member.id, member.name, guildName, li);
+                        };
                         li.appendChild(removeBtn);
                     }
 
