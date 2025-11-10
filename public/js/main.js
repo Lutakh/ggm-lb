@@ -186,21 +186,24 @@ function closeTeamDetailModal() {
     if (teamDetailBackdrop) teamDetailBackdrop.style.display = 'none';
 }
 
-// --- MODALE DE DÉTAIL DE GUILDE (MOBILE) ---
+// --- MODALE DE DÉTAIL DE GUILDE ---
 const guildDetailModal = document.getElementById('guild-detail-modal');
 const guildDetailBackdrop = document.getElementById('guild-detail-modal-backdrop');
 const guildDetailTitle = document.getElementById('guild-detail-modal-title');
 const guildDetailBody = document.getElementById('guild-detail-modal-body');
 const guildDetailCloseBtn = document.getElementById('guild-detail-close-btn');
 
-function showGuildDetails(guildRow) {
+async function showGuildDetails(guildRow) {
     if (!guildDetailModal || !guildRow || !guildRow.dataset) return;
     const data = guildRow.dataset;
+    const guildName = data.guildName || 'Unknown Guild';
+
+    // 1. Affichage des infos de base (immédiat)
+    if(guildDetailTitle) guildDetailTitle.textContent = guildName;
+
     let classDistrib = {};
     try { classDistrib = JSON.parse(data.classDistrib || '{}'); }
-    catch (e) { console.error("Error parsing guild class distribution:", data.classDistrib, e); classDistrib = {}; }
-
-    if(guildDetailTitle) guildDetailTitle.textContent = data.guildName || 'Unknown Guild';
+    catch (e) { classDistrib = {}; }
 
     const classDistribHtml = `
         <div class="guild-class-distrib centered">
@@ -211,20 +214,164 @@ function showGuildDetails(guildRow) {
             <span class="class-tag class-shadowlash" title="Shadowlash">${classDistrib.Shadowlash || 0}</span>
         </div>`;
 
+    // Structure de base de la modale
     if(guildDetailBody) guildDetailBody.innerHTML = `
         <ul class="guild-detail-list">
             <li><strong>Rank:</strong> <span>${data.rank || 'N/A'}</span></li>
             <li><strong>Total CP:</strong> <span>${formatCP(data.totalCp)}</span></li>
-            <li><strong>Members:</strong> <span>${data.memberCount || 0}</span></li>
+            <li><strong>Members:</strong> <span id="guild-modal-member-count">${data.memberCount || 0}</span>/120</li>
             <li class="distrib-item">
                 <strong class="centered-title">Class Distribution</strong>
                 ${classDistribHtml}
-                ${shortClassLegendHtml}
             </li>
-        </ul>`;
+        </ul>
+        <div id="guild-modal-members-loading" style="text-align: center; padding: 20px; opacity: 0.7; font-style: italic;">
+            Loading members...
+        </div>
+        <ul id="guild-modal-members-list" class="guild-member-list" style="display: none;"></ul>
+    `;
 
     guildDetailModal.style.display = 'flex';
     if(guildDetailBackdrop) guildDetailBackdrop.style.display = 'block';
+
+    // 2. Récupération et affichage des membres (asynchrone)
+    try {
+        const response = await fetch(`/api/guild-members/${encodeURIComponent(guildName)}`);
+        if (!response.ok) throw new Error("Network response was not ok");
+        const members = await response.json();
+
+        const membersListEl = document.getElementById('guild-modal-members-list');
+        const loadingEl = document.getElementById('guild-modal-members-loading');
+        const isAdmin = sessionStorage.getItem('adminPassword'); // Vérifie si le mode admin est actif localement
+
+        if (membersListEl && loadingEl) {
+            membersListEl.innerHTML = '';
+            if (members.length === 0) {
+                membersListEl.innerHTML = '<li style="padding: 10px; text-align: center; font-style: italic;">No members found.</li>';
+            } else {
+                members.forEach(member => {
+                    const li = document.createElement('li');
+                    li.className = 'guild-member-item';
+                    li.dataset.playerId = member.id;
+
+                    // Date de dernière MAJ CP
+                    let cpDateText = '';
+                    if (member.cp_last_updated) {
+                        const d = new Date(member.cp_last_updated);
+                        const now = new Date();
+                        const hoursDiff = (now - d) / (1000 * 60 * 60);
+                        cpDateText = formatRelativeTimeShort(member.cp_last_updated);
+                        if (hoursDiff > 24) cpDateText = `<span style="color: var(--accent-color); font-weight: bold;">${cpDateText}</span>`;
+                    }
+
+                    // Noms de classe responsive
+                    const shortClass = member.class?.substring(0, 3) || '???';
+                    const fullClass = member.class || 'Unknown';
+                    const classNameLower = (member.class || 'unknown').toLowerCase();
+
+                    li.innerHTML = `
+                        <div class="guild-member-info">
+                            <span class="class-tag class-${classNameLower}">
+                                <span class="short-name">${shortClass}</span>
+                                <span class="full-name">${fullClass}</span>
+                            </span>
+                            <span class="guild-member-name">${member.name}</span>
+                        </div>
+                        <div class="guild-member-details">
+                            <div>${formatCP(member.combat_power)}</div>
+                            <div class="guild-member-cp-date">${cpDateText}</div>
+                        </div>
+                    `;
+
+                    // Click listener pour afficher les détails du joueur
+                    li.addEventListener('click', (e) => {
+                        if (e.target.closest('.remove-from-guild-btn')) return; // Ignorer si clic sur Remove
+
+                        const fullPlayerData = allPlayersMap.get(member.name);
+                        if (fullPlayerData) {
+                            const fakeRow = {
+                                dataset: {
+                                    name: fullPlayerData.name,
+                                    class: fullPlayerData.class,
+                                    cp: fullPlayerData.combat_power,
+                                    guild: fullPlayerData.guild,
+                                    team: fullPlayerData.team,
+                                    notes: fullPlayerData.notes,
+                                    updated: fullPlayerData.updated_at,
+                                    playSlots: JSON.stringify(fullPlayerData.play_slots || '[]'),
+                                    rank: playerRankMap.get(member.name) || 'N/A',
+                                    ptTags: JSON.stringify(fullPlayerData.pt_tags || '[]')
+                                }
+                            };
+                            showPlayerDetails(fakeRow, true); // true pour gestion z-index
+                        }
+                    });
+
+                    // Bouton Admin "Remove"
+                    if (isAdmin) {
+                        const removeBtn = document.createElement('button');
+                        removeBtn.className = 'remove-from-guild-btn';
+                        removeBtn.textContent = 'Remove';
+                        removeBtn.title = `Remove ${member.name} from guild`;
+                        removeBtn.onclick = (e) => {
+                            e.stopPropagation(); // Empêcher l'ouverture de la modale joueur
+                            handleRemoveFromGuild(member.id, member.name, guildName, li);
+                        };
+                        li.appendChild(removeBtn);
+                    }
+
+                    membersListEl.appendChild(li);
+                });
+            }
+            loadingEl.style.display = 'none';
+            membersListEl.style.display = 'block';
+        }
+
+    } catch (error) {
+        console.error("Error loading guild members:", error);
+        const loadingEl = document.getElementById('guild-modal-members-loading');
+        if (loadingEl) loadingEl.textContent = "Error loading members.";
+    }
+}
+
+// Fonction pour gérer le clic sur "Remove"
+async function handleRemoveFromGuild(playerId, playerName, guildName, listItemElement) {
+    const adminPassword = sessionStorage.getItem('adminPassword');
+    if (!adminPassword) {
+        alert("Admin mode not active.");
+        return;
+    }
+
+    if (!confirm(`Are you sure you want to remove ${playerName} from ${guildName}?`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/remove-from-guild', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ player_id: playerId, admin_password: adminPassword })
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            // Succès : on retire l'élément de la liste sans recharger
+            if (listItemElement) {
+                listItemElement.remove();
+            }
+            // Mettre à jour le compteur dans la modale
+            const countEl = document.getElementById('guild-modal-member-count');
+            if (countEl) {
+                const currentCount = parseInt(countEl.textContent, 10);
+                if (!isNaN(currentCount)) countEl.textContent = Math.max(0, currentCount - 1);
+            }
+        } else {
+            alert(`Failed to remove player: ${result.error}`);
+        }
+    } catch (err) {
+        console.error("Error during remove-from-guild:", err);
+        alert("An error occurred.");
+    }
 }
 
 function closeGuildDetailModal() {
@@ -435,7 +582,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const guildTableBody = document.getElementById('guilds-tbody');
     if (guildTableBody) {
         guildTableBody.addEventListener('click', (e) => {
-            if (window.innerWidth > 768) return;
             const guildRow = e.target.closest('tr');
             if (!guildRow) return;
             e.preventDefault();

@@ -157,6 +157,21 @@ tr.rank-3, .team-entry.rank-3, tr.rank-3 {
 .mobile-pt-controls {
     display: none;
 }
+/* NOUVEAU : Styles pour les contrôles principaux PT (mobiles & desktop) */
+.pt-main-controls {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    flex-wrap: wrap; /* Pour mobile */
+}
+.pt-selector-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.pt-selector-group label {
+    font-weight: bold;
+}
 
 #pt-leaderboard-table th:first-child { width: 10%; }
 #pt-leaderboard-table th:last-child { width: 90%; }
