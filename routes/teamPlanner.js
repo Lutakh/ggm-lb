@@ -2,12 +2,12 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../services/db');
+// Import des fonctions de synchronisation Discord
+const { updateActivityEmbed, deleteActivityMessage } = require('../services/discordBot');
 
-// Obtenir toutes les activités (futures ET passées)
+// --- GET : Récupérer toutes les activités ---
 router.get('/team-planner/activities', async (req, res) => {
     try {
-        // Pas de filtrage par date ici, on renvoie tout l'historique.
-        // Le front-end se chargera de séparer futur/passé.
         const activitiesRes = await db.query(`
             SELECT pa.*,
                    p_creator.name as creator_name,
@@ -34,7 +34,7 @@ router.get('/team-planner/activities', async (req, res) => {
     }
 });
 
-// Créer une nouvelle activité
+// --- POST : Créer une activité (Web) ---
 router.post('/team-planner/create', async (req, res) => {
     const { activity_type, activity_subtype, scheduled_time, creator_id, notes } = req.body;
 
@@ -46,7 +46,7 @@ router.post('/team-planner/create', async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        // Créer l'activité
+        // 1. Créer l'activité
         const insertRes = await client.query(`
             INSERT INTO planned_activities (activity_type, activity_subtype, scheduled_time, creator_id, notes)
             VALUES ($1, $2, $3, $4, $5)
@@ -54,7 +54,7 @@ router.post('/team-planner/create', async (req, res) => {
         `, [activity_type, activity_subtype, scheduled_time, creator_id, notes]);
         const activityId = insertRes.rows[0].id;
 
-        // Ajouter le créateur comme premier participant automatiquement
+        // 2. Ajouter le créateur comme participant automatiquement
         await client.query(`
             INSERT INTO activity_participants (activity_id, player_id)
             VALUES ($1, $2)
@@ -71,11 +71,11 @@ router.post('/team-planner/create', async (req, res) => {
     }
 });
 
-// Rejoindre une activité
+// --- POST : Rejoindre une activité ---
 router.post('/team-planner/join', async (req, res) => {
     const { activity_id, player_id } = req.body;
     try {
-        // Vérifier s'il reste de la place
+        // 1. Vérifier s'il reste de la place
         const activityRes = await db.query("SELECT activity_type FROM planned_activities WHERE id = $1", [activity_id]);
         if (activityRes.rows.length === 0) return res.status(404).json({ error: "Activity not found" });
         const type = activityRes.rows[0].activity_type;
@@ -86,11 +86,16 @@ router.post('/team-planner/join', async (req, res) => {
             return res.status(400).json({ error: "Activity is full." });
         }
 
+        // 2. Ajouter le participant
         await db.query(`
             INSERT INTO activity_participants (activity_id, player_id)
             VALUES ($1, $2)
             ON CONFLICT DO NOTHING
         `, [activity_id, player_id]);
+
+        // 3. Mettre à jour le message Discord si existant
+        updateActivityEmbed(activity_id);
+
         res.json({ success: true });
     } catch (err) {
         console.error("Error joining activity:", err);
@@ -98,11 +103,15 @@ router.post('/team-planner/join', async (req, res) => {
     }
 });
 
-// Quitter une activité
+// --- POST : Quitter une activité ---
 router.post('/team-planner/leave', async (req, res) => {
     const { activity_id, player_id } = req.body;
     try {
         await db.query(`DELETE FROM activity_participants WHERE activity_id = $1 AND player_id = $2`, [activity_id, player_id]);
+
+        // Mettre à jour le message Discord si existant
+        updateActivityEmbed(activity_id);
+
         res.json({ success: true });
     } catch (err) {
         console.error("Error leaving activity:", err);
@@ -110,17 +119,20 @@ router.post('/team-planner/leave', async (req, res) => {
     }
 });
 
-// KICK un joueur (Admin seulement)
+// --- POST : KICK un joueur (Admin seulement) ---
 router.post('/team-planner/kick', async (req, res) => {
     const { activity_id, target_player_id, admin_password } = req.body;
 
-    // Vérification simple du mot de passe admin
     if (admin_password !== process.env.ADMIN_PASSWORD) {
         return res.status(403).json({ error: 'Incorrect admin password.' });
     }
 
     try {
         await db.query(`DELETE FROM activity_participants WHERE activity_id = $1 AND player_id = $2`, [activity_id, target_player_id]);
+
+        // Mettre à jour le message Discord si existant
+        updateActivityEmbed(activity_id);
+
         res.json({ success: true });
     } catch (err) {
         console.error("Error kicking player from activity:", err);
@@ -128,13 +140,19 @@ router.post('/team-planner/kick', async (req, res) => {
     }
 });
 
-// Supprimer une activité (Admin seulement pour l'instant)
+// --- POST : Supprimer une activité (Admin seulement) ---
 router.post('/team-planner/delete', async (req, res) => {
     if (req.body.admin_password !== process.env.ADMIN_PASSWORD) {
         return res.status(403).json({ error: 'Incorrect admin password.' });
     }
     try {
+        // 1. Supprimer le message Discord AVANT de supprimer l'activité en DB
+        // (car on a besoin de l'ID du message stocké en DB pour le trouver sur Discord)
+        await deleteActivityMessage(req.body.activity_id);
+
+        // 2. Supprimer de la BDD
         await db.query("DELETE FROM planned_activities WHERE id = $1", [req.body.activity_id]);
+
         res.json({ success: true });
     } catch (err) {
         console.error("Error deleting activity:", err);
