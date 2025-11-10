@@ -20,7 +20,7 @@ timers.daily %>" data-type="daily"></span>
            <li class="timer-entry">
 
  <span class="timer-label <%= timers.isPaperPlaneImportant ?
-'important-event' : '' %>">Paper Plane #<%= timers.paperPlaneNumber %> in</span>
+'important-event' : '' %>">Paper Plane #<%= timers.paperPlaneNumber %> end in</span>
                <span class="timer-value" data-milliseconds="<%= timers.event %>" data-type="event"></span>
                <% if (timers.futurePaperPlanes && timers.futurePaperPlanes.length > 0) { %>
                <div class="timer-tooltip pp-tooltip">
