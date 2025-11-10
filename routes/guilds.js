@@ -1,3 +1,4 @@
+[original_file:lutakh/ggm-lb/ggm-lb-gemini/routes/guilds.js]
 const express = require('express');
 const router = express.Router();
 const db = require('../services/db');
@@ -40,6 +41,37 @@ router.post('/delete-guild', async (req, res) => {
         console.error("Error deleting guild:", err);
         res.redirect('/?notification=Error deleting guild.');
     } finally { client.release(); }
+});
+
+// NOUVEAU : API pour récupérer les membres d'une guilde (JSON)
+router.get('/api/guild-members/:guildName', async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT id, name, class, combat_power, cp_last_updated
+            FROM players
+            WHERE guild = $1
+            ORDER BY combat_power DESC
+        `, [req.params.guildName]);
+        res.json(result.rows);
+    } catch (err) {
+        console.error("Error fetching guild members:", err);
+        res.status(500).json({ error: "Failed to fetch members" });
+    }
+});
+
+// NOUVEAU : API pour retirer un joueur d'une guilde (AJAX, sans redirect)
+router.post('/api/remove-from-guild', async (req, res) => {
+    // Vérification mot de passe admin (envoyé dans le corps de la requête JSON)
+    if (req.body.admin_password !== process.env.ADMIN_PASSWORD) {
+        return res.status(403).json({ success: false, error: 'Incorrect admin password.' });
+    }
+    try {
+        await db.query('UPDATE players SET guild = NULL, updated_at = NOW() WHERE id = $1', [req.body.player_id]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error("Error removing player from guild:", err);
+        res.status(500).json({ success: false, error: 'Database error.' });
+    }
 });
 
 module.exports = router;

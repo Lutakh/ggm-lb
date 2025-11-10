@@ -1,3 +1,4 @@
+[original_file:lutakh/ggm-lb/ggm-lb-gemini/public/css/modals.css]
 /* --- Base Modal Styles --- */
 .player-select-modal-backdrop {
     display: none;
@@ -496,4 +497,53 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
 }
 .filter-modal-dropdown-panel label:hover {
     background-color: #f9f6f1;
+}
+
+/* --- Guild Member List in Modal --- */
+.guild-member-list {
+    list-style: none;
+    padding: 0;
+    margin: 15px 0 0 0;
+    border-top: 2px dashed var(--border-color);
+}
+.guild-member-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+.guild-member-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-grow: 1;
+    overflow: hidden; /* Pour les noms très longs */
+}
+.guild-member-name {
+    font-weight: bold;
+    white-space: nowrap;
+}
+.guild-member-details {
+    text-align: right;
+    font-size: 0.9em;
+    color: var(--primary-color);
+}
+.guild-member-cp-date {
+    font-size: 0.8em;
+    opacity: 0.7;
+}
+.remove-from-guild-btn {
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 4px 8px;
+    font-size: 0.8em;
+    cursor: pointer;
+    margin-left: 10px;
+    flex-shrink: 0;
+}
+.remove-from-guild-btn:hover {
+    opacity: 0.9;
 }
