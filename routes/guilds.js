@@ -1,4 +1,3 @@
-[original_file:lutakh/ggm-lb/ggm-lb-gemini/routes/guilds.js]
 const express = require('express');
 const router = express.Router();
 const db = require('../services/db');
