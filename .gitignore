@@ -1,7 +1,7 @@
 
 # Fichier d'environnement
 .env
-
+.restore_cmd
 # Base de données
 database.sqlite
 

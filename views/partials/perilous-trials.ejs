@@ -5,8 +5,12 @@
         <label for="pt-select">Trial:</label>
         <select id="pt-select">
             <option value="global" selected>Global Ranking</option>
-            <% perilousTrials.forEach(pt => { %>
-                <option value="<%= pt.id %>"><%= pt.name %></option>
+            <% perilousTrials.forEach(pt => {
+                const isFilled = parseInt(pt.team_count) >= 50;
+            %>
+                <option value="<%= pt.id %>" class="<%= isFilled ? 'pt-filled' : '' %>">
+                    <%= pt.name %> <%= isFilled ? '(50+)' : '' %>
+                </option>
             <% }); %>
         </select>
     </div>
@@ -72,8 +76,12 @@
                 <label for="pt-id-input">Perilous Trial</label>
                 <select id="pt-id-input" name="pt_id" required>
                     <option value="" disabled selected>Select PT</option>
-                    <% perilousTrials.forEach(pt => { %>
-                        <option value="<%= pt.id %>"><%= pt.name %></option>
+                    <% perilousTrials.forEach(pt => {
+                        const isFilled = parseInt(pt.team_count) >= 50;
+                    %>
+                        <option value="<%= pt.id %>" class="<%= isFilled ? 'pt-filled' : '' %>">
+                            <%= pt.name %> <%= isFilled ? '(50+)' : '' %>
+                        </option>
                     <% }); %>
                 </select>
             </div>
