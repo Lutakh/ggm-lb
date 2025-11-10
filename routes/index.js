@@ -20,7 +20,14 @@ router.get('/', async (req, res) => {
         const [playersResult, guildsResult, trialsResult, settingsResult, ccTimersResult] = await Promise.all([
             db.query(playersSql),
             db.query('SELECT name FROM guilds ORDER BY name;'),
-            db.query('SELECT id, name FROM perilous_trials ORDER BY id;'),
+            // REQUÊTE MODIFIÉE POUR INCLURE LE NOMBRE D'ÉQUIPES
+            db.query(`
+                SELECT pt.id, pt.name, COUNT(lb.rank) as team_count
+                FROM perilous_trials pt
+                LEFT JOIN pt_leaderboard lb ON pt.id = lb.pt_id
+                GROUP BY pt.id, pt.name
+                ORDER BY pt.id;
+            `),
             db.query('SELECT key, value FROM server_settings;'),
             db.query('SELECT id, label, weeks_after_start, is_active FROM class_change_timers ORDER BY id;')
         ]);
@@ -33,7 +40,6 @@ router.get('/', async (req, res) => {
         const perilousTrials = trialsResult.rows;
         const allTeamNames = [...new Set(players.map(p => p.team).filter(Boolean).filter(t => t !== 'No Team'))];
 
-        // ... (Logique teamsData et guildsData inchangée) ...
         const teamsData = players.reduce((acc, player) => {
             const teamName = player.team;
             if (teamName && teamName !== 'No Team') {
@@ -58,16 +64,14 @@ router.get('/', async (req, res) => {
             return acc;
         }, {});
         const rankedGuilds = Object.entries(guildsData).map(([name, data]) => ({ name, total_cp: data.total_cp, member_count: data.members.length, class_distribution: data.class_distribution })).sort((a, b) => b.total_cp - a.total_cp);
-        // ...
 
         const playerListForSelectors = players.map(p => ({ id: p.id, name: p.name }));
 
-        // --- Timers Logic ---
         const now = new Date();
         const currentUTCDay = now.getUTCDay();
         const getNextReset = (targetDay) => {
             const reset = new Date(now.getTime());
-            reset.setUTCHours(10, 0, 0, 0); // 10:00 UTC matches previous logic (adjust if needed to 9)
+            reset.setUTCHours(10, 0, 0, 0);
             if (targetDay !== undefined) {
                 const daysUntilTarget = (targetDay - currentUTCDay + 7) % 7;
                 reset.setUTCDate(reset.getUTCDate() + daysUntilTarget);
@@ -80,8 +84,6 @@ router.get('/', async (req, res) => {
         const activeClassChangeTimer = allClassChangeTimers.find(t => t.milliseconds > 0);
         const levelCapTimers = calculateLevelCapTimers(serverSettings.server_open_date);
 
-        // --- Paper Plane Logic ---
-        // ... (Logique Paper Plane inchangée, je la raccourcis ici pour la lisibilité du patch) ...
         const importantPaperPlanes = [2, 5, 9, 12, 14, 18, 21, 23, 24, 25, 28, 33];
         const serverStartDate = new Date(serverSettings.server_open_date + 'T00:00:00Z');
         const timeSinceStart = now.getTime() - serverStartDate.getTime();
@@ -104,13 +106,11 @@ router.get('/', async (req, res) => {
             const nextPlaneNumber = paperPlaneNumber + i + 1;
             tooltipPaperPlanes.push({ number: nextPlaneNumber, milliseconds: nextDate - now, isImportant: importantPaperPlanes.includes(nextPlaneNumber) });
         }
-        // ...
 
         res.render('index', {
             players, playerListForSelectors, rankedTeams, rankedGuilds, allTeamNames, guilds, perilousTrials, serverSettings,
             classChangeTimers: ccTimersResult.rows,
             notification: req.query.notification || null,
-            // AJOUT : Passer le niveau de CC actuel
             currentCC: levelCapTimers.currentLevelCap ? levelCapTimers.currentLevelCap.cc : 0,
             timers: {
                 daily: getNextReset() - now,

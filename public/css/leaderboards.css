@@ -1,3 +1,5 @@
+/* public/css/leaderboards.css */
+
 /* --- Common Leaderboard Styles --- */
 .leaderboard-legend {
     display: flex;
@@ -153,16 +155,14 @@ tr.rank-3, .team-entry.rank-3, tr.rank-3 {
     margin-bottom: 20px;
     align-items: center;
 }
-/* NOUVEAU: Cacher les contrôles mobiles sur desktop */
 .mobile-pt-controls {
     display: none;
 }
-/* NOUVEAU : Styles pour les contrôles principaux PT (mobiles & desktop) */
 .pt-main-controls {
     display: flex;
     gap: 15px;
     margin-bottom: 15px;
-    flex-wrap: wrap; /* Pour mobile */
+    flex-wrap: wrap;
 }
 .pt-selector-group {
     display: flex;
@@ -193,4 +193,11 @@ tr.rank-3, .team-entry.rank-3, tr.rank-3 {
 }
 body.admin-mode .admin-only {
     display: inline-block !important;
+}
+
+/* NOUVEAU : Style pour les options de PT remplies (50+) */
+option.pt-filled {
+    background-color: #e8f5e9; /* Vert très clair */
+    color: #2e7d32; /* Vert foncé */
+    font-weight: bold;
 }
