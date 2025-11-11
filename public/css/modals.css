@@ -12,20 +12,19 @@
     z-index: 1000;
 }
 .player-select-modal {
-    display: none;
+    display: none; /* CORRECTION : 'display: flex;' a été supprimé de cette règle */
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     width: 90%;
-    max-width: 500px;
+    max-width: 500px; /* Largeur par défaut pour les petites modales */
     background-color: var(--surface-color);
     border-radius: 15px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     z-index: 1001;
     flex-direction: column;
-    max-height: 90vh; /* Hauteur max globale de la modale */
-    display: flex;
+    max-height: 90vh; /* Évite que la modale dépasse de l'écran */
 }
 
 /* MODIFICATION : Modale large pour les détails joueurs */
