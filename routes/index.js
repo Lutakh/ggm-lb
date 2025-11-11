@@ -24,7 +24,7 @@ router.get('/', async (req, res) => {
             db.query(`
                 SELECT pt.id, pt.name, COUNT(lb.rank) as team_count
                 FROM perilous_trials pt
-                LEFT JOIN pt_leaderboard lb ON pt.id = lb.pt_id
+                         LEFT JOIN pt_leaderboard lb ON pt.id = lb.pt_id
                 GROUP BY pt.id, pt.name
                 ORDER BY pt.id;
             `),
@@ -34,6 +34,9 @@ router.get('/', async (req, res) => {
 
         const serverSettings = settingsResult.rows.reduce((acc, row) => ({ ...acc, [row.key]: row.value }), {});
         if (!serverSettings.server_open_date) serverSettings.server_open_date = new Date().toISOString().split('T')[0];
+
+        // *** MODIFICATION AJOUTÉE ***
+        serverSettings.ga_measurement_id = process.env.GA_MEASUREMENT_ID || '';
 
         const players = playersResult.rows.map(p => ({ ...p, play_slots: p.play_slots || [], pt_tags: p.pt_tags || [] }));
         const guilds = guildsResult.rows.map(g => g.name);
