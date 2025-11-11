@@ -112,6 +112,7 @@ async function showPlayerDetails(playerRow, isFromTeamModal = false) {
     `;
 
     if(playerDetailBody) {
+        // Le HTML de base est injecté
         playerDetailBody.innerHTML = `
             <div class="player-detail-layout">
                 <div class="player-detail-left">${leftColumnHtml}</div>
@@ -138,6 +139,7 @@ async function showPlayerDetails(playerRow, isFromTeamModal = false) {
                 if (ptHistory.length === 0) {
                     historyContainer.innerHTML = '<div style="text-align: center; opacity: 0.6;">No PT history found.</div>';
                 } else {
+                    // MODIFICATION : Génération du nouveau HTML (une ligne)
                     historyContainer.innerHTML = ptHistory.map(entry => {
                         // Génération de l'affichage de l'équipe
                         let teamHtml = '';
@@ -150,12 +152,11 @@ async function showPlayerDetails(playerRow, isFromTeamModal = false) {
                             }
                         }
 
+                        // NOUVELLE structure HTML (utilise .pt-tag de leaderboards.css)
                         return `
                             <div class="pt-history-item">
-                                <div class="pt-history-header">
-                                    <span class="pt-history-tag">${entry.pt_name}</span>
-                                    <span class="pt-history-rank">Rank ${entry.rank}</span>
-                                </div>
+                                <span class="pt-tag">${entry.pt_name}</span>
+                                <span class="pt-history-rank-tag">Rank ${entry.rank}</span>
                                 <div class="pt-history-team">${teamHtml}</div>
                             </div>
                         `;
@@ -275,6 +276,7 @@ async function showGuildDetails(guildRow) {
     const data = guildRow.dataset;
     const guildName = data.guildName || 'Unknown Guild';
 
+    // 1. Affichage des infos de base (immédiat)
     if(guildDetailTitle) guildDetailTitle.textContent = guildName;
 
     let classDistrib = {};
@@ -290,6 +292,7 @@ async function showGuildDetails(guildRow) {
             <span class="class-tag class-shadowlash" title="Shadowlash">${classDistrib.Shadowlash || 0}</span>
         </div>`;
 
+    // Structure de base de la modale
     if(guildDetailBody) guildDetailBody.innerHTML = `
         <ul class="guild-detail-list">
             <li><strong>Rank:</strong> <span>${data.rank || 'N/A'}</span></li>
@@ -309,6 +312,7 @@ async function showGuildDetails(guildRow) {
     guildDetailModal.style.display = 'flex';
     if(guildDetailBackdrop) guildDetailBackdrop.style.display = 'block';
 
+    // 2. Récupération et affichage des membres (asynchrone)
     try {
         const response = await fetch(`/api/guild-members/${encodeURIComponent(guildName)}`);
         if (!response.ok) throw new Error("Network response was not ok");
@@ -316,7 +320,7 @@ async function showGuildDetails(guildRow) {
 
         const membersListEl = document.getElementById('guild-modal-members-list');
         const loadingEl = document.getElementById('guild-modal-members-loading');
-        const isAdmin = sessionStorage.getItem('adminPassword');
+        const isAdmin = sessionStorage.getItem('adminPassword'); // Vérifie si le mode admin est actif localement
 
         if (membersListEl && loadingEl) {
             membersListEl.innerHTML = '';
@@ -328,6 +332,7 @@ async function showGuildDetails(guildRow) {
                     li.className = 'guild-member-item';
                     li.dataset.playerId = member.id;
 
+                    // Date de dernière MAJ CP
                     let cpDateText = '';
                     if (member.cp_last_updated) {
                         const d = new Date(member.cp_last_updated);
@@ -337,6 +342,7 @@ async function showGuildDetails(guildRow) {
                         if (hoursDiff > 24) cpDateText = `<span style="color: var(--accent-color); font-weight: bold;">${cpDateText}</span>`;
                     }
 
+                    // Noms de classe responsive
                     const shortClass = member.class?.substring(0, 3) || '???';
                     const fullClass = member.class || 'Unknown';
                     const classNameLower = (member.class || 'unknown').toLowerCase();
@@ -355,8 +361,9 @@ async function showGuildDetails(guildRow) {
                         </div>
                     `;
 
+                    // Click listener pour afficher les détails du joueur
                     li.addEventListener('click', (e) => {
-                        if (e.target.closest('.remove-from-guild-btn')) return;
+                        if (e.target.closest('.remove-from-guild-btn')) return; // Ignorer si clic sur Remove
 
                         const fullPlayerData = allPlayersMap.get(member.name);
                         if (fullPlayerData) {
@@ -374,17 +381,18 @@ async function showGuildDetails(guildRow) {
                                     ptTags: JSON.stringify(fullPlayerData.pt_tags || '[]')
                                 }
                             };
-                            showPlayerDetails(fakeRow, true);
+                            showPlayerDetails(fakeRow, true); // true pour gestion z-index
                         }
                     });
 
+                    // Bouton Admin "Remove"
                     if (isAdmin) {
                         const removeBtn = document.createElement('button');
                         removeBtn.className = 'remove-from-guild-btn';
                         removeBtn.textContent = 'Remove';
                         removeBtn.title = `Remove ${member.name} from guild`;
                         removeBtn.onclick = (e) => {
-                            e.stopPropagation();
+                            e.stopPropagation(); // Empêcher l'ouverture de la modale joueur
                             handleRemoveFromGuild(member.id, member.name, guildName, li);
                         };
                         li.appendChild(removeBtn);
@@ -404,15 +412,18 @@ async function showGuildDetails(guildRow) {
     }
 }
 
+// Fonction pour gérer le clic sur "Remove"
 async function handleRemoveFromGuild(playerId, playerName, guildName, listItemElement) {
     const adminPassword = sessionStorage.getItem('adminPassword');
     if (!adminPassword) {
         alert("Admin mode not active.");
         return;
     }
+
     if (!confirm(`Are you sure you want to remove ${playerName} from ${guildName}?`)) {
         return;
     }
+
     try {
         const response = await fetch('/api/remove-from-guild', {
             method: 'POST',
@@ -420,10 +431,13 @@ async function handleRemoveFromGuild(playerId, playerName, guildName, listItemEl
             body: JSON.stringify({ player_id: playerId, admin_password: adminPassword })
         });
         const result = await response.json();
+
         if (result.success) {
+            // Succès : on retire l'élément de la liste sans recharger
             if (listItemElement) {
                 listItemElement.remove();
             }
+            // Mettre à jour le compteur dans la modale
             const countEl = document.getElementById('guild-modal-member-count');
             if (countEl) {
                 const currentCount = parseInt(countEl.textContent, 10);
@@ -458,7 +472,7 @@ function closeFiltersModal() {
     if (filtersBackdrop) filtersBackdrop.style.display = 'none';
 }
 
-// --- MODALES D'AIDE ---
+// --- MODALES D'AIDE (DQ, PT, TP) ---
 const dqHelpModal = document.getElementById('dq-help-modal');
 const dqHelpBackdrop = document.getElementById('dq-help-modal-backdrop');
 const dqHelpBtn = document.getElementById('dq-help-btn');
@@ -482,6 +496,7 @@ function closeHelpModal(modal, backdrop) {
 // --- DOMContentLoaded ---
 document.addEventListener('DOMContentLoaded', function() {
 
+    // --- Initialisation des Données ---
     const playersDataEl = document.getElementById('players-data');
     const playersSelectorDataEl = document.getElementById('player-selector-data');
     const guildsDataEl = document.getElementById('guilds-data');
@@ -543,6 +558,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     console.log(`Populated allPlayersMap with ${allPlayersMap.size} players.`);
 
+    // --- Initialisation des Modules ---
     initNavigation();
     initPlayerSelectModal(playersForModal);
     initGuildSelectModal(guildsForModal);
@@ -552,6 +568,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initDailyQuests();
     initDiscordWidget('https://discord.com/api/guilds/1425816979641466912/widget.json');
 
+    // --- Timers & Formatters Initiaux ---
     setInterval(updateTimers, 1000);
     updateTimers();
 
@@ -567,11 +584,14 @@ document.addEventListener('DOMContentLoaded', function() {
         cell.textContent = (!isNaN(start) && !isNaN(end)) ? `${minutesToFormattedTime(start)} - ${minutesToFormattedTime(end)}` : '-';
     });
 
+    // --- Gestion des tooltips des timers sur Mobile (clic pour toggle) ---
     if (window.innerWidth <= 768) {
         document.querySelectorAll('.timer-entry').forEach(entry => {
             entry.addEventListener('click', (e) => {
+                // Si l'entrée a un tooltip, on bascule la classe active
                 if (entry.querySelector('.timer-tooltip')) {
-                    e.stopPropagation();
+                    e.stopPropagation(); // Empêche la fermeture immédiate par le listener global
+                    // Fermer les autres tooltips ouverts
                     document.querySelectorAll('.timer-entry.active').forEach(other => {
                         if (other !== entry) other.classList.remove('active');
                     });
@@ -579,11 +599,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         });
+
+        // Fermer les tooltips si on clique n'importe où ailleurs sur la page
         document.addEventListener('click', () => {
             document.querySelectorAll('.timer-entry.active').forEach(el => el.classList.remove('active'));
         });
     }
 
+    // --- Listeners Modales et Clics Tableau ---
     if (notesCloseBtn) notesCloseBtn.addEventListener('click', closeNotesModal);
     if (notesBackdrop) notesBackdrop.addEventListener('click', closeNotesModal);
     if (playerDetailCloseBtn) playerDetailCloseBtn.addEventListener('click', closePlayerDetailModal);
@@ -593,16 +616,20 @@ document.addEventListener('DOMContentLoaded', function() {
     if (playerTableBody) {
         playerTableBody.addEventListener('click', (e) => {
             const playerRow = e.target.closest('tr');
+            // Ignorer les clics sur les notes, les actions admin, ou tout bouton/lien
             if (!playerRow || e.target.closest('.notes-col') || e.target.closest('.admin-actions') || e.target.closest('a') || e.target.closest('button')) return;
 
             e.preventDefault();
             const playerName = playerRow.dataset.name;
+            // Utiliser allPlayersMap pour avoir les données les plus complètes
             if (playerName && allPlayersMap.has(playerName)) {
                 const fullData = allPlayersMap.get(playerName);
+                // Fusionner les données du row et de la map pour être sûr d'avoir le rang et autres infos d'affichage
                 const mergedDataRow = {
                     dataset: {
                         ...playerRow.dataset,
                         ...fullData,
+                        // Assurer que playSlots est une chaîne JSON pour showPlayerDetails
                         playSlots: typeof fullData.play_slots === 'string' ? fullData.play_slots : JSON.stringify(fullData.play_slots || [])
                     }
                 };
@@ -643,10 +670,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (dqHelpCloseBtn) dqHelpCloseBtn.addEventListener('click', () => closeHelpModal(dqHelpModal, dqHelpBackdrop));
     if (dqHelpBackdrop) dqHelpBackdrop.addEventListener('click', () => closeHelpModal(dqHelpModal, dqHelpBackdrop));
 
+    // Listeners pour la nouvelle modale Team Planner Help
     if (tpHelpBtn) tpHelpBtn.addEventListener('click', () => openHelpModal(tpHelpModal, tpHelpBackdrop));
     if (tpHelpCloseBtn) tpHelpCloseBtn.addEventListener('click', () => closeHelpModal(tpHelpModal, tpHelpBackdrop));
     if (tpHelpBackdrop) tpHelpBackdrop.addEventListener('click', () => closeHelpModal(tpHelpModal, tpHelpBackdrop));
 
+    // Filtre mobile équipes
     const teamMobileFilter = document.getElementById('team-guild-filter-mobile');
     const allTeamRows = document.querySelectorAll('#teams-leaderboard-table tbody tr.team-data-row');
 
@@ -700,6 +729,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (ccDataEl && ccDataEl.textContent) currentCC = parseInt(ccDataEl.textContent, 10) || 0;
     } catch (e) { console.error("Error parsing initial data:", e); }
 
+    console.log("Initializing Team Planner with CC:", currentCC);
     initTeamPlanner(ptList, currentCC);
     console.log("Main.js initialization complete.");
 });
