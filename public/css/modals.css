@@ -261,6 +261,15 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
     .player-detail-right h4 {
         margin-top: 20px; /* Espace sur mobile quand c'est empilé */
     }
+
+    /* Mobile wrap for PT history list */
+    .pt-history-item {
+        flex-wrap: wrap;
+    }
+    .pt-history-team {
+        flex-basis: 100%;
+        margin-top: 8px;
+    }
 }
 
 .pt-history-list {
@@ -274,7 +283,6 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
     display: flex;
     align-items: center;
     gap: 8px;
-    flex-wrap: wrap;
     padding: 8px 10px;
     background-color: #f9f6f1;
     border: 1px solid var(--border-color);
@@ -309,8 +317,6 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
     overflow-x: auto; /* Permet le scroll si la ligne est trop longue */
     overflow-y: hidden;
     align-items: center;
-    flex-basis: 100%;
-    margin-top: 8px;
     min-width: 0; /* Important pour que le flex-shrink fonctionne */
     /* Masquer la scrollbar */
     -ms-overflow-style: none;  /* IE and Edge */
