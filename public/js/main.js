@@ -42,7 +42,8 @@ const initialPlayerBackdropZIndex = playerDetailBackdrop?.style.zIndex || 1000;
 const playerRankMap = new Map();
 const allPlayersMap = new Map();
 
-function showPlayerDetails(playerRow, isFromTeamModal = false) {
+// MODIFIÉ : Fonction asynchrone pour charger les détails ET l'historique PT
+async function showPlayerDetails(playerRow, isFromTeamModal = false) {
     if (!playerDetailModal || !playerRow || !playerRow.dataset) return;
 
     if (isFromTeamModal) {
@@ -53,15 +54,20 @@ function showPlayerDetails(playerRow, isFromTeamModal = false) {
         playerDetailBackdrop.style.zIndex = initialPlayerBackdropZIndex;
     }
 
+    // Appliquer la classe pour élargir la modale
+    playerDetailModal.classList.add('modal-wide');
+
     const data = playerRow.dataset;
     const fullPlayerData = allPlayersMap.get(data.name);
 
+    // Récupération des données de base (fusion dataset / fullPlayerData)
     let playSlots = [];
     try {
         const slotsSource = fullPlayerData?.play_slots ? fullPlayerData.play_slots : JSON.parse(data.playSlots || '[]');
         playSlots = Array.isArray(slotsSource) ? slotsSource : [];
     } catch (e) { console.error("Error processing playSlots:", data.playSlots, e); playSlots = []; }
 
+    const playerId = fullPlayerData?.id || data.id;
     const notes = fullPlayerData?.notes ?? (data.notes || '-');
     const combatPower = fullPlayerData?.combat_power ?? data.cp;
     const playerClass = fullPlayerData?.class ?? data.class;
@@ -70,6 +76,7 @@ function showPlayerDetails(playerRow, isFromTeamModal = false) {
     const updatedAt = fullPlayerData?.updated_at ?? data.updated;
     const rank = playerRankMap.get(data.name) || data.rank || 'N/A';
 
+    // Formatage des heures de jeu
     let playHoursHtml = '-';
     if (playSlots.length > 0 && typeof playSlots[0]?.start_minutes === 'number' && typeof playSlots[0]?.end_minutes === 'number') {
         playHoursHtml = playSlots.map(slot =>
@@ -82,7 +89,9 @@ function showPlayerDetails(playerRow, isFromTeamModal = false) {
     const classNameLower = String(playerClass || 'unknown').toLowerCase();
     if(playerDetailTitle) playerDetailTitle.innerHTML = `<span class="class-tag class-${classNameLower}">${data.name}</span>`;
 
-    if(playerDetailBody) playerDetailBody.innerHTML = `
+    // --- Construction du Layout 2 Colonnes ---
+    // Colonne de gauche : Détails existants
+    const leftColumnHtml = `
         <ul class="player-detail-list">
             <li><strong>Rank:</strong> <span>${rank}</span></li>
             <li><strong>CP:</strong> <span>${formatCP(combatPower)}</span></li>
@@ -95,12 +104,81 @@ function showPlayerDetails(playerRow, isFromTeamModal = false) {
         </ul>
     `;
 
+    // Colonne de droite : Placeholder de chargement initial
+    let rightColumnHtml = `
+        <h4>Perilous Trials Bests</h4>
+        <div id="pt-history-loading" style="text-align: center; opacity: 0.6; font-style: italic;">Loading history...</div>
+        <div id="pt-history-list" class="pt-history-list"></div>
+    `;
+
+    if(playerDetailBody) {
+        // Le HTML de base est injecté
+        playerDetailBody.innerHTML = `
+            <div class="player-detail-layout">
+                <div class="player-detail-left">${leftColumnHtml}</div>
+                <div class="player-detail-right">${rightColumnHtml}</div>
+            </div>
+        `;
+    }
+
     playerDetailModal.style.display = 'flex';
     if(playerDetailBackdrop) playerDetailBackdrop.style.display = 'block';
+
+    // --- Chargement asynchrone de l'historique PT ---
+    if (playerId) {
+        try {
+            const response = await fetch(`/api/player-pt-history/${playerId}`);
+            if (!response.ok) throw new Error("Network response was not ok");
+            const ptHistory = await response.json();
+
+            const historyContainer = document.getElementById('pt-history-list');
+            const loadingEl = document.getElementById('pt-history-loading');
+
+            if (historyContainer && loadingEl) {
+                loadingEl.style.display = 'none';
+                if (ptHistory.length === 0) {
+                    historyContainer.innerHTML = '<div style="text-align: center; opacity: 0.6;">No PT history found.</div>';
+                } else {
+                    // MODIFICATION : Génération du nouveau HTML (une ligne)
+                    historyContainer.innerHTML = ptHistory.map(entry => {
+                        // Génération de l'affichage de l'équipe
+                        let teamHtml = '';
+                        for (let i = 1; i <= 4; i++) {
+                            const pName = entry[`player${i}_name`];
+                            const pClass = entry[`player${i}_class`];
+                            if (pName) {
+                                const isCurrentPlayer = pName === data.name;
+                                teamHtml += `<span class="class-tag class-${(pClass || 'unknown').toLowerCase()} ${isCurrentPlayer ? 'current-player' : ''}">${pName}</span>`;
+                            }
+                        }
+
+                        // NOUVELLE structure HTML (utilise .pt-tag de leaderboards.css)
+                        return `
+                            <div class="pt-history-item">
+                                <span class="pt-tag">${entry.pt_name}</span>
+                                <span class="pt-history-rank-tag">Rank ${entry.rank}</span>
+                                <div class="pt-history-team">${teamHtml}</div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+        } catch (error) {
+            console.error("Error loading PT history:", error);
+            const loadingEl = document.getElementById('pt-history-loading');
+            if (loadingEl) loadingEl.textContent = "Error loading history.";
+        }
+    } else {
+        const loadingEl = document.getElementById('pt-history-loading');
+        if (loadingEl) loadingEl.textContent = "Cannot load history (missing Player ID).";
+    }
 }
 
 function closePlayerDetailModal() {
-    if (playerDetailModal) playerDetailModal.style.display = 'none';
+    if (playerDetailModal) {
+        playerDetailModal.style.display = 'none';
+        playerDetailModal.classList.remove('modal-wide'); // Réinitialiser la largeur
+    }
     if (playerDetailBackdrop) playerDetailBackdrop.style.display = 'none';
 }
 

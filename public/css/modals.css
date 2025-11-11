@@ -1,3 +1,5 @@
+/* public/css/modals.css */
+
 /* --- Base Modal Styles --- */
 .player-select-modal-backdrop {
     display: none;
@@ -7,7 +9,7 @@
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.6);
-    z-index: 1000; /* Z-index de base pour les fonds */
+    z-index: 1000;
 }
 .player-select-modal {
     display: none;
@@ -16,19 +18,29 @@
     left: 50%;
     transform: translate(-50%, -50%);
     width: 90%;
-    max-width: 500px;
+    max-width: 500px; /* Largeur par défaut pour les petites modales */
     background-color: var(--surface-color);
     border-radius: 15px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    z-index: 1001; /* Z-index de base pour les modales */
+    z-index: 1001;
     flex-direction: column;
+    max-height: 90vh; /* Évite que la modale dépasse de l'écran */
+    /* display: flex; <--- L'ERREUR ÉTAIT ICI (supprimée) */
 }
+
+/* CETTE RÈGLE A ÉTÉ DÉPLACÉE PLUS BAS
+.player-select-modal.modal-wide {
+    max-width: 900px;
+}
+*/
+
 .player-select-modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 15px 20px;
     border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0; /* L'en-tête ne doit pas rétrécir */
 }
 .player-select-modal-header h3 { margin: 0; }
 .player-select-close-btn {
@@ -67,7 +79,7 @@
     width: 100%;
     height: 100%;
     background: rgba(0,0,0,0.5);
-    z-index: 999; /* En dessous des autres modales */
+    z-index: 999;
     display: none;
 }
 #admin-modal {
@@ -79,10 +91,12 @@
     padding: 30px;
     border-radius: 15px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    z-index: 1000; /* En dessous des autres modales */
+    z-index: 1000;
     width: 90%;
     max-width: 600px;
     display: none;
+    max-height: 90vh; /* Ajout d'une hauteur max */
+    overflow-y: auto; /* Ajout du scroll si contenu admin long */
 }
 #admin-modal.active, #admin-modal-backdrop.active { display: block; }
 #admin-modal-content h3 { margin-top: 0; }
@@ -103,11 +117,13 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
     padding: 15px 20px;
     gap: 10px;
     background-color: #f9f6f1;
+    flex-shrink: 0; /* Ne doit pas rétrécir */
 }
 .player-select-controls input { width: 100%; }
 .player-select-list {
     max-height: 40vh;
     overflow-y: auto;
+    flex-grow: 1; /* Prend l'espace restant */
 }
 .suggestion-item {
     padding: 12px 20px;
@@ -122,7 +138,6 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
 .suggestion-item .class-tag { font-size: 0.8em; padding: 4px 10px; }
 .suggestion-item.active { background-color: #e0e0e0; }
 
-/* --- Styles spécifiques pour les items de guilde --- */
 .guild-item-info {
     font-size: 0.85em;
     color: var(--primary-color);
@@ -133,82 +148,84 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
     font-weight: bold;
 }
 
-/* --- Notes Modal --- */
-#notes-modal-backdrop { z-index: 1000; }
-#notes-modal { z-index: 1001; }
-#notes-modal-body {
+/* --- Notes, Help, Filters, Team, Guild Modals Body --- */
+#notes-modal-body,
+#pt-help-modal-body,
+#dq-help-modal-body,
+#tp-help-modal-body,
+.filters-modal-body,
+#team-detail-modal-body,
+#guild-detail-modal-body {
     padding: 20px 25px;
-    white-space: pre-wrap;
-    line-height: 1.6;
-    max-height: 60vh;
     overflow-y: auto;
+    flex-grow: 1;
+    /* max-height: 60vh; (Déplacé vers des modales spécifiques si besoin) */
 }
+#notes-modal-body { white-space: pre-wrap; line-height: 1.6; max-height: 60vh; }
+#pt-help-modal-body, #dq-help-modal-body, #tp-help-modal-body { white-space: normal; line-height: 1.6; max-height: 60vh; }
+#pt-help-modal-body p, #dq-help-modal-body p { margin-top: 0; margin-bottom: 10px; }
+#pt-help-modal-body strong, #dq-help-modal-body strong { display: block; margin-top: 15px; margin-bottom: 5px; color: var(--primary-color); font-size: 1.1em; }
+#pt-help-modal-body ul, #dq-help-modal-body ul, #dq-help-modal-body ol { padding-left: 25px; margin-top: 5px; margin-bottom: 15px; }
+.filters-modal-body { max-height: 70vh; }
+#team-detail-modal-body { max-height: 70vh; }
+#guild-detail-modal-body { max-height: 70vh; }
 
-/* --- PT Help Modal --- */
-#pt-help-modal-backdrop { z-index: 1000; }
-#pt-help-modal { z-index: 1001; }
-#pt-help-modal-body {
-    padding: 20px 25px;
-    white-space: normal;
-    line-height: 1.6;
-    max-height: 60vh;
-    overflow-y: auto;
-}
-#pt-help-modal-body p { margin-top: 0; margin-bottom: 10px; }
-#pt-help-modal-body strong {
-    display: block;
-    margin-top: 15px;
-    margin-bottom: 5px;
-    color: var(--primary-color);
-    font-size: 1.1em;
-}
-#pt-help-modal-body ul {
-    list-style-type: disc;
-    padding-left: 25px;
-    margin-top: 5px;
-    margin-bottom: 15px;
-}
-#pt-help-modal-body ul ul { list-style-type: circle; margin-top: 5px; }
-
-/* --- DQ Help Modal --- */
-#dq-help-modal-backdrop { z-index: 1000; }
-#dq-help-modal { z-index: 1001; }
-#dq-help-modal-body {
-    padding: 20px 25px;
-    white-space: normal;
-    line-height: 1.6;
-    max-height: 60vh;
-    overflow-y: auto;
-}
-#dq-help-modal-body p { margin-top: 0; margin-bottom: 10px; }
-#dq-help-modal-body strong {
-    display: block;
-    margin-top: 15px;
-    margin-bottom: 5px;
-    color: var(--primary-color);
-    font-size: 1.1em;
-}
-#dq-help-modal-body ul, #dq-help-modal-body ol {
-    padding-left: 25px;
-    margin-top: 5px;
-    margin-bottom: 15px;
-}
-#dq-help-modal-body ul ul, #dq-help-modal-body ol ol {
-    margin-top: 5px;
-}
 
 /* --- Player Detail Modal (Mobile) --- */
-#player-detail-modal-backdrop { z-index: 1000; } /* Z-index par défaut */
-#player-detail-modal { z-index: 1001; } /* Z-index par défaut */
+#player-detail-modal-backdrop { z-index: 1000; }
+#player-detail-modal { z-index: 1001; }
+
+/* MODIFICATION : Le body grandit avec flex et gère le scroll sur mobile */
 #player-detail-modal-body {
     padding: 10px 25px 25px 25px;
     max-height: 70vh;
     overflow-y: auto;
+    flex-grow: 1;
+    min-height: 0; /* Fix flexbox overflow */
 }
+
 #player-detail-modal-header .class-tag {
     font-size: 1.1em;
     padding: 8px 14px;
 }
+
+/* Layout principal : grille 1 colonne (Mobile) */
+.player-detail-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+}
+
+/* MODIFICATION : Layout 2 colonnes (Desktop) */
+@media (min-width: 769px) {
+
+    /* CORRECTION : La règle .modal-wide est déplacée ICI */
+    .player-select-modal.modal-wide {
+        max-width: 900px; /* Plus large pour afficher les 2 colonnes */
+    }
+
+    /* Le body de la modale ne scrolle plus, il contient la grille */
+    #player-detail-modal-body {
+        padding: 0;
+        overflow: hidden; /* Les enfants gèrent le scroll */
+    }
+    .player-detail-layout {
+        grid-template-columns: 40% 60%;
+        height: 100%; /* Prend 100% de la hauteur du body (qui est flex-grow) */
+        overflow: hidden;
+    }
+    .player-detail-left {
+        border-right: 1px solid var(--border-color);
+        overflow-y: auto; /* Scroll indépendant */
+        padding: 20px 25px;
+    }
+    .player-detail-right {
+        overflow-y: auto; /* Scroll indépendant */
+        padding: 20px 25px;
+    }
+}
+
+
+/* Colonne de Gauche (Détails existants) */
 .player-detail-list {
     list-style: none;
     padding: 0;
@@ -232,14 +249,97 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
     font-weight: bold;
 }
 
-/* --- Team Detail Modal (Mobile) --- */
-#team-detail-modal-backdrop { z-index: 1009; } /* En dessous du fond player-detail si ouvert depuis team-detail */
-#team-detail-modal { z-index: 1010; } /* En dessous de player-detail si ouvert depuis team-detail */
-#team-detail-modal-body {
-    padding: 10px 25px 25px 25px;
-    max-height: 70vh;
-    overflow-y: auto;
+/* Colonne de Droite (Historique PT) */
+.player-detail-right h4 {
+    margin-top: 0;
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--secondary-color);
+    padding-bottom: 8px;
+    margin-bottom: 15px;
 }
+@media (max-width: 768px) {
+    .player-detail-right h4 {
+        margin-top: 20px; /* Espace sur mobile quand c'est empilé */
+    }
+
+    /* Mobile wrap for PT history list */
+    .pt-history-item {
+        flex-wrap: wrap;
+    }
+    .pt-history-team {
+        flex-basis: 100%;
+        margin-top: 8px;
+    }
+}
+
+.pt-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* NOUVEAU: Style pour la ligne d'historique */
+.pt-history-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background-color: #f9f6f1;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.9em;
+    overflow: hidden; /* Empêche le flex-item de déborder */
+}
+
+/* Utilise le style .pt-tag existant (de leaderboards.css) */
+.pt-history-item .pt-tag {
+    font-size: 0.9em; /* 0.9em relatif au 0.9em du parent */
+    margin-left: 0;
+    flex-shrink: 0; /* Ne rétrécit pas */
+}
+
+/* NOUVEAU: Style pour le tag de rang */
+.pt-history-rank-tag {
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-size: 0.9em;
+    flex-shrink: 0;
+}
+
+/* NOUVEAU: Style pour la team (pour scroll horizontal) */
+.pt-history-team {
+    display: flex;
+    gap: 5px;
+    flex-wrap: nowrap; /* Force une seule ligne */
+    overflow-x: auto; /* Permet le scroll si la ligne est trop longue */
+    overflow-y: hidden;
+    align-items: center;
+    min-width: 0; /* Important pour que le flex-shrink fonctionne */
+    /* Masquer la scrollbar */
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+.pt-history-team::-webkit-scrollbar {
+    display: none; /* Chrome, Safari */
+}
+
+.pt-history-team .class-tag {
+    font-size: 0.9em;
+    padding: 2px 6px;
+    flex-shrink: 0;
+}
+
+.pt-history-team .class-tag.current-player {
+    box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+
+/* --- Team Detail Modal (Mobile) --- */
+#team-detail-modal-backdrop { z-index: 1009; }
+#team-detail-modal { z-index: 1010; }
 #team-detail-modal-header .guild-prefix {
     font-size: 0.9em;
     font-weight: normal;
@@ -249,10 +349,10 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
 #team-detail-modal-header .team-name {
     font-weight: bold;
 }
-.team-detail-list { /* Container pour les joueurs */
+.team-detail-list {
     list-style: none;
     padding: 0;
-    margin: 0 0 15px 0; /* Espace avant la légende */
+    margin: 0 0 15px 0;
 }
 .team-detail-player {
     padding: 12px 0;
@@ -264,20 +364,19 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
 }
 .team-detail-player:last-child { border-bottom: none; }
 .team-detail-player:hover { background-color: #f9f6f1; }
-.team-detail-player .class-tag { /* Nom du joueur */
+.team-detail-player .class-tag {
     font-size: 1em;
     padding: 6px 12px;
-    flex-grow: 1; /* Permet au nom de prendre l'espace */
-    margin-right: 10px; /* Espace avant le CP */
-    text-align: left; /* Assurer l'alignement à gauche */
+    flex-grow: 1;
+    margin-right: 10px;
+    text-align: left;
 }
-.team-detail-player-cp { /* CP du joueur */
+.team-detail-player-cp {
     font-weight: bold;
     color: var(--primary-color);
     font-size: 1.1em;
-    white-space: nowrap; /* Empêcher le retour à la ligne */
+    white-space: nowrap;
 }
-/* Style pour la légende courte DANS la modale */
 .short-legend {
     justify-content: center;
     font-size: 0.8em;
@@ -292,29 +391,23 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
 .short-legend .legend-item {
     display: flex;
     align-items: center;
-    gap: 3px; /* Espace réduit entre point et texte */
+    gap: 3px;
 }
 .short-legend .legend-item .class-tag {
-    width: 10px; height: 10px; min-width: 10px; /* Plus petits points */
-    padding: 0; /* Pas de padding */
-    border-radius: 50%; /* Garder rond */
+    width: 10px; height: 10px; min-width: 10px;
+    padding: 0;
+    border-radius: 50%;
 }
 
 
 /* --- Guild Detail Modal (Mobile) --- */
 #guild-detail-modal-backdrop { z-index: 1000; }
 #guild-detail-modal { z-index: 1001; }
-#guild-detail-modal-body {
-    padding: 10px 25px 25px 25px;
-    max-height: 70vh;
-    overflow-y: auto;
-}
 .guild-detail-list {
     list-style: none;
     padding: 0;
     margin: 0;
 }
-/* Style pour Rank, Total CP, Members */
 .guild-detail-list li:not(.distrib-item) {
     display: flex;
     flex-direction: row;
@@ -334,43 +427,39 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
     width: auto;
     text-align: right;
 }
-/* Style spécifique pour l'item Class Distribution */
 .guild-detail-list li.distrib-item {
-    display: flex; /* Utiliser flex */
-    flex-direction: column; /* Empiler verticalement */
-    align-items: center; /* Centrer horizontalement */
-    padding: 15px 0 12px 0; /* Plus d'espace vertical */
-    border-bottom: none; /* Pas de bordure en bas */
-    gap: 10px; /* Espace entre titre, distrib et légende */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px 0 12px 0;
+    border-bottom: none;
+    gap: 10px;
 }
 .guild-detail-list li.distrib-item strong.centered-title {
     width: 100%;
     text-align: center;
     color: var(--primary-color);
-    margin: 0; /* Retirer marge par défaut */
-    font-size: 1.1em; /* Un peu plus grand peut-être */
+    margin: 0;
+    font-size: 1.1em;
 }
-.guild-detail-list li.distrib-item > div { /* Conteneurs pour distrib et légende */
+.guild-detail-list li.distrib-item > div {
     width: 100%;
     display: flex;
     justify-content: center;
 }
 .guild-detail-list li.distrib-item .guild-class-distrib {
-    margin-top: 5px; /* Espace sous le titre */
+    margin-top: 5px;
 }
 .guild-detail-list li.distrib-item .short-legend {
     border-top: none;
-    margin-top: 10px; /* Espace au dessus de la légende */
+    margin-top: 10px;
     padding-top: 0;
 }
-
-
-/* Styles pour .guild-class-distrib et ses enfants */
 .guild-class-distrib {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    justify-content: center; /* Centrer les tags */
+    justify-content: center;
 }
 .guild-class-distrib .class-tag {
     min-width: 32px;
@@ -420,14 +509,6 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
 /* --- Filters Modal (JOUEURS) --- */
 #filters-modal-backdrop { z-index: 1000; }
 #filters-modal { z-index: 1001; }
-.filters-modal-body {
-    padding: 10px 25px 25px 25px;
-    max-height: 70vh;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
 .filter-group-modal h4 {
     color: var(--primary-color);
     margin: 0 0 10px 0;
@@ -465,7 +546,6 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
     cursor: pointer;
     font-weight: normal;
 }
-
 .filter-modal-dropdown-btn::after {
     content: '▼';
     font-size: 0.7em;
@@ -482,7 +562,7 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
     border-radius: 0 0 10px 10px;
     max-height: 150px;
     overflow-y: auto;
-    z-index: 1010; /* Au dessus du fond de la modale */
+    z-index: 1010;
     margin-top: -1px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
@@ -511,7 +591,7 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
     align-items: center;
     padding: 8px 0;
     border-bottom: 1px solid #eee;
-    cursor: pointer; /* Indiquer que c'est cliquable */
+    cursor: pointer;
     transition: background-color 0.2s;
 }
 .guild-member-item:hover {
@@ -522,7 +602,7 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
     align-items: center;
     gap: 10px;
     flex-grow: 1;
-    overflow: hidden; /* Pour les noms très longs */
+    overflow: hidden;
 }
 .guild-member-name {
     font-weight: bold;
@@ -551,11 +631,8 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
 .remove-from-guild-btn:hover {
     opacity: 0.9;
 }
-
-/* Gestion responsive des noms de classe dans la modale */
 .guild-member-info .short-name { display: inline; }
 .guild-member-info .full-name { display: none; }
-
 @media (min-width: 769px) {
     .guild-member-info .short-name { display: none; }
     .guild-member-info .full-name { display: inline; }

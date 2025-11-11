@@ -21,6 +21,45 @@ router.get('/player-details/:name', async (req, res) => {
     }
 });
 
+// NOUVEAU : Endpoint pour l'historique des meilleurs rangs PT d'un joueur
+router.get('/api/player-pt-history/:playerId', async (req, res) => {
+    const playerId = parseInt(req.params.playerId, 10);
+    if (isNaN(playerId)) return res.status(400).json({ error: "Invalid player ID" });
+
+    try {
+        // Cette requête trouve d'abord le meilleur rang pour chaque PT où le joueur est présent,
+        // puis joint pour obtenir les détails complets de l'équipe pour ce rang précis.
+        const sql = `
+            WITH BestRanks AS (
+                SELECT pt_id, MIN(rank) as rank
+                FROM pt_leaderboard
+                WHERE player1_id = $1 OR player2_id = $1 OR player3_id = $1 OR player4_id = $1
+                GROUP BY pt_id
+            )
+            SELECT lb.pt_id, pt.name as pt_name, lb.rank,
+                   lb.player1_name, p1.class as player1_class,
+                   lb.player2_name, p2.class as player2_class,
+                   lb.player3_name, p3.class as player3_class,
+                   lb.player4_name, p4.class as player4_class
+            FROM pt_leaderboard lb
+                     JOIN BestRanks br ON lb.pt_id = br.pt_id AND lb.rank = br.rank
+                     JOIN perilous_trials pt ON lb.pt_id = pt.id
+                     LEFT JOIN players p1 ON lb.player1_id = p1.id
+                     LEFT JOIN players p2 ON lb.player2_id = p2.id
+                     LEFT JOIN players p3 ON lb.player3_id = p3.id
+                     LEFT JOIN players p4 ON lb.player4_id = p4.id
+            WHERE (lb.player1_id = $1 OR lb.player2_id = $1 OR lb.player3_id = $1 OR lb.player4_id = $1)
+            ORDER BY lb.pt_id DESC;
+        `;
+
+        const result = await db.query(sql, [playerId]);
+        res.json(result.rows);
+    } catch (err) {
+        console.error("Error fetching player PT history:", err);
+        res.status(500).json({ error: "Failed to fetch PT history" });
+    }
+});
+
 router.post('/add-player', async (req, res) => {
     let { name, pClass, cp, team, guild, notes, play_start = [], play_end = [], discord_user_id } = req.body;
     name = name ? name.trim() : '';
@@ -51,19 +90,18 @@ router.post('/add-player', async (req, res) => {
             const finalNotes = notes !== undefined ? notes : existingPlayer.notes;
             const finalDiscordId = discord_user_id !== undefined ? discordId : existingPlayer.discord_user_id;
 
-            // MISE A JOUR CONDITIONNELLE DU TIMESTAMP CP
             await client.query(
                 `UPDATE players SET
-                    name = $1,
-                    class = $2,
-                    cp_last_updated = CASE WHEN combat_power != $3 THEN NOW() ELSE cp_last_updated END,
-                    combat_power = $3,
-                    team = $4,
-                    guild = $5,
-                    notes = $6,
-                    discord_user_id = $7,
-                    updated_at = NOW()
-                 WHERE id = $8`,
+                                        name = $1,
+                                        class = $2,
+                                        cp_last_updated = CASE WHEN combat_power != $3 THEN NOW() ELSE cp_last_updated END,
+                                        combat_power = $3,
+                                        team = $4,
+                                        guild = $5,
+                                        notes = $6,
+                                        discord_user_id = $7,
+                                        updated_at = NOW()
+                                     WHERE id = $8`,
                 [name, finalClass, finalCp, finalTeam, finalGuild, finalNotes, finalDiscordId, playerId]
             );
 
@@ -77,7 +115,6 @@ router.post('/add-player', async (req, res) => {
             if (!pClass || !cp) { return res.redirect(`/?notification=${encodeURIComponent(`Class and CP are required for new players.`)}`); }
             const finalGuild = guild && guild.trim() ? guild.trim() : null;
 
-            // INSERT AVEC TIMESTAMP CP INITIAL
             const insertRes = await client.query(
                 `INSERT INTO players (name, class, combat_power, team, guild, notes, discord_user_id, updated_at, cp_last_updated)
                  VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW()) RETURNING id`,
