@@ -12,7 +12,7 @@
     z-index: 1000;
 }
 .player-select-modal {
-    display: none; /* CORRECTION : 'display: flex;' a été supprimé de cette règle */
+    display: none;
     position: fixed;
     top: 50%;
     left: 50%;
@@ -25,12 +25,14 @@
     z-index: 1001;
     flex-direction: column;
     max-height: 90vh; /* Évite que la modale dépasse de l'écran */
+    /* display: flex; <--- L'ERREUR ÉTAIT ICI (supprimée) */
 }
 
-/* MODIFICATION : Modale large pour les détails joueurs */
+/* CETTE RÈGLE A ÉTÉ DÉPLACÉE PLUS BAS
 .player-select-modal.modal-wide {
-    max-width: 900px; /* Plus large pour afficher les 2 colonnes */
+    max-width: 900px;
 }
+*/
 
 .player-select-modal-header {
     display: flex;
@@ -195,6 +197,12 @@ body.admin-mode .admin-actions { display: flex; gap: 5px; justify-content: cente
 
 /* MODIFICATION : Layout 2 colonnes (Desktop) */
 @media (min-width: 769px) {
+
+    /* CORRECTION : La règle .modal-wide est déplacée ICI */
+    .player-select-modal.modal-wide {
+        max-width: 900px; /* Plus large pour afficher les 2 colonnes */
+    }
+
     /* Le body de la modale ne scrolle plus, il contient la grille */
     #player-detail-modal-body {
         padding: 0;
