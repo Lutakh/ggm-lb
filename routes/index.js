@@ -95,7 +95,7 @@ router.get('/', async (req, res) => {
         const daysUntilFirstWed = (3 - serverStartDay + 7) % 7;
         const firstEventReset = new Date(serverStartDate.getTime());
         firstEventReset.setUTCDate(firstEventReset.getUTCDate() + daysUntilFirstWed);
-        firstEventReset.setUTCHours(9, 0, 0, 0);
+        firstEventReset.setUTCHours(10, 0, 0, 0);
         if (firstEventReset < serverStartDate) { firstEventReset.setUTCDate(firstEventReset.getUTCDate() + 7); }
         const timeSinceFirstReset = now.getTime() - firstEventReset.getTime();
         let paperPlaneNumber = (timeSinceFirstReset < 0) ? 0 : Math.floor(timeSinceFirstReset / (1000 * 60 * 60 * 24 * 7));
