@@ -15,7 +15,27 @@
     <link rel="stylesheet" href="/css/daily-quests.css">
     <link rel="stylesheet" href="/css/mobile.css">
     <link rel="stylesheet" href="/css/desktop.css">
-    <link rel="stylesheet" href="/css/team-planner.css"></head>
+    <link rel="stylesheet" href="/css/team-planner.css">
+
+    <%# --- BLOC GOOGLE ANALYTICS MODIFIÉ --- %>
+    <% if (serverSettings.ga_measurement_id && serverSettings.ga_measurement_id.startsWith('G-')) { %>
+        <script async src="https://www.googletagmanager.com/gtag/js?id=<%= serverSettings.ga_measurement_id %>"></script>
+        <script>
+      window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+    // Configurez-le SANS le page_view initial, car nous le gérerons manuellement
+          gtag('config', '<%= serverSettings.ga_measurement_id %>', {
+            'send_page_view': false
+          });
+        </script>
+    <% } else { %>
+        <script>
+            console.log('Google Analytics non configuré (variable GA_MEASUREMENT_ID manquante dans .env).');
+        </script>
+    <% } %>
+    <%# --- FIN DU BLOC MODIFIÉ --- %>
+</head>
 <body>
     <button id="home-nav-btn">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24
@@ -26,17 +46,20 @@
 
  <header>
         <a href="https://discord.gg/AMpJQ6YTtx" target="_blank" class="top-bar-section discord-section">
-            <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><title>Discord</title><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4464.8245-.6667 1.2482-2.6549-.6032-5.4682-.6032-8.1223 0-.2203-.4237-.4558-.873-.6667-1.2482a.0741.0741 0 00-.0785-.0371 19.7363 19.7363 0 00-4.8851 1.5152.0699.0699 0 00-.0321.0253C.3438 8.1764-1.229 14.041 1.0537 18.0613a.0745.0745 0 00.0817.0428c.348-.1354.698-.2903 1.0471-.4445a.0739.0739 0 00.0428-.0613c-.0352-.142-.0683-.284-.1013-.4259a.0739.0739 0 01.0253-.0785c.6764-.5267 1.3283-1.037 1.9429-1.5273a.0743.0743 0 00.0253-.0785c-.0112-.017-.0234-.033-.0352-.0502-1.153-1.025-2.23-2.18-3.12-3.4754a.069.069 0 01.002-.0817c.022-.018.043-.035.064-.052 6.02-3.18 11.64-3.18 17.66 0a.069.069 0 01.064.052.069.069 0 01.002.0817c-.89 1.29-1.967 2.45-3.12 3.4754-.01.017-.024.033-.035.05a.0743.0743 0 00.025.0785c.614.49 1.267.99 1.943 1.5273a.0739.0739 0 01.025.0785c-.033.14-.066.28-.101.4259a.0739.0739 0 00.043.0613c.349.15 1.047.44 1.047.44a.0745.0745 0 00.082-.0428c2.28-4.02 1.05-9.88.34-13.66a.069.069 0 00-.032-.025zm-5.0253 8.3242c-1.2118 0-2.1918-.99-2.1918-2.2062s.98-2.2062 2.1918-2.2062 2.1918.99 2.1918 2.2062c0 1.216-.98 2.2062-2.1918 2.2062zm-8.4322 0c-1.2118 0-2.1918-.99-2.1918-2.2062s.98-2.2062 2.1918-2.2062 2.1918.99 2.1918 2.2062c0 1.216-.98 2.2062-2.1918 2.2062z"/></svg>
+            <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><title>Discord</title><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4464.8245-.6667 1.2482-2.6549-.6032-5.4682-.6032-8.1223 0-.2203-.4237-.4558-.873-.6667-1.2482a.0741.0741 0 00-.0785-.0371 19.7363 19.7363 0 00-4.8851 1.5152.0699.0699 0 00-.0321.0253C.3438 8.1764-1.229 14.041 1.0537 18.0613a.0745.0745 0 00.0817.0428c.348-.1354.698-.2903 1.0471-.4445a.0739.0739 0 00.0428-.0613c-.0352-.142-.0683-.284-.1013-.4259a.0739.0739 0 01.0253-.0785c.6764-.5267 1.3283-1.037 1.9429-1.5273a.0743.0743 0 00.0253-.0785c-.0112-.017-.0234-.033-.0352-.0502-1.153-1.025-2.23-2.18-3.12-3.4754a.069.069 0 01.002-.0817c.022-.018.043-.035.064-.052 6.02-3.18 11.64-3.18 17.66 0a.069.069 0 01.064.052.069.069 0 01.002.0817c-.89 1.29-1.967 2.45-3.12
+3.4754-.01.017-.024.033-.035.05a.0743.0743 0 00.025.0785c.614.49 1.267.99 1.943 1.5273a.0739.0739 0 01.025.0785c-.033.14-.066.28-.101.4259a.0739.0739 0 00.043.0613c.349.15 1.047.44 1.047.44a.0745.0745 0 00.082-.0428c2.28-4.02 1.05-9.88.34-13.66a.069.069 0 00-.032-.025zm-5.0253 8.3242c-1.2118 0-2.1918-.99-2.1918-2.2062s.98-2.2062 2.1918-2.2062 2.1918.99 2.1918 2.2062c0 1.216-.98 2.2062-2.1918 2.2062zm-8.4322 0c-1.2118 0-2.1918-.99-2.1918-2.2062s.98-2.2062 2.1918-2.2062 2.1918.99 2.1918 2.2062c0 1.216-.98 2.2062-2.1918 2.2062z"/></svg>
             <div class="discord-info">
                 <span>Join Discord</span>
                 <div class="discord-stats">
-                    <span id="discord-online-count"></span>
+
+ <span id="discord-online-count"></span>
                 </div>
             </div>
         </a>
 
         <h1>
-            <svg class="logo logo-desktop" width="60" height="60" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="frostingGradient" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#FFDDC1;stop-opacity:1" /><stop offset="100%" style="stop-color:#FBC49D;stop-opacity:1" /></linearGradient><linearGradient id="muffinGradient" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#8c5a3a;stop-opacity:1" /><stop offset="100%" style="stop-color:#6b442a;stop-opacity:1" /></linearGradient></defs><path d="M20,60 Q18,40 30,45 T50,40 T70,45 T82,40 Q90,60 80,60 Z" fill="url(#frostingGradient)"/><path d="M20,60 L25,90 Q50,100 75,90 L80,60 Z" fill="url(#muffinGradient)"/><circle cx="50" cy="28" r="7" fill="#e57373"/></svg>
+            <svg class="logo logo-desktop" width="60" height="60" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="frostingGradient" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#FFDDC1;stop-opacity:1" /><stop offset="100%" style="stop-color:#FBC49D;stop-opacity:1" /></linearGradient><linearGradient id="muffinGradient" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#8c5a3a;stop-opacity:1" /><stop offset="100%" style="stop-color:#6b442a;stop-opacity:1" /></linearGradient></defs><path d="M20,60 Q18,40 30,45 T50,40 T70,45 T82,40 Q90,60 80,60 Z" fill="url(#frostingGradient)"/><path
+d="M20,60 L25,90 Q50,100 75,90 L80,60 Z" fill="url(#muffinGradient)"/><circle cx="50" cy="28" r="7" fill="#e57373"/></svg>
 
             <span class="title-full-text">Go Go Muffin <%= serverSettings.server_name %> Leaderboard</span>
             <span class="title-mobile-short">GGM <%= serverSettings.server_name %> LB</span>
@@ -44,7 +67,8 @@
 
         <a href="https://boarhat.gg/games/go-go-muffin/" target="_blank" class="top-bar-section guides-section">
             <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                <title>Book</title>
+
+ <title>Book</title>
                 <path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"></path>
             </svg>
             <span>Guides</span>
@@ -52,5 +76,6 @@
 
    <button id="admin-settings-btn">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.44,0.17-0.48,0.41L9.2,5.73C8.6,5.97,8.07,6.29,7.57,6.67L5.18,5.71C4.96,5.64,4.71,5.7,4.59,5.92L2.67,9.24 c-0.11,0.2-0.06,0.47,0.12,0.61L4.82,11c-0.05,0.3-0.07,0.62-0.07,0.94c0,0.32,0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.92 c0.04,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.48,0.41l0.36-2.92c0.6-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0.01,0.59-0.22l1.92-3.32c0.11-0.2,0.06-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
-        </button>
+
+  </button>
     </header>

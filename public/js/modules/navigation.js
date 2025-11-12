@@ -1,4 +1,22 @@
 // public/js/modules/navigation.js
+
+// NOUVEAU : Fonction pour envoyer une "page vue" à Google Analytics
+function trackGAPageView(pageId) {
+    if (typeof gtag === 'function') {
+        const pageTitle = pageId || 'home';
+        const pageLocation = window.location.href; // GA4 utilise 'page_location'
+
+        // Envoie l'événement de vue de page à GA4
+        gtag('event', 'page_view', {
+            'page_title': pageTitle,
+            'page_location': pageLocation
+        });
+
+        // Log pour déboguer (optionnel)
+        // console.log(`GA Page View Tracked: ${pageTitle}`);
+    }
+}
+
 export function initNavigation() {
     const navModalBtn = document.getElementById('home-nav-btn');
     const navModal = document.getElementById('nav-modal');
@@ -45,6 +63,8 @@ export function initNavigation() {
             const url = new URL(window.location);
             url.searchParams.set('section', targetId);
             window.history.pushState({ section: targetId }, '', url);
+
+            trackGAPageView(targetId); // <<< MODIFICATION AJOUTÉE
         } else {
             goToHomeState();
         }
@@ -61,6 +81,8 @@ export function initNavigation() {
         const url = new URL(window.location);
         url.searchParams.delete('section');
         window.history.pushState({ section: 'home' }, '', url);
+
+        trackGAPageView('home'); // <<< MODIFICATION AJOUTÉE
     }
 
     if (navModalBtn && navModal && navModalContent && navModalCloseBtn && navModalBackdrop) {
@@ -115,10 +137,12 @@ export function initNavigation() {
         });
     }
 
+    // Cet appel initial va déclencher soit showSection(id) soit goToHomeState(),
+    // qui traceront tous les deux la première vue de page.
     showSection(currentSectionId);
 
     window.addEventListener('popstate', (event) => {
         const stateSection = event.state ? event.state.section : 'home';
-        showSection(stateSection);
+        showSection(stateSection); // showSection tracera automatiquement la vue
     });
 }
