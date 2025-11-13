@@ -50,7 +50,8 @@ const LOCALES = {
         ask_creator_character: 'Which character is organizing this activity?',
         placeholder_select_creator: 'Select your organizer character',
 
-        activity_created_thread: '✅ Activity **{type}** created in <#{threadId}>!',
+        // Modifié : Plus de référence au thread
+        activity_created: '✅ Activity **{type}** created!',
 
         join_not_linked: '❌ Your Discord account is not linked. Please use the "Join" button to search and link your character.',
         activity_not_found: '❌ Activity not found (might be deleted).',
@@ -134,6 +135,7 @@ function initDiscordBot() {
     discordClient.once(Events.ClientReady, async () => {
         console.log(`✅ Discord Bot logged in as ${discordClient.user.tag}`);
         isReady = true;
+        // La logique de déploiement est maintenant ici
         await deployPlannerPanel();
     });
 
@@ -148,29 +150,59 @@ function initDiscordBot() {
 }
 
 // --- DÉPLOIEMENT DU PANNEAU PERMANENT ---
-// *** MODIFIÉ POUR SUPPRIMER L'ANCIEN PANNEAU ET REPOSTER ***
+// *** MODIFIÉ POUR NETTOYER LE CANAL ET REPUBLIER LES ACTIVITÉS ***
 async function deployPlannerPanel() {
     if (!PLANNER_CHANNEL_ID) return;
     try {
         const channel = await discordClient.channels.fetch(PLANNER_CHANNEL_ID);
         if (!channel) return console.error("Planner channel not found.");
 
-        const messages = await channel.messages.fetch({ limit: 50 });
+        // 1. Nettoyer le canal
+        console.log(`[Deploy] Cleaning channel ${channel.name}...`);
+        let fetched;
+        do {
+            fetched = await channel.messages.fetch({ limit: 100 });
+            if (fetched.size > 0) {
+                // On ne peut pas bulkDelete les messages de plus de 14 jours
+                const oldMessages = fetched.filter(msg => (Date.now() - msg.createdTimestamp) > 1209600000); // 14 jours
+                const newMessages = fetched.filter(msg => (Date.now() - msg.createdTimestamp) <= 1209600000);
 
-        // Trouver TOUS les anciens panneaux
-        const existingPanels = messages.filter(m =>
-            m.author.id === discordClient.user.id &&
-            m.embeds.length > 0 &&
-            m.embeds[0].title === t('panel_title')
+                if (newMessages.size > 0) {
+                    await channel.bulkDelete(newMessages);
+                }
+                if (oldMessages.size > 0) {
+                    for (const msg of oldMessages.values()) {
+                        await msg.delete();
+                    }
+                }
+            }
+        } while (fetched.size >= 2); // Continuer tant qu'on fetch des messages
+
+        console.log('[Deploy] Channel cleaned.');
+
+        // 2. Republier toutes les activités prévues (à venir)
+        const activities = await db.query(
+            `SELECT id FROM planned_activities WHERE scheduled_time > NOW() ORDER BY scheduled_time ASC`
         );
+        console.log(`[Deploy] Republishing ${activities.rows.length} upcoming activities...`);
 
-        // Supprimer tous les anciens panneaux
-        if (existingPanels.size > 0) {
-            console.log(`[Deploy] Found ${existingPanels.size} old panel(s). Deleting...`);
-            await Promise.all(existingPanels.map(panel => panel.delete().catch(e => console.warn(`Warn: Could not delete old panel: ${e.message}`))));
+        for (const activity of activities.rows) {
+            try {
+                const { embed, row } = await createActivityEmbedData(activity.id);
+                if (embed && row) {
+                    const message = await channel.send({ embeds: [embed], components: [row] });
+                    // Mettre à jour la BDD avec le NOUVEL ID de message
+                    await db.query(
+                        'UPDATE planned_activities SET discord_message_id = $1, discord_channel_id = $2 WHERE id = $3',
+                        [message.id, channel.id, activity.id]
+                    );
+                }
+            } catch (err) {
+                console.error(`[Deploy] Error republishing activity ${activity.id}:`, err);
+            }
         }
 
-        // Poster le nouveau panneau
+        // 3. Poster le panneau "New Activity"
         const embed = new EmbedBuilder()
             .setColor('#8c5a3a')
             .setTitle(t('panel_title'))
@@ -492,36 +524,27 @@ async function handleModalSubmit(interaction) {
         }
 
         try {
-            const creatorNameRes = await db.query('SELECT name FROM players WHERE id = $1', [creatorId]);
-            const creatorName = creatorNameRes.rows[0]?.name || 'Unknown';
-            const dateString = `${day.padStart(2, '0')}/${month.padStart(2, '0')}`;
-            const threadName = `${activityType} ${subtype || ''} - ${dateString} (${creatorName})`.substring(0, 100);
-
-            const thread = await interaction.channel.threads.create({
-                name: threadName,
-                autoArchiveDuration: 1440,
-                reason: `Activity created by ${creatorName}`
-            });
-
+            // *** MODIFICATION : Plus de thread ***
             const insertRes = await db.query(`
                 INSERT INTO planned_activities (activity_type, activity_subtype, scheduled_time, creator_id, notes, discord_channel_id)
                 VALUES ($1, $2, $3, $4, $5, $6)
                 RETURNING id, scheduled_time
-            `, [activityType, subtype, scheduledTime.toISOString(), creatorId, notes, thread.id]);
+            `, [activityType, subtype, scheduledTime.toISOString(), creatorId, notes, interaction.channelId]); // Utilise l'ID du canal principal
 
             const activityId = insertRes.rows[0].id;
-            const finalTimestamp = Math.floor(new Date(insertRes.rows[0].scheduled_time).getTime() / 1000);
 
             await db.query('INSERT INTO activity_participants (activity_id, player_id) VALUES ($1, $2)', [activityId, creatorId]);
 
             const { embed, row } = await createActivityEmbedData(activityId);
-            const message = await thread.send({ embeds: [embed], components: [row] });
+            // Envoyer l'embed DANS LE CANAL PRINCIPAL
+            const message = await interaction.channel.send({ embeds: [embed], components: [row] });
 
             await db.query('UPDATE planned_activities SET discord_message_id = $1 WHERE id = $2', [message.id, activityId]);
 
             await interaction.editReply({
-                content: t('activity_created_thread', { type: activityType, threadId: thread.id })
+                content: t('activity_created') // Réponse simple
             });
+            // *** FIN MODIFICATION ***
 
         } catch (err) {
             console.error("Error creating activity:", err);
@@ -604,15 +627,10 @@ async function handleDeleteActivity(interaction) {
 
     await interaction.deferUpdate();
 
-    const threadChannel = interaction.channel;
-
+    // *** MODIFICATION : Plus de thread ***
     await db.query('DELETE FROM planned_activities WHERE id = $1', [activityId]);
-
     await interaction.message.delete().catch((e) => console.warn(`Warn: Could not delete message: ${e.message}`));
-
-    if (threadChannel && threadChannel.isThread()) {
-        await threadChannel.delete('Activity deleted by creator').catch((e) => console.warn(`Warn: Could not delete thread: ${e.message}`));
-    }
+    // *** FIN MODIFICATION ***
 }
 
 // --- HELPERS & EXPORTS ---
@@ -667,8 +685,13 @@ async function updateActivityEmbed(activityId) {
 
         const channel = await discordClient.channels.fetch(discord_channel_id);
         if (!channel) return;
-        const message = await channel.messages.fetch(discord_message_id);
-        if (!message) return;
+
+        // Gérer le cas où le message a été supprimé (par ex. par le nettoyage)
+        const message = await channel.messages.fetch(discord_message_id).catch(() => null);
+        if (!message) {
+            console.warn(`[Update] Message ${discord_message_id} not found for activity ${activityId}. Maybe deleted by restart?`);
+            return;
+        }
 
         const data = await createActivityEmbedData(activityId);
         if (data) await message.edit({ embeds: [data.embed], components: [data.row] });
@@ -678,45 +701,56 @@ async function updateActivityEmbed(activityId) {
 
 async function deleteActivityMessage(activityId) {
     if (!discordClient || !isReady) return;
-    let channel;
     try {
         const res = await db.query('SELECT discord_channel_id, discord_message_id FROM planned_activities WHERE id = $1', [activityId]);
         if (res.rows.length > 0 && res.rows[0].discord_message_id) {
             const channelId = res.rows[0].discord_channel_id;
             const messageId = res.rows[0].discord_message_id;
 
-            channel = await discordClient.channels.fetch(channelId);
+            const channel = await discordClient.channels.fetch(channelId);
             if (channel) {
-                const msg = await channel.messages.fetch(messageId);
+                const msg = await channel.messages.fetch(messageId).catch(() => null); // Gérer si déjà supprimé
                 if (msg) await msg.delete();
-
-                if (channel.isThread()) {
-                    await channel.delete('Activity deleted from web panel');
-                }
             }
         }
     } catch (e) {
-        console.warn(`Warn: Failed to delete activity message/thread ${activityId}: ${e.message}`);
-        if (channel && channel.isThread()) {
-            await channel.delete('Activity deleted from web panel').catch(() => {});
-        }
+        console.warn(`Warn: Failed to delete activity message ${activityId}: ${e.message}`);
     }
 }
 
+// *** MODIFIÉ : Le rappel se fait en réponse au message ***
 async function sendActivityReminder(activity) {
-    if (!discordClient || !isReady || !activity.discord_channel_id) return;
+    if (!discordClient || !isReady || !activity.discord_channel_id || !activity.discord_message_id) return;
     try {
         const channel = await discordClient.channels.fetch(activity.discord_channel_id);
         if (!channel) return;
 
-        const res = await db.query(`SELECT p.discord_user_id FROM activity_participants ap JOIN players p ON ap.player_id = p.id WHERE ap.activity_id = $1 AND p.discord_user_id IS NOT NULL`, [activity.id]);
-        const mentions = res.rows.map(r => `<@${r.discord_user_id}>`).join(' ');
+        // Trouver le message original de l'activité
+        const message = await channel.messages.fetch(activity.discord_message_id).catch(() => null);
+        if (!message) {
+            console.warn(`[Reminder] Could not find original message ${activity.discord_message_id} for activity ${activity.id}`);
+            return;
+        }
 
-        if (mentions) {
-            await channel.send(`${t('reminder_text', { type: activity.activity_type })} ${mentions}`);
+        const res = await db.query(`SELECT p.discord_user_id FROM activity_participants ap JOIN players p ON ap.player_id = p.id WHERE ap.activity_id = $1 AND p.discord_user_id IS NOT NULL`, [activity.id]);
+
+        // Extraire juste les IDs pour la mention
+        const mentionUserIds = res.rows.map(r => r.discord_user_id);
+        const mentionText = mentionUserIds.map(id => `<@${id}>`).join(' ');
+
+        if (mentionText) {
+            // Envoyer le rappel EN RÉPONSE au message de l'activité
+            await message.reply({
+                content: `${t('reminder_text', { type: activity.activity_type })} ${mentionText}`,
+                allowed_mentions: {
+                    repliedUser: false, // Ne pas ping l'auteur du message (le bot)
+                    users: mentionUserIds // Ping seulement les participants
+                }
+            });
         }
     } catch (e) { console.error("Failed to send reminder:", e); }
 }
+// *** FIN MODIFICATION ***
 
 function formatCP(num) {
     if (!num) return 'N/A';
