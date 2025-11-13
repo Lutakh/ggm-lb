@@ -192,6 +192,7 @@ async function deployPlannerPanel() {
 }
 
 // --- GESTION DES INTERACTIONS ---
+// *** MODIFICATION ANTI-CRASH ***
 async function handleInteraction(interaction) {
     try {
         if (interaction.isButton()) {
@@ -203,11 +204,31 @@ async function handleInteraction(interaction) {
         }
     } catch (error) {
         console.error("Interaction Error:", error);
-        if (!interaction.replied && !interaction.deferred) {
-            await interaction.reply({ content: 'Error.', flags: MessageFlags.Ephemeral });
+
+        // --- MODIFICATION ANTI-CRASH ---
+        // Si l'erreur est que l'interaction est inconnue ou déjà répondue,
+        // on ne peut plus rien faire. On logge et on arrête pour éviter un crash.
+        if (error.code === 10062 || error.code === 40060) {
+            console.warn(`[Warn] Interaction ${interaction.id} (customId: ${interaction.customId}) was unknown or already acknowledged. Likely due to bot restart.`);
+            return; // Ne pas tenter de répondre
         }
+
+        // Pour les autres erreurs, on essaie de répondre.
+        try {
+            if (!interaction.replied && !interaction.deferred) {
+                await interaction.reply({ content: 'An error occurred.', flags: MessageFlags.Ephemeral });
+            } else {
+                // Si on a déjà "deferReply" mais qu'une erreur survient plus tard
+                await interaction.followUp({ content: 'An error occurred after acknowledging.', flags: MessageFlags.Ephemeral });
+            }
+        } catch (replyError) {
+            // Si même la réponse d'erreur échoue, on logge et on arrête.
+            console.error("[Critical] Failed to send error reply to interaction:", replyError);
+        }
+        // --- FIN MODIFICATION ANTI-CRASH ---
     }
 }
+// *** FIN MODIFICATION ANTI-CRASH ***
 
 // --- 1. GESTION DES BOUTONS ---
 async function handleButton(interaction) {
