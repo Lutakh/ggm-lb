@@ -54,6 +54,9 @@ const LOCALES = {
         ask_creator_character: 'Which character is organizing this activity?',
         placeholder_select_creator: 'Select your organizer character',
 
+        // --- NOUVEAU (Logique Thread) ---
+        activity_created_thread: '✅ Activity **{type}** created in <#{threadId}>!',
+
         // ... (reste des clés)
         join_not_linked: '❌ Your Discord account is not linked. Please use the "Join" button to search and link your character.',
         activity_not_found: '❌ Activity not found (might be deleted).',
@@ -192,7 +195,6 @@ async function deployPlannerPanel() {
 }
 
 // --- GESTION DES INTERACTIONS ---
-// *** MODIFICATION ANTI-CRASH ***
 async function handleInteraction(interaction) {
     try {
         if (interaction.isButton()) {
@@ -206,29 +208,22 @@ async function handleInteraction(interaction) {
         console.error("Interaction Error:", error);
 
         // --- MODIFICATION ANTI-CRASH ---
-        // Si l'erreur est que l'interaction est inconnue ou déjà répondue,
-        // on ne peut plus rien faire. On logge et on arrête pour éviter un crash.
         if (error.code === 10062 || error.code === 40060) {
             console.warn(`[Warn] Interaction ${interaction.id} (customId: ${interaction.customId}) was unknown or already acknowledged. Likely due to bot restart.`);
             return; // Ne pas tenter de répondre
         }
 
-        // Pour les autres erreurs, on essaie de répondre.
         try {
             if (!interaction.replied && !interaction.deferred) {
                 await interaction.reply({ content: 'An error occurred.', flags: MessageFlags.Ephemeral });
             } else {
-                // Si on a déjà "deferReply" mais qu'une erreur survient plus tard
                 await interaction.followUp({ content: 'An error occurred after acknowledging.', flags: MessageFlags.Ephemeral });
             }
         } catch (replyError) {
-            // Si même la réponse d'erreur échoue, on logge et on arrête.
             console.error("[Critical] Failed to send error reply to interaction:", replyError);
         }
-        // --- FIN MODIFICATION ANTI-CRASH ---
     }
 }
-// *** FIN MODIFICATION ANTI-CRASH ***
 
 // --- 1. GESTION DES BOUTONS ---
 async function handleButton(interaction) {
@@ -244,9 +239,7 @@ async function handleButton(interaction) {
         if (playerRes.rows.length === 1) {
             const creator = playerRes.rows[0];
 
-            // NOUVELLE VÉRIFICATION : Le joueur unique a-t-il une timezone ?
             if (!creator.timezone) {
-                // Doit d'abord définir la timezone
                 const options = COMMON_TIMEZONES.map(tz =>
                     new StringSelectMenuOptionBuilder().setLabel(tz.label).setValue(tz.value)
                 );
@@ -259,7 +252,6 @@ async function handleButton(interaction) {
                 return interaction.reply({ content: t('ask_timezone'), components: [row], flags: MessageFlags.Ephemeral });
             }
 
-            // Timezone OK, continuer vers la sélection d'activité
             const row = new ActionRowBuilder().addComponents(
                 new StringSelectMenuBuilder()
                     .setCustomId(`select_activity_type_creator_${creator.id}`)
@@ -276,7 +268,6 @@ async function handleButton(interaction) {
             return interaction.reply({ content: t('ask_activity_type'), components: [row], flags: MessageFlags.Ephemeral });
         }
 
-        // Plusieurs personnages, demander de choisir l'organisateur
         const classEmojis = { 'Swordbearer': '🛡️', 'Acolyte': '💖', 'Wayfarer': '🏹', 'Scholar': '✨', 'Shadowlash': '🗡️', 'Unknown': '❓' };
         const options = playerRes.rows.map(p =>
             new StringSelectMenuOptionBuilder()
@@ -326,12 +317,10 @@ async function handleSelectMenu(interaction) {
 
     // Étape 2: L'utilisateur a choisi son personnage organisateur
     if (customId === 'select_creator_character_for_activity') {
-        // VÉRIFIER LA TIMEZONE pour le personnage choisi
         const playerRes = await db.query('SELECT timezone FROM players WHERE id = $1', [creatorId]);
         const playerTimezone = playerRes.rows[0]?.timezone;
 
         if (!playerTimezone) {
-            // Le personnage choisi n'a pas de timezone, on la demande
             const options = COMMON_TIMEZONES.map(tz =>
                 new StringSelectMenuOptionBuilder().setLabel(tz.label).setValue(tz.value)
             );
@@ -344,7 +333,6 @@ async function handleSelectMenu(interaction) {
             return interaction.update({ content: t('ask_timezone'), components: [row] });
         }
 
-        // Timezone OK, continuer vers la sélection d'activité
         const row = new ActionRowBuilder().addComponents(
             new StringSelectMenuBuilder()
                 .setCustomId(`select_activity_type_creator_${creatorId}`)
@@ -361,21 +349,18 @@ async function handleSelectMenu(interaction) {
         return interaction.update({ content: t('ask_activity_type'), components: [row] });
     }
 
-    // NOUVEAU : L'utilisateur vient de choisir sa timezone
+    // L'utilisateur vient de choisir sa timezone
     if (customId.startsWith('select_timezone_for_creator_')) {
         const creatorIdForTimezone = customId.replace('select_timezone_for_creator_', '');
         const selectedTimezone = values[0];
 
-        // Sauvegarder la timezone en BDD
         await db.query('UPDATE players SET timezone = $1 WHERE id = $2', [selectedTimezone, creatorIdForTimezone]);
 
-        // Maintenant, continuer le flux normal : montrer le type d'activité
         const row = new ActionRowBuilder().addComponents(
             new StringSelectMenuBuilder()
                 .setCustomId(`select_activity_type_creator_${creatorIdForTimezone}`)
                 .setPlaceholder(t('placeholder_activity_type'))
                 .addOptions(
-                    // ... (options d'activité) ...
                     new StringSelectMenuOptionBuilder().setLabel('Perilous Trial').setValue('Perilous Trial').setEmoji('⚔️'),
                     new StringSelectMenuOptionBuilder().setLabel('Wave of Horror').setValue('Wave of Horror').setEmoji('🌊'),
                     new StringSelectMenuOptionBuilder().setLabel('Echo of Battlefield').setValue('Echo of Battlefield').setEmoji('🛡️'),
@@ -385,7 +370,6 @@ async function handleSelectMenu(interaction) {
                 )
         );
 
-        // Informer l'utilisateur que la timezone est enregistrée et lui montrer l'étape suivante
         return interaction.update({
             content: `${t('timezone_set', {timezone: selectedTimezone})}\n\n${t('ask_activity_type')}`,
             components: [row]
@@ -408,8 +392,8 @@ async function handleSelectMenu(interaction) {
 
         const dateInput = new TextInputBuilder()
             .setCustomId('datetime')
-            .setLabel(t('label_date')) // Demande l'heure locale
-            .setPlaceholder(t('placeholder_date')) // ex: 15:00 (Your Local Time)
+            .setLabel(t('label_date'))
+            .setPlaceholder(t('placeholder_date'))
             .setStyle(TextInputStyle.Short)
             .setRequired(true);
 
@@ -486,29 +470,21 @@ async function handleModalSubmit(interaction) {
             return interaction.editReply({ content: t('error_date_format') });
         }
 
-        // 1. Récupérer la timezone du créateur
         const playerRes = await db.query('SELECT timezone FROM players WHERE id = $1', [creatorId]);
         const playerTimezone = playerRes.rows[0]?.timezone;
         if (!playerTimezone) {
-            // Sécurité : ne devrait pas arriver car vérifié avant, mais au cas où.
             return interaction.editReply({ content: 'Error: Timezone not found for creator. Please try again.' });
         }
 
         let scheduledTime;
         try {
-            // 2. Créer une date "temporaire" (ex: 2024-12-25 15:00)
-            // On la force en UTC pour avoir une base de calcul stable
             const tempDate = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute)));
             if (isNaN(tempDate.getTime())) throw new Error('Invalid date components');
 
-            // 3. Obtenir le décalage pour cette date dans ce fuseau horaire
             const offsetString = getOffsetString(tempDate, playerTimezone); // ex: "+01:00"
 
-            // 4. Construire la chaîne ISO 8601 complète
-            // ex: "2024-12-25T15:00:00+01:00"
             const isoString = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${hour.padStart(2, '0')}:${minute.padStart(2, '0')}:00${offsetString}`;
 
-            // 5. new Date() va maintenant l'interpréter correctement et la stocker en UTC
             scheduledTime = new Date(isoString);
             if (isNaN(scheduledTime.getTime())) throw new Error('Invalid ISO string conversion');
 
@@ -519,11 +495,26 @@ async function handleModalSubmit(interaction) {
         // --- FIN LOGIQUE DATE ---
 
         try {
+            // *** MODIFICATION : Logique de Thread ***
+            const creatorNameRes = await db.query('SELECT name FROM players WHERE id = $1', [creatorId]);
+            const creatorName = creatorNameRes.rows[0]?.name || 'Unknown';
+            const dateString = `${day.padStart(2, '0')}/${month.padStart(2, '0')}`;
+            // Créer un nom de thread (max 100 chars)
+            const threadName = `${activityType} ${subtype || ''} - ${dateString} (${creatorName})`.substring(0, 100);
+
+            // Créer le thread dans le canal principal
+            const thread = await interaction.channel.threads.create({
+                name: threadName,
+                autoArchiveDuration: 1440, // 24 heures
+                reason: `Activity created by ${creatorName}`
+            });
+
+            // Insérer l'activité avec L'ID DU THREAD comme channel_id
             const insertRes = await db.query(`
                 INSERT INTO planned_activities (activity_type, activity_subtype, scheduled_time, creator_id, notes, discord_channel_id)
                 VALUES ($1, $2, $3, $4, $5, $6)
                 RETURNING id, scheduled_time
-            `, [activityType, subtype, scheduledTime.toISOString(), creatorId, notes, interaction.channelId]);
+            `, [activityType, subtype, scheduledTime.toISOString(), creatorId, notes, thread.id]); // <-- Stocke thread.id
 
             const activityId = insertRes.rows[0].id;
             const finalTimestamp = Math.floor(new Date(insertRes.rows[0].scheduled_time).getTime() / 1000);
@@ -531,10 +522,17 @@ async function handleModalSubmit(interaction) {
             await db.query('INSERT INTO activity_participants (activity_id, player_id) VALUES ($1, $2)', [activityId, creatorId]);
 
             const { embed, row } = await createActivityEmbedData(activityId);
-            const message = await interaction.channel.send({ embeds: [embed], components: [row] });
+            // Envoyer l'embed DANS LE THREAD
+            const message = await thread.send({ embeds: [embed], components: [row] });
+
+            // Mettre à jour la BDD avec l'ID du message (qui est dans le thread)
             await db.query('UPDATE planned_activities SET discord_message_id = $1 WHERE id = $2', [message.id, activityId]);
 
-            await interaction.editReply({ content: t('activity_created', { type: activityType, timestamp: finalTimestamp }) });
+            // Répondre à l'utilisateur avec un lien vers le thread
+            await interaction.editReply({
+                content: t('activity_created_thread', { type: activityType, threadId: thread.id })
+            });
+            // *** FIN MODIFICATION THREAD ***
 
         } catch (err) {
             console.error("Error creating activity:", err);
@@ -615,9 +613,22 @@ async function handleDeleteActivity(interaction) {
         return interaction.reply({ content: t('only_creator_delete'), flags: MessageFlags.Ephemeral });
     }
 
-    await interaction.deferUpdate();
+    await interaction.deferUpdate(); // Accuse réception
+
+    // *** MODIFICATION : Logique de Thread ***
+    const threadChannel = interaction.channel; // Le channel EST le thread
+
+    // 1. Supprimer de la BDD
     await db.query('DELETE FROM planned_activities WHERE id = $1', [activityId]);
-    await interaction.message.delete().catch(() => {});
+
+    // 2. Supprimer le message embed
+    await interaction.message.delete().catch((e) => console.warn(`Warn: Could not delete message: ${e.message}`));
+
+    // 3. Supprimer le thread lui-même
+    if (threadChannel && threadChannel.isThread()) {
+        await threadChannel.delete('Activity deleted by creator').catch((e) => console.warn(`Warn: Could not delete thread: ${e.message}`));
+    }
+    // *** FIN MODIFICATION THREAD ***
 }
 
 // --- HELPERS & EXPORTS ---
@@ -670,6 +681,7 @@ async function updateActivityEmbed(activityId) {
         const { discord_channel_id, discord_message_id } = res.rows[0];
         if (!discord_channel_id || !discord_message_id) return;
 
+        // Le channel_id EST maintenant un thread_id, fetch le récupère comme un channel
         const channel = await discordClient.channels.fetch(discord_channel_id);
         if (!channel) return;
         const message = await channel.messages.fetch(discord_message_id);
@@ -683,21 +695,37 @@ async function updateActivityEmbed(activityId) {
 
 async function deleteActivityMessage(activityId) {
     if (!discordClient || !isReady) return;
+    let channel; // Déclarer channel ici pour qu'il soit accessible dans le catch
     try {
         const res = await db.query('SELECT discord_channel_id, discord_message_id FROM planned_activities WHERE id = $1', [activityId]);
         if (res.rows.length > 0 && res.rows[0].discord_message_id) {
-            const channel = await discordClient.channels.fetch(res.rows[0].discord_channel_id);
+            const channelId = res.rows[0].discord_channel_id; // C'est l'ID du thread
+            const messageId = res.rows[0].discord_message_id;
+
+            channel = await discordClient.channels.fetch(channelId);
             if (channel) {
-                const msg = await channel.messages.fetch(res.rows[0].discord_message_id);
+                const msg = await channel.messages.fetch(messageId);
                 if (msg) await msg.delete();
+
+                // MODIFICATION : Supprimer le thread aussi
+                if (channel.isThread()) {
+                    await channel.delete('Activity deleted from web panel');
+                }
             }
         }
-    } catch (e) { /* Ignorer si déjà supprimé */ }
+    } catch (e) {
+        console.warn(`Warn: Failed to delete activity message/thread ${activityId}: ${e.message}`);
+        // Tenter de supprimer le thread même si le message n'existe plus
+        if (channel && channel.isThread()) {
+            await channel.delete('Activity deleted from web panel').catch(() => {});
+        }
+    }
 }
 
 async function sendActivityReminder(activity) {
     if (!discordClient || !isReady || !activity.discord_channel_id) return;
     try {
+        // Le channel_id EST le thread_id
         const channel = await discordClient.channels.fetch(activity.discord_channel_id);
         if (!channel) return;
 
@@ -705,6 +733,7 @@ async function sendActivityReminder(activity) {
         const mentions = res.rows.map(r => `<@${r.discord_user_id}>`).join(' ');
 
         if (mentions) {
+            // Envoyer le rappel DANS le thread
             await channel.send(`${t('reminder_text', { type: activity.activity_type })} ${mentions}`);
         }
     } catch (e) { console.error("Failed to send reminder:", e); }

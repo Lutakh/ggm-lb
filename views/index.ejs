@@ -77,14 +77,19 @@
 
                 <select id="timezone-select" name="timezone">
                     <option value="" selected>Timezone (Optional, for Bot)</option>
-                    <option value="Europe/Paris">Europe / Paris (CET/CEST)</option>
-                    <option value="Europe/London">Europe / London (GMT/BST)</option>
-                    <option value="America/New_York">America / New York (ET)</option>
-                    <option value="America/Chicago">America / Chicago (CT)</option>
-                    <option value="America/Los_Angeles">America / Los Angeles (PT)</option>
-                    <option value="Asia/Singapore">Asia / Singapore (SGT)</option>
-                    <option value="Australia/Sydney">Australia / Sydney (AEST/AEDT)</option>
-                    <option value="UTC">UTC</option>
+                    <option value="America/Los_Angeles">(GMT-07:00) Los Angeles (PT)</option>
+                    <option value="America/Chicago">(GMT-06:00) Chicago (CT)</option>
+                    <option value="America/New_York">(GMT-05:00) New York (ET)</option>
+                    <option value="America/Sao_Paulo">(GMT-03:00) São Paulo</option>
+                    <option value="Europe/London">(GMT+00:00) London (GMT/BST)</option>
+                    <option value="Europe/Paris">(GMT+01:00) Paris (CET/CEST)</option>
+                    <option value="Europe/Moscow">(GMT+03:00) Moscow</option>
+                    <option value="Asia/Bangkok">(GMT+07:00) Bangkok</option>
+                    <option value="Asia/Singapore">(GMT+08:00) Singapore/Perth</option>
+                    <option value="Asia/Tokyo">(GMT+09:00) Tokyo</option>
+                    <option value="Australia/Sydney">(GMT+10:00) Sydney (AEST/AEDT)</option>
+                    <option value="Pacific/Auckland">(GMT+12:00) Auckland</option>
+                    <option value="UTC">(GMT+00:00) UTC</option>
                 </select>
 
                 <input type="text" name="discord_user_id" id="discord-user-id-input" placeholder="Discord User ID (For Notifs)">
@@ -250,7 +255,7 @@
         <ul>
             <li><strong>Best Rank/PT:</strong> Calculates points based on your <em>single best rank</em> achieved for each PT, regardless of how
  many teams you are in.</li>
-            <li><strong>All Ranks:</strong> Sums up points from <em>all</em> your ranked teams across all PTs.
+            <li><strong>All Ranks:</strong> Sums up points from <em>all</em>your ranked teams across all PTs.
  Being in multiple top teams yields more points here.</li>
         </ul>
         <p><em>Tip: Use filters to see rankings for specific classes in the Global view.</em></p>
