@@ -8,7 +8,26 @@ let isReady = false;
 
 const PLANNER_CHANNEL_ID = process.env.PLANNER_CHANNEL_ID;
 
-// --- SYSTÈME DE TRADUCTION (i18n) ---
+// --- Timezone List ---
+// Une listeT réduite mais commune de fuseaux horaires IANA
+const COMMON_TIMEZONES = [
+    { label: "(GMT-07:00) Los Angeles (PT)", value: "America/Los_Angeles" },
+    { label: "(GMT-06:00) Chicago (CT)", value: "America/Chicago" },
+    { label: "(GMT-05:00) New York (ET)", value: "America/New_York" },
+    { label: "(GMT-03:00) São Paulo", value: "America/Sao_Paulo" },
+    { label: "(GMT+00:00) London (GMT/BST)", value: "Europe/London" },
+    { label: "(GMT+01:00) Paris (CET/CEST)", value: "Europe/Paris" },
+    { label: "(GMT+03:00) Moscow", value: "Europe/Moscow" },
+    { label: "(GMT+07:00) Bangkok", value: "Asia/Bangkok" },
+    { label: "(GMT+08:00) Singapore/Perth", value: "Asia/Singapore" },
+    { label: "(GMT+09:00) Tokyo", value: "Asia/Tokyo" },
+    { label: "(GMT+10:00) Sydney (AEST/AEDT)", value: "Australia/Sydney" },
+    { label: "(GMT+12:00) Auckland", value: "Pacific/Auckland" },
+    { label: "(GMT+00:00) UTC", value: "UTC" }
+];
+
+
+// --- SYSTÈME DE TRADUCTION (i18n) - Anglais Uniquement ---
 const DEFAULT_LOCALE = 'en-US';
 const LOCALES = {
     'en-US': {
@@ -18,15 +37,20 @@ const LOCALES = {
         ask_activity_type: 'What type of activity do you want to create?',
         placeholder_activity_type: 'Choose activity type',
 
-        // --- MODIFIÉ (Problème 1) ---
+        // --- MODIFIÉ (Heure Locale) ---
         modal_title_create: 'Create: {type}',
         label_subtype: 'Details (e.g. Boss, Level...)',
-        label_date: 'Date/Time (DD/MM/YYYY HH:mm **UTC**)', // UTC Clarification
+        label_date: 'Date/Time (DD/MM/YYYY HH:mm)', // Retiré UTC
         label_notes: 'Notes (Optional)',
-        error_date_format: '❌ Invalid date format. Use DD/MM/YYYY HH:mm **UTC** (e.g. 25/12/2024 14:00)', // UTC Clarification
-        placeholder_date: 'ex: 25/12/2024 14:00 (in UTC)', // UTC Clarification
+        error_date_format: '❌ Invalid date format. Use DD/MM/YYYY HH:mm (e.g. 25/12/2024 15:00)', // Retiré UTC
+        placeholder_date: 'ex: 25/12/2024 15:00 (Your Local Time)', // Changé pour 'Your Local Time'
 
-        // --- AJOUTÉ (Problème 2) ---
+        // --- AJOUTÉ (Logique Timezone) ---
+        ask_timezone: 'Please select your primary timezone to continue. This is a one-time setup for your character.',
+        placeholder_select_timezone: 'Select your timezone',
+        timezone_set: '✅ Timezone set to **{timezone}**! You can now continue.',
+
+        // --- AJOUTÉ (Logique Créateur Multiple) ---
         ask_creator_character: 'Which character is organizing this activity?',
         placeholder_select_creator: 'Select your organizer character',
 
@@ -59,6 +83,45 @@ function t(key, args = {}) {
     }
     return text;
 }
+
+/**
+ * NOUVELLE FONCTION : Calcule le décalage UTC (ex: "+01:00") pour une date et un fuseau horaire IANA.
+ * Gère l'heure d'été (DST) automatiquement.
+ */
+function getOffsetString(date, timezone) {
+    try {
+        const formatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: timezone,
+            timeZoneName: 'longOffset', // Donne "GMT+X" ou "GMT-X"
+        });
+        const parts = formatter.formatToParts(date);
+        const offsetPart = parts.find(p => p.type === 'timeZoneName');
+
+        if (!offsetPart) return '+00:00'; // Fallback UTC
+
+        // Valeur est "GMT+1" ou "GMT+5:30" ou "GMT-7"
+        let offset = offsetPart.value.replace('GMT', ''); // "+1", "+5:30", "-7"
+
+        if (!offset.includes(':')) {
+            // Gérer "+1" -> "+01:00" ou "-7" -> "-07:00"
+            const sign = offset[0];
+            const hours = offset.substring(1);
+            offset = `${sign}${hours.padStart(2, '0')}:00`;
+        } else if (offset.split(':')[0].length < 3) {
+            // Gérer "+5:30" -> "+05:30"
+            const sign = offset[0];
+            const parts = offset.substring(1).split(':');
+            offset = `${sign}${parts[0].padStart(2, '0')}:${parts[1]}`;
+        }
+
+        return offset; // ex: "+01:00", "-07:00", "+05:30"
+
+    } catch (e) {
+        console.error(`Error getting offset for timezone ${timezone}:`, e);
+        return '+00:00'; // Fallback sur UTC en cas d'erreur
+    }
+}
+
 
 function initDiscordBot() {
     if (!process.env.BOT_TOKEN) {
@@ -141,7 +204,6 @@ async function handleInteraction(interaction) {
     } catch (error) {
         console.error("Interaction Error:", error);
         if (!interaction.replied && !interaction.deferred) {
-            // Utilisation de flags ici aussi pour les erreurs inattendues
             await interaction.reply({ content: 'Error.', flags: MessageFlags.Ephemeral });
         }
     }
@@ -149,24 +211,37 @@ async function handleInteraction(interaction) {
 
 // --- 1. GESTION DES BOUTONS ---
 async function handleButton(interaction) {
-    const { customId } = interaction; // 'locale' retiré
+    const { customId } = interaction;
 
-    // --- MODIFIÉ (Problème 2) ---
     if (customId === 'btn_create_activity_start') {
-        // Vérifier les personnages liés AVANT de montrer le type d'activité
-        const playerRes = await db.query('SELECT id, name, class FROM players WHERE discord_user_id = $1 ORDER BY combat_power DESC', [interaction.user.id]);
+        const playerRes = await db.query('SELECT id, name, class, timezone FROM players WHERE discord_user_id = $1 ORDER BY combat_power DESC', [interaction.user.id]);
 
         if (playerRes.rows.length === 0) {
-            // Aucun personnage lié
             return interaction.reply({ content: t('join_not_linked'), flags: MessageFlags.Ephemeral });
         }
 
         if (playerRes.rows.length === 1) {
-            // Un seul personnage, on passe directement au choix de l'activité
-            const creatorId = playerRes.rows[0].id;
+            const creator = playerRes.rows[0];
+
+            // NOUVELLE VÉRIFICATION : Le joueur unique a-t-il une timezone ?
+            if (!creator.timezone) {
+                // Doit d'abord définir la timezone
+                const options = COMMON_TIMEZONES.map(tz =>
+                    new StringSelectMenuOptionBuilder().setLabel(tz.label).setValue(tz.value)
+                );
+                const row = new ActionRowBuilder().addComponents(
+                    new StringSelectMenuBuilder()
+                        .setCustomId(`select_timezone_for_creator_${creator.id}`)
+                        .setPlaceholder(t('placeholder_select_timezone'))
+                        .addOptions(options)
+                );
+                return interaction.reply({ content: t('ask_timezone'), components: [row], flags: MessageFlags.Ephemeral });
+            }
+
+            // Timezone OK, continuer vers la sélection d'activité
             const row = new ActionRowBuilder().addComponents(
                 new StringSelectMenuBuilder()
-                    .setCustomId(`select_activity_type_creator_${creatorId}`) // On passe l'ID créateur
+                    .setCustomId(`select_activity_type_creator_${creator.id}`)
                     .setPlaceholder(t('placeholder_activity_type'))
                     .addOptions(
                         new StringSelectMenuOptionBuilder().setLabel('Perilous Trial').setValue('Perilous Trial').setEmoji('⚔️'),
@@ -180,7 +255,7 @@ async function handleButton(interaction) {
             return interaction.reply({ content: t('ask_activity_type'), components: [row], flags: MessageFlags.Ephemeral });
         }
 
-        // Plusieurs personnages, on demande de choisir l'organisateur
+        // Plusieurs personnages, demander de choisir l'organisateur
         const classEmojis = { 'Swordbearer': '🛡️', 'Acolyte': '💖', 'Wayfarer': '🏹', 'Scholar': '✨', 'Shadowlash': '🗡️', 'Unknown': '❓' };
         const options = playerRes.rows.map(p =>
             new StringSelectMenuOptionBuilder()
@@ -199,7 +274,6 @@ async function handleButton(interaction) {
 
         return interaction.reply({ content: t('ask_creator_character'), components: [row], flags: MessageFlags.Ephemeral });
     }
-    // --- FIN MODIFICATION (Problème 2) ---
 
     else if (customId.startsWith('btn_join_')) {
         const activityId = customId.replace('btn_join_', '');
@@ -226,16 +300,33 @@ async function handleButton(interaction) {
 
 // --- 2. GESTION DES MENUS DÉROULANTS ---
 async function handleSelectMenu(interaction) {
-    const { customId, values } = interaction; // 'locale' retiré
+    const { customId, values } = interaction;
+    const creatorId = values[0]; // Le premier (et seul) ID sélectionné
 
-    // --- AJOUTÉ (Problème 2) ---
     // Étape 2: L'utilisateur a choisi son personnage organisateur
     if (customId === 'select_creator_character_for_activity') {
-        const creatorId = values[0];
-        // On affiche maintenant le sélecteur de type d'activité, en passant l'ID créateur
+        // VÉRIFIER LA TIMEZONE pour le personnage choisi
+        const playerRes = await db.query('SELECT timezone FROM players WHERE id = $1', [creatorId]);
+        const playerTimezone = playerRes.rows[0]?.timezone;
+
+        if (!playerTimezone) {
+            // Le personnage choisi n'a pas de timezone, on la demande
+            const options = COMMON_TIMEZONES.map(tz =>
+                new StringSelectMenuOptionBuilder().setLabel(tz.label).setValue(tz.value)
+            );
+            const row = new ActionRowBuilder().addComponents(
+                new StringSelectMenuBuilder()
+                    .setCustomId(`select_timezone_for_creator_${creatorId}`)
+                    .setPlaceholder(t('placeholder_select_timezone'))
+                    .addOptions(options)
+            );
+            return interaction.update({ content: t('ask_timezone'), components: [row] });
+        }
+
+        // Timezone OK, continuer vers la sélection d'activité
         const row = new ActionRowBuilder().addComponents(
             new StringSelectMenuBuilder()
-                .setCustomId(`select_activity_type_creator_${creatorId}`) // On passe l'ID
+                .setCustomId(`select_activity_type_creator_${creatorId}`)
                 .setPlaceholder(t('placeholder_activity_type'))
                 .addOptions(
                     new StringSelectMenuOptionBuilder().setLabel('Perilous Trial').setValue('Perilous Trial').setEmoji('⚔️'),
@@ -246,18 +337,46 @@ async function handleSelectMenu(interaction) {
                     new StringSelectMenuOptionBuilder().setLabel('Other').setValue('Other').setEmoji('📅')
                 )
         );
-        // On met à jour le message éphémère précédent
         return interaction.update({ content: t('ask_activity_type'), components: [row] });
     }
-    // --- FIN AJOUT (Problème 2) ---
 
-    // --- MODIFIÉ (Problème 2) ---
-    // Étape 3: L'utilisateur a choisi le type d'activité (l'ID contient l'ID créateur)
+    // NOUVEAU : L'utilisateur vient de choisir sa timezone
+    if (customId.startsWith('select_timezone_for_creator_')) {
+        const creatorIdForTimezone = customId.replace('select_timezone_for_creator_', '');
+        const selectedTimezone = values[0];
+
+        // Sauvegarder la timezone en BDD
+        await db.query('UPDATE players SET timezone = $1 WHERE id = $2', [selectedTimezone, creatorIdForTimezone]);
+
+        // Maintenant, continuer le flux normal : montrer le type d'activité
+        const row = new ActionRowBuilder().addComponents(
+            new StringSelectMenuBuilder()
+                .setCustomId(`select_activity_type_creator_${creatorIdForTimezone}`)
+                .setPlaceholder(t('placeholder_activity_type'))
+                .addOptions(
+                    // ... (options d'activité) ...
+                    new StringSelectMenuOptionBuilder().setLabel('Perilous Trial').setValue('Perilous Trial').setEmoji('⚔️'),
+                    new StringSelectMenuOptionBuilder().setLabel('Wave of Horror').setValue('Wave of Horror').setEmoji('🌊'),
+                    new StringSelectMenuOptionBuilder().setLabel('Echo of Battlefield').setValue('Echo of Battlefield').setEmoji('🛡️'),
+                    new StringSelectMenuOptionBuilder().setLabel('Echo of War').setValue('Echo of War').setEmoji('🐲'),
+                    new StringSelectMenuOptionBuilder().setLabel('Dragon Hunt').setValue('Dragon Hunt').setEmoji('🐉'),
+                    new StringSelectMenuOptionBuilder().setLabel('Other').setValue('Other').setEmoji('📅')
+                )
+        );
+
+        // Informer l'utilisateur que la timezone est enregistrée et lui montrer l'étape suivante
+        return interaction.update({
+            content: `${t('timezone_set', {timezone: selectedTimezone})}\n\n${t('ask_activity_type')}`,
+            components: [row]
+        });
+    }
+
+    // Étape 3: L'utilisateur a choisi le type d'activité
     if (customId.startsWith('select_activity_type_creator_')) {
-        const creatorId = customId.replace('select_activity_type_creator_', ''); // Récupération ID créateur
+        const creatorIdFromActivity = customId.replace('select_activity_type_creator_', '');
         const activityType = values[0];
         const modal = new ModalBuilder()
-            .setCustomId(`modal_create_activity_${creatorId}_${activityType}`) // On passe l'ID créateur ET le type
+            .setCustomId(`modal_create_activity_${creatorIdFromActivity}_${activityType}`)
             .setTitle(t('modal_title_create', { type: activityType }));
 
         const subtypeInput = new TextInputBuilder()
@@ -266,14 +385,12 @@ async function handleSelectMenu(interaction) {
             .setStyle(TextInputStyle.Short)
             .setRequired(false);
 
-        // --- MODIFIÉ (Problème 1) ---
         const dateInput = new TextInputBuilder()
             .setCustomId('datetime')
-            .setLabel(t('label_date'))
-            .setPlaceholder(t('placeholder_date')) // Utilisation du placeholder traduit
+            .setLabel(t('label_date')) // Demande l'heure locale
+            .setPlaceholder(t('placeholder_date')) // ex: 15:00 (Your Local Time)
             .setStyle(TextInputStyle.Short)
             .setRequired(true);
-        // --- FIN MODIFICATION (Problème 1) ---
 
         const notesInput = new TextInputBuilder()
             .setCustomId('notes')
@@ -289,8 +406,8 @@ async function handleSelectMenu(interaction) {
 
         await interaction.showModal(modal);
     }
-    // --- FIN MODIFICATION (Problème 2) ---
 
+    // Logique pour REJOINDRE (inchangée)
     else if (customId.startsWith('menu_join_player_')) {
         await interaction.deferUpdate();
         const activityId = customId.replace('menu_join_player_', '');
@@ -324,32 +441,58 @@ async function handleSelectMenu(interaction) {
 
 // --- 3. GESTION DES MODALS ---
 async function handleModalSubmit(interaction) {
-    const { customId, fields, user } = interaction; // 'locale' retiré
+    const { customId, fields } = interaction;
 
-    // --- MODIFIÉ (Problème 2) ---
     // Étape 4: L'utilisateur soumet le modal de création
     if (customId.startsWith('modal_create_activity_')) {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-        // On extrait l'ID créateur et le type d'activité de l'ID du modal
         const parts = customId.replace('modal_create_activity_', '').split('_');
-        const creatorId = parts[0]; // ID du créateur
-        const activityType = parts.slice(1).join('_'); // Type d'activité
+        const creatorId = parts[0];
+        const activityType = parts.slice(1).join('_');
 
         const subtype = fields.getTextInputValue('subtype');
-        const datetimeStr = fields.getTextInputValue('datetime');
+        const datetimeStr = fields.getTextInputValue('datetime'); // "DD/MM/YYYY HH:mm" (Heure Locale)
         const notes = fields.getTextInputValue('notes');
 
-        // --- LOGIQUE DE PARSING DATE (Problème 1) ---
-        // L'utilisateur entre en UTC
+        // --- LOGIQUE DE PARSING DATE (AVEC TIMEZONE) ---
         const [datePart, timePart] = datetimeStr.split(' ');
         if (!datePart || !timePart) return interaction.editReply({ content: t('error_date_format') });
         const [day, month, year] = datePart.split('/');
         const [hour, minute] = timePart.split(':');
-        // Le serveur (supposé en UTC) crée une date. Ex: "14:00" devient 14:00 UTC.
-        let scheduledTime = new Date(`${year}-${month}-${day}T${hour}:${minute}:00`);
 
-        if (isNaN(scheduledTime.getTime())) {
+        if (!day || !month || !year || !hour || !minute) {
+            return interaction.editReply({ content: t('error_date_format') });
+        }
+
+        // 1. Récupérer la timezone du créateur
+        const playerRes = await db.query('SELECT timezone FROM players WHERE id = $1', [creatorId]);
+        const playerTimezone = playerRes.rows[0]?.timezone;
+        if (!playerTimezone) {
+            // Sécurité : ne devrait pas arriver car vérifié avant, mais au cas où.
+            return interaction.editReply({ content: 'Error: Timezone not found for creator. Please try again.' });
+        }
+
+        let scheduledTime;
+        try {
+            // 2. Créer une date "temporaire" (ex: 2024-12-25 15:00)
+            // On la force en UTC pour avoir une base de calcul stable
+            const tempDate = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute)));
+            if (isNaN(tempDate.getTime())) throw new Error('Invalid date components');
+
+            // 3. Obtenir le décalage pour cette date dans ce fuseau horaire
+            const offsetString = getOffsetString(tempDate, playerTimezone); // ex: "+01:00"
+
+            // 4. Construire la chaîne ISO 8601 complète
+            // ex: "2024-12-25T15:00:00+01:00"
+            const isoString = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${hour.padStart(2, '0')}:${minute.padStart(2, '0')}:00${offsetString}`;
+
+            // 5. new Date() va maintenant l'interpréter correctement et la stocker en UTC
+            scheduledTime = new Date(isoString);
+            if (isNaN(scheduledTime.getTime())) throw new Error('Invalid ISO string conversion');
+
+        } catch(e) {
+            console.error("Date parsing error:", e);
             return interaction.editReply({ content: t('error_date_format') });
         }
         // --- FIN LOGIQUE DATE ---
@@ -359,12 +502,11 @@ async function handleModalSubmit(interaction) {
                 INSERT INTO planned_activities (activity_type, activity_subtype, scheduled_time, creator_id, notes, discord_channel_id)
                 VALUES ($1, $2, $3, $4, $5, $6)
                 RETURNING id, scheduled_time
-            `, [activityType, subtype, scheduledTime.toISOString(), creatorId, notes, interaction.channelId]); // On utilise creatorId
+            `, [activityType, subtype, scheduledTime.toISOString(), creatorId, notes, interaction.channelId]);
 
             const activityId = insertRes.rows[0].id;
             const finalTimestamp = Math.floor(new Date(insertRes.rows[0].scheduled_time).getTime() / 1000);
 
-            // On ajoute l'organisateur (creatorId) comme premier participant
             await db.query('INSERT INTO activity_participants (activity_id, player_id) VALUES ($1, $2)', [activityId, creatorId]);
 
             const { embed, row } = await createActivityEmbedData(activityId);
@@ -378,7 +520,6 @@ async function handleModalSubmit(interaction) {
             await interaction.editReply({ content: t('error_db') });
         }
     }
-    // --- FIN MODIFICATION (Problème 2) ---
 
     else if (customId.startsWith('modal_join_search_')) {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
@@ -420,7 +561,7 @@ async function handleModalSubmit(interaction) {
 // --- 4. LEAVE & DELETE ---
 async function handleLeave(interaction) {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-    const { customId, user } = interaction; // 'locale' retiré
+    const { customId, user } = interaction;
     const activityId = customId.replace('btn_leave_', '');
 
     const playerRes = await db.query('SELECT id FROM players WHERE discord_user_id = $1', [user.id]);
@@ -440,7 +581,7 @@ async function handleLeave(interaction) {
 }
 
 async function handleDeleteActivity(interaction) {
-    const { customId, user } = interaction; // 'locale' retiré
+    const { customId, user } = interaction;
     const activityId = customId.replace('btn_delete_', '');
 
     const actRes = await db.query(`SELECT creator_id FROM planned_activities WHERE id = $1`, [activityId]);
@@ -459,7 +600,7 @@ async function handleDeleteActivity(interaction) {
 }
 
 // --- HELPERS & EXPORTS ---
-async function createActivityEmbedData(activityId) { // 'targetLocale' retiré
+async function createActivityEmbedData(activityId) {
     const res = await db.query(`
         SELECT pa.*, pc.name as creator_name,
                (SELECT json_agg(json_build_object('name', p.name, 'class', p.class, 'cp', p.combat_power))
@@ -513,7 +654,7 @@ async function updateActivityEmbed(activityId) {
         const message = await channel.messages.fetch(discord_message_id);
         if (!message) return;
 
-        const data = await createActivityEmbedData(activityId); // 'locale' retiré
+        const data = await createActivityEmbedData(activityId);
         if (data) await message.edit({ embeds: [data.embed], components: [data.row] });
         else await message.delete().catch(() => {});
     } catch (e) { console.error(`Failed to update Discord embed for activity ${activityId}:`, e.message); }

@@ -20,21 +20,25 @@ const initializeDb = async () => {
         await client.query(`CREATE TABLE IF NOT EXISTS guilds (id SERIAL PRIMARY KEY, name TEXT NOT NULL UNIQUE);`);
         await client.query(`
             CREATE TABLE IF NOT EXISTS players (
-               id SERIAL PRIMARY KEY,
-               name TEXT NOT NULL UNIQUE,
-               class TEXT NOT NULL,
-               combat_power BIGINT NOT NULL,
-               team TEXT,
-               guild TEXT,
-               notes TEXT,
-               updated_at TIMESTAMPTZ DEFAULT NOW(),
-               stamina INTEGER DEFAULT 0,
-               stamina_last_updated TIMESTAMPTZ DEFAULT NOW(),
-               discord_user_id TEXT NULL,
-               last_stamina_notification_level INTEGER DEFAULT 0,
-               cp_last_updated TIMESTAMPTZ DEFAULT NOW()
+                                                   id SERIAL PRIMARY KEY,
+                                                   name TEXT NOT NULL UNIQUE,
+                                                   class TEXT NOT NULL,
+                                                   combat_power BIGINT NOT NULL,
+                                                   team TEXT,
+                                                   guild TEXT,
+                                                   notes TEXT,
+                                                   updated_at TIMESTAMPTZ DEFAULT NOW(),
+                                                   stamina INTEGER DEFAULT 0,
+                                                   stamina_last_updated TIMESTAMPTZ DEFAULT NOW(),
+                                                   discord_user_id TEXT NULL,
+                                                   last_stamina_notification_level INTEGER DEFAULT 0,
+                                                   cp_last_updated TIMESTAMPTZ DEFAULT NOW()
             );
         `);
+
+        // --- NOUVELLE COLONNE TIMEZONE ---
+        await client.query(`ALTER TABLE players ADD COLUMN IF NOT EXISTS timezone TEXT NULL;`);
+        // ---------------------------------
 
         // ... (autres tables existantes ...)
         await client.query(`CREATE TABLE IF NOT EXISTS play_slots (id SERIAL PRIMARY KEY, player_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE, start_minutes INTEGER NOT NULL, end_minutes INTEGER NOT NULL);`);
@@ -45,13 +49,13 @@ const initializeDb = async () => {
 
         await client.query(`
             CREATE TABLE IF NOT EXISTS planned_activities (
-                  id SERIAL PRIMARY KEY,
-                  activity_type TEXT NOT NULL,
-                  activity_subtype TEXT,
-                  scheduled_time TIMESTAMPTZ NOT NULL,
-                  creator_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
-                  notes TEXT,
-                  created_at TIMESTAMPTZ DEFAULT NOW()
+                                                              id SERIAL PRIMARY KEY,
+                                                              activity_type TEXT NOT NULL,
+                                                              activity_subtype TEXT,
+                                                              scheduled_time TIMESTAMPTZ NOT NULL,
+                                                              creator_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
+                                                              notes TEXT,
+                                                              created_at TIMESTAMPTZ DEFAULT NOW()
             );
         `);
 

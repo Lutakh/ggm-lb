@@ -13,6 +13,7 @@ router.get('/player-details/:name', async (req, res) => {
     try {
         const result = await db.query(sql, [req.params.name]);
         if (result.rows.length === 0) return res.json(null);
+        // MODIFIÉ : Assurez-vous que play_slots est un tableau vide s'il est null
         const player = {...result.rows[0], play_slots: result.rows[0].play_slots || []};
         res.json(player);
     } catch (err) {
@@ -61,9 +62,12 @@ router.get('/api/player-pt-history/:playerId', async (req, res) => {
 });
 
 router.post('/add-player', async (req, res) => {
-    let { name, pClass, cp, team, guild, notes, play_start = [], play_end = [], discord_user_id } = req.body;
+    // AJOUT DE 'timezone'
+    let { name, pClass, cp, team, guild, notes, play_start = [], play_end = [], discord_user_id, timezone } = req.body;
     name = name ? name.trim() : '';
     const discordId = (discord_user_id && String(discord_user_id).trim()) ? String(discord_user_id).trim() : null;
+    // Gérer la timezone
+    const finalTimezone = (timezone && timezone.trim()) ? timezone.trim() : null;
 
     if (!name) return res.redirect(`/?notification=${encodeURIComponent('Player name cannot be empty.')}`);
 
@@ -89,20 +93,23 @@ router.post('/add-player', async (req, res) => {
             const finalGuild = guild === undefined ? existingPlayer.guild : (guild || null);
             const finalNotes = notes !== undefined ? notes : existingPlayer.notes;
             const finalDiscordId = discord_user_id !== undefined ? discordId : existingPlayer.discord_user_id;
+            // Gérer la timezone (ne pas écraser si non fournie)
+            const resolvedTimezone = timezone !== undefined ? finalTimezone : existingPlayer.timezone;
 
             await client.query(
                 `UPDATE players SET
-                                        name = $1,
-                                        class = $2,
-                                        cp_last_updated = CASE WHEN combat_power != $3 THEN NOW() ELSE cp_last_updated END,
-                                        combat_power = $3,
-                                        team = $4,
-                                        guild = $5,
-                                        notes = $6,
-                                        discord_user_id = $7,
-                                        updated_at = NOW()
-                                     WHERE id = $8`,
-                [name, finalClass, finalCp, finalTeam, finalGuild, finalNotes, finalDiscordId, playerId]
+                                    name = $1,
+                                    class = $2,
+                                    cp_last_updated = CASE WHEN combat_power != $3 THEN NOW() ELSE cp_last_updated END,
+                                    combat_power = $3,
+                                    team = $4,
+                                    guild = $5,
+                                    notes = $6,
+                                    discord_user_id = $7,
+                                    timezone = $8,
+                                    updated_at = NOW()
+                 WHERE id = $9`,
+                [name, finalClass, finalCp, finalTeam, finalGuild, finalNotes, finalDiscordId, resolvedTimezone, playerId]
             );
 
             await client.query(`DELETE FROM play_slots WHERE player_id = $1`, [playerId]);
@@ -116,9 +123,9 @@ router.post('/add-player', async (req, res) => {
             const finalGuild = guild && guild.trim() ? guild.trim() : null;
 
             const insertRes = await client.query(
-                `INSERT INTO players (name, class, combat_power, team, guild, notes, discord_user_id, updated_at, cp_last_updated)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW()) RETURNING id`,
-                [name, pClass, combatPowerNumeric, team || 'No Team', finalGuild, notes || null, discordId]
+                `INSERT INTO players (name, class, combat_power, team, guild, notes, discord_user_id, timezone, updated_at, cp_last_updated)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW()) RETURNING id`,
+                [name, pClass, combatPowerNumeric, team || 'No Team', finalGuild, notes || null, discordId, finalTimezone]
             );
             playerId = insertRes.rows[0].id;
 
