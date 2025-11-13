@@ -9,7 +9,6 @@ let isReady = false;
 const PLANNER_CHANNEL_ID = process.env.PLANNER_CHANNEL_ID;
 
 // --- Timezone List ---
-// Une listeT réduite mais commune de fuseaux horaires IANA
 const COMMON_TIMEZONES = [
     { label: "(GMT-07:00) Los Angeles (PT)", value: "America/Los_Angeles" },
     { label: "(GMT-06:00) Chicago (CT)", value: "America/Chicago" },
@@ -37,27 +36,22 @@ const LOCALES = {
         ask_activity_type: 'What type of activity do you want to create?',
         placeholder_activity_type: 'Choose activity type',
 
-        // --- MODIFIÉ (Heure Locale) ---
         modal_title_create: 'Create: {type}',
         label_subtype: 'Details (e.g. Boss, Level...)',
-        label_date: 'Date/Time (DD/MM/YYYY HH:mm)', // Retiré UTC
+        label_date: 'Date/Time (DD/MM/YYYY HH:mm)',
         label_notes: 'Notes (Optional)',
-        error_date_format: '❌ Invalid date format. Use DD/MM/YYYY HH:mm (e.g. 25/12/2024 15:00)', // Retiré UTC
-        placeholder_date: 'ex: 25/12/2024 15:00 (Your Local Time)', // Changé pour 'Your Local Time'
+        error_date_format: '❌ Invalid date format. Use DD/MM/YYYY HH:mm (e.g. 25/12/2024 15:00)',
+        placeholder_date: 'ex: 25/12/2024 15:00 (Your Local Time)',
 
-        // --- AJOUTÉ (Logique Timezone) ---
         ask_timezone: 'Please select your primary timezone to continue. This is a one-time setup for your character.',
         placeholder_select_timezone: 'Select your timezone',
         timezone_set: '✅ Timezone set to **{timezone}**! You can now continue.',
 
-        // --- AJOUTÉ (Logique Créateur Multiple) ---
         ask_creator_character: 'Which character is organizing this activity?',
         placeholder_select_creator: 'Select your organizer character',
 
-        // --- NOUVEAU (Logique Thread) ---
         activity_created_thread: '✅ Activity **{type}** created in <#{threadId}>!',
 
-        // ... (reste des clés)
         join_not_linked: '❌ Your Discord account is not linked. Please use the "Join" button to search and link your character.',
         activity_not_found: '❌ Activity not found (might be deleted).',
         activity_full: '❌ Activity is full!',
@@ -87,41 +81,34 @@ function t(key, args = {}) {
     return text;
 }
 
-/**
- * NOUVELLE FONCTION : Calcule le décalage UTC (ex: "+01:00") pour une date et un fuseau horaire IANA.
- * Gère l'heure d'été (DST) automatiquement.
- */
 function getOffsetString(date, timezone) {
     try {
         const formatter = new Intl.DateTimeFormat('en-US', {
             timeZone: timezone,
-            timeZoneName: 'longOffset', // Donne "GMT+X" ou "GMT-X"
+            timeZoneName: 'longOffset',
         });
         const parts = formatter.formatToParts(date);
         const offsetPart = parts.find(p => p.type === 'timeZoneName');
 
-        if (!offsetPart) return '+00:00'; // Fallback UTC
+        if (!offsetPart) return '+00:00';
 
-        // Valeur est "GMT+1" ou "GMT+5:30" ou "GMT-7"
-        let offset = offsetPart.value.replace('GMT', ''); // "+1", "+5:30", "-7"
+        let offset = offsetPart.value.replace('GMT', '');
 
         if (!offset.includes(':')) {
-            // Gérer "+1" -> "+01:00" ou "-7" -> "-07:00"
             const sign = offset[0];
             const hours = offset.substring(1);
             offset = `${sign}${hours.padStart(2, '0')}:00`;
         } else if (offset.split(':')[0].length < 3) {
-            // Gérer "+5:30" -> "+05:30"
             const sign = offset[0];
             const parts = offset.substring(1).split(':');
             offset = `${sign}${parts[0].padStart(2, '0')}:${parts[1]}`;
         }
 
-        return offset; // ex: "+01:00", "-07:00", "+05:30"
+        return offset;
 
     } catch (e) {
         console.error(`Error getting offset for timezone ${timezone}:`, e);
-        return '+00:00'; // Fallback sur UTC en cas d'erreur
+        return '+00:00';
     }
 }
 
@@ -161,40 +148,53 @@ function initDiscordBot() {
 }
 
 // --- DÉPLOIEMENT DU PANNEAU PERMANENT ---
+// *** MODIFIÉ POUR SUPPRIMER L'ANCIEN PANNEAU ET REPOSTER ***
 async function deployPlannerPanel() {
     if (!PLANNER_CHANNEL_ID) return;
     try {
         const channel = await discordClient.channels.fetch(PLANNER_CHANNEL_ID);
         if (!channel) return console.error("Planner channel not found.");
 
-        const messages = await channel.messages.fetch({ limit: 10 });
-        const existingPanel = messages.find(m => m.author.id === discordClient.user.id && m.embeds.length > 0 && m.embeds[0].title === LOCALES[DEFAULT_LOCALE].panel_title);
+        const messages = await channel.messages.fetch({ limit: 50 });
 
-        if (!existingPanel) {
-            const embed = new EmbedBuilder()
-                .setColor('#8c5a3a')
-                .setTitle(t('panel_title'))
-                .setDescription(t('panel_desc'))
-                .setFooter({ text: t('footer_text') });
+        // Trouver TOUS les anciens panneaux
+        const existingPanels = messages.filter(m =>
+            m.author.id === discordClient.user.id &&
+            m.embeds.length > 0 &&
+            m.embeds[0].title === t('panel_title')
+        );
 
-            const row = new ActionRowBuilder()
-                .addComponents(
-                    new ButtonBuilder()
-                        .setCustomId('btn_create_activity_start')
-                        .setLabel(t('btn_new_activity'))
-                        .setStyle(ButtonStyle.Success)
-                        .setEmoji('📅')
-                );
-
-            await channel.send({ embeds: [embed], components: [row] });
-            console.log("✅ Planner panel deployed.");
+        // Supprimer tous les anciens panneaux
+        if (existingPanels.size > 0) {
+            console.log(`[Deploy] Found ${existingPanels.size} old panel(s). Deleting...`);
+            await Promise.all(existingPanels.map(panel => panel.delete().catch(e => console.warn(`Warn: Could not delete old panel: ${e.message}`))));
         }
+
+        // Poster le nouveau panneau
+        const embed = new EmbedBuilder()
+            .setColor('#8c5a3a')
+            .setTitle(t('panel_title'))
+            .setDescription(t('panel_desc'))
+            .setFooter({ text: t('footer_text') });
+
+        const row = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('btn_create_activity_start')
+                    .setLabel(t('btn_new_activity'))
+                    .setStyle(ButtonStyle.Success)
+                    .setEmoji('📅')
+            );
+
+        await channel.send({ embeds: [embed], components: [row] });
+        console.log("✅ New planner panel successfully deployed.");
+
     } catch (e) {
         console.error("Error deploying planner panel:", e);
     }
 }
+// *** FIN DE LA MODIFICATION ***
 
-// --- GESTION DES INTERACTIONS ---
 async function handleInteraction(interaction) {
     try {
         if (interaction.isButton()) {
@@ -207,10 +207,9 @@ async function handleInteraction(interaction) {
     } catch (error) {
         console.error("Interaction Error:", error);
 
-        // --- MODIFICATION ANTI-CRASH ---
         if (error.code === 10062 || error.code === 40060) {
             console.warn(`[Warn] Interaction ${interaction.id} (customId: ${interaction.customId}) was unknown or already acknowledged. Likely due to bot restart.`);
-            return; // Ne pas tenter de répondre
+            return;
         }
 
         try {
@@ -245,7 +244,7 @@ async function handleButton(interaction) {
                 );
                 const row = new ActionRowBuilder().addComponents(
                     new StringSelectMenuBuilder()
-                        .setCustomId(`select_timezone_for_creator_${creator.id}`)
+                        .setCustomId(`select_timezone_for_creator|${creator.id}`)
                         .setPlaceholder(t('placeholder_select_timezone'))
                         .addOptions(options)
                 );
@@ -254,7 +253,7 @@ async function handleButton(interaction) {
 
             const row = new ActionRowBuilder().addComponents(
                 new StringSelectMenuBuilder()
-                    .setCustomId(`select_activity_type_creator_${creator.id}`)
+                    .setCustomId(`select_activity_type_creator|${creator.id}`)
                     .setPlaceholder(t('placeholder_activity_type'))
                     .addOptions(
                         new StringSelectMenuOptionBuilder().setLabel('Perilous Trial').setValue('Perilous Trial').setEmoji('⚔️'),
@@ -290,7 +289,7 @@ async function handleButton(interaction) {
     else if (customId.startsWith('btn_join_')) {
         const activityId = customId.replace('btn_join_', '');
         const modal = new ModalBuilder()
-            .setCustomId(`modal_join_search_${activityId}`)
+            .setCustomId(`modal_join_search|${activityId}`)
             .setTitle(t('modal_title_search'));
 
         const nameInput = new TextInputBuilder()
@@ -313,10 +312,10 @@ async function handleButton(interaction) {
 // --- 2. GESTION DES MENUS DÉROULANTS ---
 async function handleSelectMenu(interaction) {
     const { customId, values } = interaction;
-    const creatorId = values[0]; // Le premier (et seul) ID sélectionné
 
     // Étape 2: L'utilisateur a choisi son personnage organisateur
     if (customId === 'select_creator_character_for_activity') {
+        const creatorId = values[0];
         const playerRes = await db.query('SELECT timezone FROM players WHERE id = $1', [creatorId]);
         const playerTimezone = playerRes.rows[0]?.timezone;
 
@@ -326,7 +325,7 @@ async function handleSelectMenu(interaction) {
             );
             const row = new ActionRowBuilder().addComponents(
                 new StringSelectMenuBuilder()
-                    .setCustomId(`select_timezone_for_creator_${creatorId}`)
+                    .setCustomId(`select_timezone_for_creator|${creatorId}`) // Utilisation de |
                     .setPlaceholder(t('placeholder_select_timezone'))
                     .addOptions(options)
             );
@@ -335,7 +334,7 @@ async function handleSelectMenu(interaction) {
 
         const row = new ActionRowBuilder().addComponents(
             new StringSelectMenuBuilder()
-                .setCustomId(`select_activity_type_creator_${creatorId}`)
+                .setCustomId(`select_activity_type_creator|${creatorId}`) // Utilisation de |
                 .setPlaceholder(t('placeholder_activity_type'))
                 .addOptions(
                     new StringSelectMenuOptionBuilder().setLabel('Perilous Trial').setValue('Perilous Trial').setEmoji('⚔️'),
@@ -350,15 +349,15 @@ async function handleSelectMenu(interaction) {
     }
 
     // L'utilisateur vient de choisir sa timezone
-    if (customId.startsWith('select_timezone_for_creator_')) {
-        const creatorIdForTimezone = customId.replace('select_timezone_for_creator_', '');
+    if (customId.startsWith('select_timezone_for_creator|')) {
         const selectedTimezone = values[0];
+        const creatorIdForTimezone = customId.split('|')[1];
 
         await db.query('UPDATE players SET timezone = $1 WHERE id = $2', [selectedTimezone, creatorIdForTimezone]);
 
         const row = new ActionRowBuilder().addComponents(
             new StringSelectMenuBuilder()
-                .setCustomId(`select_activity_type_creator_${creatorIdForTimezone}`)
+                .setCustomId(`select_activity_type_creator|${creatorIdForTimezone}`) // Utilisation de |
                 .setPlaceholder(t('placeholder_activity_type'))
                 .addOptions(
                     new StringSelectMenuOptionBuilder().setLabel('Perilous Trial').setValue('Perilous Trial').setEmoji('⚔️'),
@@ -377,11 +376,12 @@ async function handleSelectMenu(interaction) {
     }
 
     // Étape 3: L'utilisateur a choisi le type d'activité
-    if (customId.startsWith('select_activity_type_creator_')) {
-        const creatorIdFromActivity = customId.replace('select_activity_type_creator_', '');
+    if (customId.startsWith('select_activity_type_creator|')) {
         const activityType = values[0];
+        const creatorIdFromActivity = customId.split('|')[1];
+
         const modal = new ModalBuilder()
-            .setCustomId(`modal_create_activity_${creatorIdFromActivity}_${activityType}`)
+            .setCustomId(`modal_create_activity|${creatorIdFromActivity}|${activityType}`) // Utilisation de |
             .setTitle(t('modal_title_create', { type: activityType }));
 
         const subtypeInput = new TextInputBuilder()
@@ -412,11 +412,11 @@ async function handleSelectMenu(interaction) {
         await interaction.showModal(modal);
     }
 
-    // Logique pour REJOINDRE (inchangée)
+    // Logique pour REJOINDRE
     else if (customId.startsWith('menu_join_player_')) {
+        const playerId = values[0];
         await interaction.deferUpdate();
         const activityId = customId.replace('menu_join_player_', '');
-        const playerId = values[0];
 
         try {
             const actRes = await db.query('SELECT activity_type FROM planned_activities WHERE id = $1', [activityId]);
@@ -444,23 +444,23 @@ async function handleSelectMenu(interaction) {
     }
 }
 
+
 // --- 3. GESTION DES MODALS ---
 async function handleModalSubmit(interaction) {
     const { customId, fields } = interaction;
 
     // Étape 4: L'utilisateur soumet le modal de création
-    if (customId.startsWith('modal_create_activity_')) {
+    if (customId.startsWith('modal_create_activity|')) {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-        const parts = customId.replace('modal_create_activity_', '').split('_');
+        const parts = customId.replace('modal_create_activity|', '').split('|');
         const creatorId = parts[0];
-        const activityType = parts.slice(1).join('_');
+        const activityType = parts[1];
 
         const subtype = fields.getTextInputValue('subtype');
-        const datetimeStr = fields.getTextInputValue('datetime'); // "DD/MM/YYYY HH:mm" (Heure Locale)
+        const datetimeStr = fields.getTextInputValue('datetime');
         const notes = fields.getTextInputValue('notes');
 
-        // --- LOGIQUE DE PARSING DATE (AVEC TIMEZONE) ---
         const [datePart, timePart] = datetimeStr.split(' ');
         if (!datePart || !timePart) return interaction.editReply({ content: t('error_date_format') });
         const [day, month, year] = datePart.split('/');
@@ -481,10 +481,8 @@ async function handleModalSubmit(interaction) {
             const tempDate = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute)));
             if (isNaN(tempDate.getTime())) throw new Error('Invalid date components');
 
-            const offsetString = getOffsetString(tempDate, playerTimezone); // ex: "+01:00"
-
+            const offsetString = getOffsetString(tempDate, playerTimezone);
             const isoString = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${hour.padStart(2, '0')}:${minute.padStart(2, '0')}:00${offsetString}`;
-
             scheduledTime = new Date(isoString);
             if (isNaN(scheduledTime.getTime())) throw new Error('Invalid ISO string conversion');
 
@@ -492,29 +490,24 @@ async function handleModalSubmit(interaction) {
             console.error("Date parsing error:", e);
             return interaction.editReply({ content: t('error_date_format') });
         }
-        // --- FIN LOGIQUE DATE ---
 
         try {
-            // *** MODIFICATION : Logique de Thread ***
             const creatorNameRes = await db.query('SELECT name FROM players WHERE id = $1', [creatorId]);
             const creatorName = creatorNameRes.rows[0]?.name || 'Unknown';
             const dateString = `${day.padStart(2, '0')}/${month.padStart(2, '0')}`;
-            // Créer un nom de thread (max 100 chars)
             const threadName = `${activityType} ${subtype || ''} - ${dateString} (${creatorName})`.substring(0, 100);
 
-            // Créer le thread dans le canal principal
             const thread = await interaction.channel.threads.create({
                 name: threadName,
-                autoArchiveDuration: 1440, // 24 heures
+                autoArchiveDuration: 1440,
                 reason: `Activity created by ${creatorName}`
             });
 
-            // Insérer l'activité avec L'ID DU THREAD comme channel_id
             const insertRes = await db.query(`
                 INSERT INTO planned_activities (activity_type, activity_subtype, scheduled_time, creator_id, notes, discord_channel_id)
                 VALUES ($1, $2, $3, $4, $5, $6)
                 RETURNING id, scheduled_time
-            `, [activityType, subtype, scheduledTime.toISOString(), creatorId, notes, thread.id]); // <-- Stocke thread.id
+            `, [activityType, subtype, scheduledTime.toISOString(), creatorId, notes, thread.id]);
 
             const activityId = insertRes.rows[0].id;
             const finalTimestamp = Math.floor(new Date(insertRes.rows[0].scheduled_time).getTime() / 1000);
@@ -522,17 +515,13 @@ async function handleModalSubmit(interaction) {
             await db.query('INSERT INTO activity_participants (activity_id, player_id) VALUES ($1, $2)', [activityId, creatorId]);
 
             const { embed, row } = await createActivityEmbedData(activityId);
-            // Envoyer l'embed DANS LE THREAD
             const message = await thread.send({ embeds: [embed], components: [row] });
 
-            // Mettre à jour la BDD avec l'ID du message (qui est dans le thread)
             await db.query('UPDATE planned_activities SET discord_message_id = $1 WHERE id = $2', [message.id, activityId]);
 
-            // Répondre à l'utilisateur avec un lien vers le thread
             await interaction.editReply({
                 content: t('activity_created_thread', { type: activityType, threadId: thread.id })
             });
-            // *** FIN MODIFICATION THREAD ***
 
         } catch (err) {
             console.error("Error creating activity:", err);
@@ -540,9 +529,9 @@ async function handleModalSubmit(interaction) {
         }
     }
 
-    else if (customId.startsWith('modal_join_search_')) {
+    else if (customId.startsWith('modal_join_search|')) {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-        const activityId = customId.replace('modal_join_search_', '');
+        const activityId = customId.split('|')[1];
         const searchName = fields.getTextInputValue('search_name').trim();
 
         try {
@@ -613,22 +602,17 @@ async function handleDeleteActivity(interaction) {
         return interaction.reply({ content: t('only_creator_delete'), flags: MessageFlags.Ephemeral });
     }
 
-    await interaction.deferUpdate(); // Accuse réception
+    await interaction.deferUpdate();
 
-    // *** MODIFICATION : Logique de Thread ***
-    const threadChannel = interaction.channel; // Le channel EST le thread
+    const threadChannel = interaction.channel;
 
-    // 1. Supprimer de la BDD
     await db.query('DELETE FROM planned_activities WHERE id = $1', [activityId]);
 
-    // 2. Supprimer le message embed
     await interaction.message.delete().catch((e) => console.warn(`Warn: Could not delete message: ${e.message}`));
 
-    // 3. Supprimer le thread lui-même
     if (threadChannel && threadChannel.isThread()) {
         await threadChannel.delete('Activity deleted by creator').catch((e) => console.warn(`Warn: Could not delete thread: ${e.message}`));
     }
-    // *** FIN MODIFICATION THREAD ***
 }
 
 // --- HELPERS & EXPORTS ---
@@ -681,7 +665,6 @@ async function updateActivityEmbed(activityId) {
         const { discord_channel_id, discord_message_id } = res.rows[0];
         if (!discord_channel_id || !discord_message_id) return;
 
-        // Le channel_id EST maintenant un thread_id, fetch le récupère comme un channel
         const channel = await discordClient.channels.fetch(discord_channel_id);
         if (!channel) return;
         const message = await channel.messages.fetch(discord_message_id);
@@ -695,11 +678,11 @@ async function updateActivityEmbed(activityId) {
 
 async function deleteActivityMessage(activityId) {
     if (!discordClient || !isReady) return;
-    let channel; // Déclarer channel ici pour qu'il soit accessible dans le catch
+    let channel;
     try {
         const res = await db.query('SELECT discord_channel_id, discord_message_id FROM planned_activities WHERE id = $1', [activityId]);
         if (res.rows.length > 0 && res.rows[0].discord_message_id) {
-            const channelId = res.rows[0].discord_channel_id; // C'est l'ID du thread
+            const channelId = res.rows[0].discord_channel_id;
             const messageId = res.rows[0].discord_message_id;
 
             channel = await discordClient.channels.fetch(channelId);
@@ -707,7 +690,6 @@ async function deleteActivityMessage(activityId) {
                 const msg = await channel.messages.fetch(messageId);
                 if (msg) await msg.delete();
 
-                // MODIFICATION : Supprimer le thread aussi
                 if (channel.isThread()) {
                     await channel.delete('Activity deleted from web panel');
                 }
@@ -715,7 +697,6 @@ async function deleteActivityMessage(activityId) {
         }
     } catch (e) {
         console.warn(`Warn: Failed to delete activity message/thread ${activityId}: ${e.message}`);
-        // Tenter de supprimer le thread même si le message n'existe plus
         if (channel && channel.isThread()) {
             await channel.delete('Activity deleted from web panel').catch(() => {});
         }
@@ -725,7 +706,6 @@ async function deleteActivityMessage(activityId) {
 async function sendActivityReminder(activity) {
     if (!discordClient || !isReady || !activity.discord_channel_id) return;
     try {
-        // Le channel_id EST le thread_id
         const channel = await discordClient.channels.fetch(activity.discord_channel_id);
         if (!channel) return;
 
@@ -733,7 +713,6 @@ async function sendActivityReminder(activity) {
         const mentions = res.rows.map(r => `<@${r.discord_user_id}>`).join(' ');
 
         if (mentions) {
-            // Envoyer le rappel DANS le thread
             await channel.send(`${t('reminder_text', { type: activity.activity_type })} ${mentions}`);
         }
     } catch (e) { console.error("Failed to send reminder:", e); }
