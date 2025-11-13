@@ -8,7 +8,6 @@ RUN apk add --no-cache nano
 # Étape 3: Copier les fichiers de dépendances et les installer
 # On copie ces fichiers en premier pour profiter du cache Docker.
 COPY package*.json ./
-RUN npm install discord.js
 RUN npm install
 
 # Étape 4: Copier tout le reste du code de l'application

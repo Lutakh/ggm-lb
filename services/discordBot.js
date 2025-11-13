@@ -8,54 +8,51 @@ let isReady = false;
 
 const PLANNER_CHANNEL_ID = process.env.PLANNER_CHANNEL_ID;
 
-// --- SYSTÈME DE TRADUCTION (i18n) ---
+// --- Timezone List ---
+const COMMON_TIMEZONES = [
+    { label: "(GMT-07:00) Los Angeles (PT)", value: "America/Los_Angeles" },
+    { label: "(GMT-06:00) Chicago (CT)", value: "America/Chicago" },
+    { label: "(GMT-05:00) New York (ET)", value: "America/New_York" },
+    { label: "(GMT-03:00) São Paulo", value: "America/Sao_Paulo" },
+    { label: "(GMT+00:00) London (GMT/BST)", value: "Europe/London" },
+    { label: "(GMT+01:00) Paris (CET/CEST)", value: "Europe/Paris" },
+    { label: "(GMT+03:00) Moscow", value: "Europe/Moscow" },
+    { label: "(GMT+07:00) Bangkok", value: "Asia/Bangkok" },
+    { label: "(GMT+08:00) Singapore/Perth", value: "Asia/Singapore" },
+    { label: "(GMT+09:00) Tokyo", value: "Asia/Tokyo" },
+    { label: "(GMT+10:00) Sydney (AEST/AEDT)", value: "Australia/Sydney" },
+    { label: "(GMT+12:00) Auckland", value: "Pacific/Auckland" },
+    { label: "(GMT+00:00) UTC", value: "UTC" }
+];
+
+
+// --- SYSTÈME DE TRADUCTION (i18n) - Anglais Uniquement ---
 const DEFAULT_LOCALE = 'en-US';
 const LOCALES = {
-    'fr': {
-        panel_title: '📅 Team Planner',
-        panel_desc: "Cliquez ci-dessous pour planifier une nouvelle activité.\nLes activités créées s'afficheront dans ce canal.",
-        btn_new_activity: 'Nouvelle Activité',
-        ask_activity_type: 'Quel type d\'activité voulez-vous créer ?',
-        placeholder_activity_type: 'Choisissez le type d\'activité',
-        modal_title_create: 'Créer : {type}',
-        label_subtype: 'Détails (ex: Boss, Niveau...)',
-        label_date: 'Date/Heure (JJ/MM/AAAA HH:mm)',
-        label_notes: 'Notes (Optionnel)',
-        error_date_format: '❌ Format de date invalide. Utilisez JJ/MM/AAAA HH:mm (ex: 25/12/2024 21:00)',
-        error_db: '❌ Une erreur est survenue en base de données.',
-        activity_created: '✅ Activité **{type}** créée pour le <t:{timestamp}:F> !',
-        join_not_linked: '❌ Votre compte Discord n\'est pas lié. Veuillez utiliser le bouton "Rejoindre" pour rechercher et lier votre personnage.',
-        activity_not_found: '❌ Activité introuvable (peut-être supprimée).',
-        activity_full: '❌ L\'activité est complète !',
-        left_activity: '✅ Vous avez quitté l\'activité.',
-        only_creator_delete: '❌ Seul le créateur peut supprimer cette activité via Discord.',
-        activity_deleted: '🗑️ Activité supprimée.',
-        modal_title_search: 'Recherche ton personnage',
-        label_search_name: 'Nom du personnage (partiel)',
-        search_no_results: '❌ Aucun personnage trouvé avec ce nom.',
-        placeholder_select_player: 'Sélectionnez votre personnage',
-        joined_as: '✅ Vous avez rejoint l\'activité en tant que **{name}** !',
-        reminder_text: '⏰ **RAPPEL** : {type} commence dans environ 5 minutes !',
-        btn_join: 'Rejoindre',
-        btn_leave: 'Quitter',
-        footer_text: 'Go Go Muffin Planner',
-        participants_list: '👥 **Participants ({current}/{max}) :**',
-        no_participants: '*Aucun participant*',
-        empty_slot: '🔲 *Place libre*'
-    },
     'en-US': {
         panel_title: '📅 Team Planner',
         panel_desc: "Click below to plan a new activity.\nCreated activities will appear in this channel.",
         btn_new_activity: 'New Activity',
         ask_activity_type: 'What type of activity do you want to create?',
         placeholder_activity_type: 'Choose activity type',
+
         modal_title_create: 'Create: {type}',
         label_subtype: 'Details (e.g. Boss, Level...)',
         label_date: 'Date/Time (DD/MM/YYYY HH:mm)',
         label_notes: 'Notes (Optional)',
-        error_date_format: '❌ Invalid date format. Use DD/MM/YYYY HH:mm (e.g. 25/12/2024 21:00)',
-        error_db: '❌ A database error occurred.',
-        activity_created: '✅ Activity **{type}** created for <t:{timestamp}:F>!',
+        error_date_format: '❌ Invalid date format. Use DD/MM/YYYY HH:mm (e.g. 25/12/2024 15:00)',
+        placeholder_date: 'ex: 25/12/2024 15:00 (Your Local Time)',
+
+        ask_timezone: 'Please select your primary timezone to continue. This is a one-time setup for your character.',
+        placeholder_select_timezone: 'Select your timezone',
+        timezone_set: '✅ Timezone set to **{timezone}**! You can now continue.',
+
+        ask_creator_character: 'Which character is organizing this activity?',
+        placeholder_select_creator: 'Select your organizer character',
+
+        // Modifié : Plus de référence au thread
+        activity_created: '✅ Activity **{type}** created!',
+
         join_not_linked: '❌ Your Discord account is not linked. Please use the "Join" button to search and link your character.',
         activity_not_found: '❌ Activity not found (might be deleted).',
         activity_full: '❌ Activity is full!',
@@ -77,14 +74,45 @@ const LOCALES = {
     }
 };
 
-function t(locale, key, args = {}) {
-    const lang = LOCALES[locale] ? locale : DEFAULT_LOCALE;
-    let text = LOCALES[lang][key] || LOCALES[DEFAULT_LOCALE][key] || key;
+function t(key, args = {}) {
+    let text = LOCALES[DEFAULT_LOCALE][key] || key;
     for (const [k, v] of Object.entries(args)) {
         text = text.replace(`{${k}}`, v);
     }
     return text;
 }
+
+function getOffsetString(date, timezone) {
+    try {
+        const formatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: timezone,
+            timeZoneName: 'longOffset',
+        });
+        const parts = formatter.formatToParts(date);
+        const offsetPart = parts.find(p => p.type === 'timeZoneName');
+
+        if (!offsetPart) return '+00:00';
+
+        let offset = offsetPart.value.replace('GMT', '');
+
+        if (!offset.includes(':')) {
+            const sign = offset[0];
+            const hours = offset.substring(1);
+            offset = `${sign}${hours.padStart(2, '0')}:00`;
+        } else if (offset.split(':')[0].length < 3) {
+            const sign = offset[0];
+            const parts = offset.substring(1).split(':');
+            offset = `${sign}${parts[0].padStart(2, '0')}:${parts[1]}`;
+        }
+
+        return offset;
+
+    } catch (e) {
+        console.error(`Error getting offset for timezone ${timezone}:`, e);
+        return '+00:00';
+    }
+}
+
 
 function initDiscordBot() {
     if (!process.env.BOT_TOKEN) {
@@ -107,6 +135,7 @@ function initDiscordBot() {
     discordClient.once(Events.ClientReady, async () => {
         console.log(`✅ Discord Bot logged in as ${discordClient.user.tag}`);
         isReady = true;
+        // La logique de déploiement est maintenant ici
         await deployPlannerPanel();
     });
 
@@ -121,41 +150,83 @@ function initDiscordBot() {
 }
 
 // --- DÉPLOIEMENT DU PANNEAU PERMANENT ---
+// *** MODIFIÉ POUR NETTOYER LE CANAL ET REPUBLIER LES ACTIVITÉS ***
 async function deployPlannerPanel() {
     if (!PLANNER_CHANNEL_ID) return;
     try {
         const channel = await discordClient.channels.fetch(PLANNER_CHANNEL_ID);
         if (!channel) return console.error("Planner channel not found.");
 
-        const messages = await channel.messages.fetch({ limit: 10 });
-        const existingPanel = messages.find(m => m.author.id === discordClient.user.id && m.embeds.length > 0 && (m.embeds[0].title === LOCALES['fr'].panel_title || m.embeds[0].title === LOCALES['en-US'].panel_title));
+        // 1. Nettoyer le canal
+        console.log(`[Deploy] Cleaning channel ${channel.name}...`);
+        let fetched;
+        do {
+            fetched = await channel.messages.fetch({ limit: 100 });
+            if (fetched.size > 0) {
+                // On ne peut pas bulkDelete les messages de plus de 14 jours
+                const oldMessages = fetched.filter(msg => (Date.now() - msg.createdTimestamp) > 1209600000); // 14 jours
+                const newMessages = fetched.filter(msg => (Date.now() - msg.createdTimestamp) <= 1209600000);
 
-        if (!existingPanel) {
-            const lang = 'en-US';
-            const embed = new EmbedBuilder()
-                .setColor('#8c5a3a')
-                .setTitle(t(lang, 'panel_title'))
-                .setDescription(t(lang, 'panel_desc'))
-                .setFooter({ text: t(lang, 'footer_text') });
+                if (newMessages.size > 0) {
+                    await channel.bulkDelete(newMessages);
+                }
+                if (oldMessages.size > 0) {
+                    for (const msg of oldMessages.values()) {
+                        await msg.delete();
+                    }
+                }
+            }
+        } while (fetched.size >= 2); // Continuer tant qu'on fetch des messages
 
-            const row = new ActionRowBuilder()
-                .addComponents(
-                    new ButtonBuilder()
-                        .setCustomId('btn_create_activity_start')
-                        .setLabel(t(lang, 'btn_new_activity'))
-                        .setStyle(ButtonStyle.Success)
-                        .setEmoji('📅')
-                );
+        console.log('[Deploy] Channel cleaned.');
 
-            await channel.send({ embeds: [embed], components: [row] });
-            console.log("✅ Planner panel deployed.");
+        // 2. Republier toutes les activités prévues (à venir)
+        const activities = await db.query(
+            `SELECT id FROM planned_activities WHERE scheduled_time > NOW() ORDER BY scheduled_time ASC`
+        );
+        console.log(`[Deploy] Republishing ${activities.rows.length} upcoming activities...`);
+
+        for (const activity of activities.rows) {
+            try {
+                const { embed, row } = await createActivityEmbedData(activity.id);
+                if (embed && row) {
+                    const message = await channel.send({ embeds: [embed], components: [row] });
+                    // Mettre à jour la BDD avec le NOUVEL ID de message
+                    await db.query(
+                        'UPDATE planned_activities SET discord_message_id = $1, discord_channel_id = $2 WHERE id = $3',
+                        [message.id, channel.id, activity.id]
+                    );
+                }
+            } catch (err) {
+                console.error(`[Deploy] Error republishing activity ${activity.id}:`, err);
+            }
         }
+
+        // 3. Poster le panneau "New Activity"
+        const embed = new EmbedBuilder()
+            .setColor('#8c5a3a')
+            .setTitle(t('panel_title'))
+            .setDescription(t('panel_desc'))
+            .setFooter({ text: t('footer_text') });
+
+        const row = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('btn_create_activity_start')
+                    .setLabel(t('btn_new_activity'))
+                    .setStyle(ButtonStyle.Success)
+                    .setEmoji('📅')
+            );
+
+        await channel.send({ embeds: [embed], components: [row] });
+        console.log("✅ New planner panel successfully deployed.");
+
     } catch (e) {
         console.error("Error deploying planner panel:", e);
     }
 }
+// *** FIN DE LA MODIFICATION ***
 
-// --- GESTION DES INTERACTIONS ---
 async function handleInteraction(interaction) {
     try {
         if (interaction.isButton()) {
@@ -167,43 +238,95 @@ async function handleInteraction(interaction) {
         }
     } catch (error) {
         console.error("Interaction Error:", error);
-        if (!interaction.replied && !interaction.deferred) {
-            // Utilisation de flags ici aussi pour les erreurs inattendues
-            await interaction.reply({ content: 'Error.', flags: MessageFlags.Ephemeral });
+
+        if (error.code === 10062 || error.code === 40060) {
+            console.warn(`[Warn] Interaction ${interaction.id} (customId: ${interaction.customId}) was unknown or already acknowledged. Likely due to bot restart.`);
+            return;
+        }
+
+        try {
+            if (!interaction.replied && !interaction.deferred) {
+                await interaction.reply({ content: 'An error occurred.', flags: MessageFlags.Ephemeral });
+            } else {
+                await interaction.followUp({ content: 'An error occurred after acknowledging.', flags: MessageFlags.Ephemeral });
+            }
+        } catch (replyError) {
+            console.error("[Critical] Failed to send error reply to interaction:", replyError);
         }
     }
 }
 
 // --- 1. GESTION DES BOUTONS ---
 async function handleButton(interaction) {
-    const { customId, locale } = interaction;
+    const { customId } = interaction;
 
     if (customId === 'btn_create_activity_start') {
+        const playerRes = await db.query('SELECT id, name, class, timezone FROM players WHERE discord_user_id = $1 ORDER BY combat_power DESC', [interaction.user.id]);
+
+        if (playerRes.rows.length === 0) {
+            return interaction.reply({ content: t('join_not_linked'), flags: MessageFlags.Ephemeral });
+        }
+
+        if (playerRes.rows.length === 1) {
+            const creator = playerRes.rows[0];
+
+            if (!creator.timezone) {
+                const options = COMMON_TIMEZONES.map(tz =>
+                    new StringSelectMenuOptionBuilder().setLabel(tz.label).setValue(tz.value)
+                );
+                const row = new ActionRowBuilder().addComponents(
+                    new StringSelectMenuBuilder()
+                        .setCustomId(`select_timezone_for_creator|${creator.id}`)
+                        .setPlaceholder(t('placeholder_select_timezone'))
+                        .addOptions(options)
+                );
+                return interaction.reply({ content: t('ask_timezone'), components: [row], flags: MessageFlags.Ephemeral });
+            }
+
+            const row = new ActionRowBuilder().addComponents(
+                new StringSelectMenuBuilder()
+                    .setCustomId(`select_activity_type_creator|${creator.id}`)
+                    .setPlaceholder(t('placeholder_activity_type'))
+                    .addOptions(
+                        new StringSelectMenuOptionBuilder().setLabel('Perilous Trial').setValue('Perilous Trial').setEmoji('⚔️'),
+                        new StringSelectMenuOptionBuilder().setLabel('Wave of Horror').setValue('Wave of Horror').setEmoji('🌊'),
+                        new StringSelectMenuOptionBuilder().setLabel('Echo of Battlefield').setValue('Echo of Battlefield').setEmoji('🛡️'),
+                        new StringSelectMenuOptionBuilder().setLabel('Echo of War').setValue('Echo of War').setEmoji('🐲'),
+                        new StringSelectMenuOptionBuilder().setLabel('Dragon Hunt').setValue('Dragon Hunt').setEmoji('🐉'),
+                        new StringSelectMenuOptionBuilder().setLabel('Other').setValue('Other').setEmoji('📅')
+                    )
+            );
+            return interaction.reply({ content: t('ask_activity_type'), components: [row], flags: MessageFlags.Ephemeral });
+        }
+
+        const classEmojis = { 'Swordbearer': '🛡️', 'Acolyte': '💖', 'Wayfarer': '🏹', 'Scholar': '✨', 'Shadowlash': '🗡️', 'Unknown': '❓' };
+        const options = playerRes.rows.map(p =>
+            new StringSelectMenuOptionBuilder()
+                .setLabel(p.name)
+                .setDescription(p.class || 'Unknown')
+                .setValue(p.id.toString())
+                .setEmoji(classEmojis[p.class] || '👤')
+        );
+
         const row = new ActionRowBuilder().addComponents(
             new StringSelectMenuBuilder()
-                .setCustomId('select_activity_type')
-                .setPlaceholder(t(locale, 'placeholder_activity_type'))
-                .addOptions(
-                    new StringSelectMenuOptionBuilder().setLabel('Perilous Trial').setValue('Perilous Trial').setEmoji('⚔️'),
-                    new StringSelectMenuOptionBuilder().setLabel('Wave of Horror').setValue('Wave of Horror').setEmoji('🌊'),
-                    new StringSelectMenuOptionBuilder().setLabel('Echo of Battlefield').setValue('Echo of Battlefield').setEmoji('🛡️'),
-                    new StringSelectMenuOptionBuilder().setLabel('Echo of War').setValue('Echo of War').setEmoji('🐲'),
-                    new StringSelectMenuOptionBuilder().setLabel('Dragon Hunt').setValue('Dragon Hunt').setEmoji('🐉'),
-                    new StringSelectMenuOptionBuilder().setLabel('Other').setValue('Other').setEmoji('📅')
-                )
+                .setCustomId('select_creator_character_for_activity')
+                .setPlaceholder(t('placeholder_select_creator'))
+                .addOptions(options)
         );
-        // Remplacement de ephemeral: true par flags: MessageFlags.Ephemeral
-        await interaction.reply({ content: t(locale, 'ask_activity_type'), components: [row], flags: MessageFlags.Ephemeral });
+
+        return interaction.reply({ content: t('ask_creator_character'), components: [row], flags: MessageFlags.Ephemeral });
     }
+
     else if (customId.startsWith('btn_join_')) {
         const activityId = customId.replace('btn_join_', '');
         const modal = new ModalBuilder()
-            .setCustomId(`modal_join_search_${activityId}`)
-            .setTitle(t(locale, 'modal_title_search'));
+            .setCustomId(`modal_join_search|${activityId}`)
+            .setTitle(t('modal_title_search'));
 
         const nameInput = new TextInputBuilder()
             .setCustomId('search_name')
-            .setLabel(t(locale, 'label_search_name'))
+            .setLabel(t('label_search_name'))
             .setStyle(TextInputStyle.Short)
             .setRequired(true);
 
@@ -220,30 +343,95 @@ async function handleButton(interaction) {
 
 // --- 2. GESTION DES MENUS DÉROULANTS ---
 async function handleSelectMenu(interaction) {
-    const { customId, locale, values } = interaction;
+    const { customId, values } = interaction;
 
-    if (customId === 'select_activity_type') {
+    // Étape 2: L'utilisateur a choisi son personnage organisateur
+    if (customId === 'select_creator_character_for_activity') {
+        const creatorId = values[0];
+        const playerRes = await db.query('SELECT timezone FROM players WHERE id = $1', [creatorId]);
+        const playerTimezone = playerRes.rows[0]?.timezone;
+
+        if (!playerTimezone) {
+            const options = COMMON_TIMEZONES.map(tz =>
+                new StringSelectMenuOptionBuilder().setLabel(tz.label).setValue(tz.value)
+            );
+            const row = new ActionRowBuilder().addComponents(
+                new StringSelectMenuBuilder()
+                    .setCustomId(`select_timezone_for_creator|${creatorId}`) // Utilisation de |
+                    .setPlaceholder(t('placeholder_select_timezone'))
+                    .addOptions(options)
+            );
+            return interaction.update({ content: t('ask_timezone'), components: [row] });
+        }
+
+        const row = new ActionRowBuilder().addComponents(
+            new StringSelectMenuBuilder()
+                .setCustomId(`select_activity_type_creator|${creatorId}`) // Utilisation de |
+                .setPlaceholder(t('placeholder_activity_type'))
+                .addOptions(
+                    new StringSelectMenuOptionBuilder().setLabel('Perilous Trial').setValue('Perilous Trial').setEmoji('⚔️'),
+                    new StringSelectMenuOptionBuilder().setLabel('Wave of Horror').setValue('Wave of Horror').setEmoji('🌊'),
+                    new StringSelectMenuOptionBuilder().setLabel('Echo of Battlefield').setValue('Echo of Battlefield').setEmoji('🛡️'),
+                    new StringSelectMenuOptionBuilder().setLabel('Echo of War').setValue('Echo of War').setEmoji('🐲'),
+                    new StringSelectMenuOptionBuilder().setLabel('Dragon Hunt').setValue('Dragon Hunt').setEmoji('🐉'),
+                    new StringSelectMenuOptionBuilder().setLabel('Other').setValue('Other').setEmoji('📅')
+                )
+        );
+        return interaction.update({ content: t('ask_activity_type'), components: [row] });
+    }
+
+    // L'utilisateur vient de choisir sa timezone
+    if (customId.startsWith('select_timezone_for_creator|')) {
+        const selectedTimezone = values[0];
+        const creatorIdForTimezone = customId.split('|')[1];
+
+        await db.query('UPDATE players SET timezone = $1 WHERE id = $2', [selectedTimezone, creatorIdForTimezone]);
+
+        const row = new ActionRowBuilder().addComponents(
+            new StringSelectMenuBuilder()
+                .setCustomId(`select_activity_type_creator|${creatorIdForTimezone}`) // Utilisation de |
+                .setPlaceholder(t('placeholder_activity_type'))
+                .addOptions(
+                    new StringSelectMenuOptionBuilder().setLabel('Perilous Trial').setValue('Perilous Trial').setEmoji('⚔️'),
+                    new StringSelectMenuOptionBuilder().setLabel('Wave of Horror').setValue('Wave of Horror').setEmoji('🌊'),
+                    new StringSelectMenuOptionBuilder().setLabel('Echo of Battlefield').setValue('Echo of Battlefield').setEmoji('🛡️'),
+                    new StringSelectMenuOptionBuilder().setLabel('Echo of War').setValue('Echo of War').setEmoji('🐲'),
+                    new StringSelectMenuOptionBuilder().setLabel('Dragon Hunt').setValue('Dragon Hunt').setEmoji('🐉'),
+                    new StringSelectMenuOptionBuilder().setLabel('Other').setValue('Other').setEmoji('📅')
+                )
+        );
+
+        return interaction.update({
+            content: `${t('timezone_set', {timezone: selectedTimezone})}\n\n${t('ask_activity_type')}`,
+            components: [row]
+        });
+    }
+
+    // Étape 3: L'utilisateur a choisi le type d'activité
+    if (customId.startsWith('select_activity_type_creator|')) {
         const activityType = values[0];
+        const creatorIdFromActivity = customId.split('|')[1];
+
         const modal = new ModalBuilder()
-            .setCustomId(`modal_create_activity_${activityType}`)
-            .setTitle(t(locale, 'modal_title_create', { type: activityType }));
+            .setCustomId(`modal_create_activity|${creatorIdFromActivity}|${activityType}`) // Utilisation de |
+            .setTitle(t('modal_title_create', { type: activityType }));
 
         const subtypeInput = new TextInputBuilder()
             .setCustomId('subtype')
-            .setLabel(t(locale, 'label_subtype'))
+            .setLabel(t('label_subtype'))
             .setStyle(TextInputStyle.Short)
             .setRequired(false);
 
         const dateInput = new TextInputBuilder()
             .setCustomId('datetime')
-            .setLabel(t(locale, 'label_date'))
-            .setPlaceholder("ex: 25/12/2024 21:00")
+            .setLabel(t('label_date'))
+            .setPlaceholder(t('placeholder_date'))
             .setStyle(TextInputStyle.Short)
             .setRequired(true);
 
         const notesInput = new TextInputBuilder()
             .setCustomId('notes')
-            .setLabel(t(locale, 'label_notes'))
+            .setLabel(t('label_notes'))
             .setStyle(TextInputStyle.Paragraph)
             .setRequired(false);
 
@@ -255,19 +443,21 @@ async function handleSelectMenu(interaction) {
 
         await interaction.showModal(modal);
     }
+
+    // Logique pour REJOINDRE
     else if (customId.startsWith('menu_join_player_')) {
+        const playerId = values[0];
         await interaction.deferUpdate();
         const activityId = customId.replace('menu_join_player_', '');
-        const playerId = values[0];
 
         try {
             const actRes = await db.query('SELECT activity_type FROM planned_activities WHERE id = $1', [activityId]);
-            if (actRes.rows.length === 0) return interaction.followUp({ content: t(locale, 'activity_not_found'), flags: MessageFlags.Ephemeral });
+            if (actRes.rows.length === 0) return interaction.followUp({ content: t('activity_not_found'), flags: MessageFlags.Ephemeral });
             const type = actRes.rows[0].activity_type;
             const max = (type === 'Echo of War' || type === 'Dragon Hunt') ? 6 : 4;
             const countRes = await db.query('SELECT COUNT(*) FROM activity_participants WHERE activity_id = $1', [activityId]);
             if (parseInt(countRes.rows[0].count) >= max) {
-                return interaction.followUp({ content: t(locale, 'activity_full'), flags: MessageFlags.Ephemeral });
+                return interaction.followUp({ content: t('activity_full'), flags: MessageFlags.Ephemeral });
             }
 
             await db.query('UPDATE players SET discord_user_id = $1 WHERE id = $2', [interaction.user.id, playerId]);
@@ -276,76 +466,102 @@ async function handleSelectMenu(interaction) {
             const playerRes = await db.query('SELECT name FROM players WHERE id = $1', [playerId]);
             const playerName = playerRes.rows[0]?.name || 'Unknown';
 
-            await interaction.followUp({ content: t(locale, 'joined_as', { name: playerName }), flags: MessageFlags.Ephemeral });
+            await interaction.followUp({ content: t('joined_as', { name: playerName }), flags: MessageFlags.Ephemeral });
             await updateActivityEmbed(activityId);
 
         } catch (err) {
             console.error("Error joining via menu:", err);
-            await interaction.followUp({ content: t(locale, 'error_db'), flags: MessageFlags.Ephemeral });
+            await interaction.followUp({ content: t('error_db'), flags: MessageFlags.Ephemeral });
         }
     }
 }
 
+
 // --- 3. GESTION DES MODALS ---
 async function handleModalSubmit(interaction) {
-    const { customId, locale, fields, user } = interaction;
+    const { customId, fields } = interaction;
 
-    if (customId.startsWith('modal_create_activity_')) {
-        // Remplacement ici aussi pour deferReply
+    // Étape 4: L'utilisateur soumet le modal de création
+    if (customId.startsWith('modal_create_activity|')) {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-        const activityType = customId.replace('modal_create_activity_', '');
+
+        const parts = customId.replace('modal_create_activity|', '').split('|');
+        const creatorId = parts[0];
+        const activityType = parts[1];
+
         const subtype = fields.getTextInputValue('subtype');
         const datetimeStr = fields.getTextInputValue('datetime');
         const notes = fields.getTextInputValue('notes');
 
-        const playerRes = await db.query('SELECT id, name FROM players WHERE discord_user_id = $1', [user.id]);
-        if (playerRes.rows.length === 0) {
-            return interaction.editReply({ content: t(locale, 'join_not_linked') });
-        }
-        const creator = playerRes.rows[0];
-
         const [datePart, timePart] = datetimeStr.split(' ');
-        if (!datePart || !timePart) return interaction.editReply({ content: t(locale, 'error_date_format') });
+        if (!datePart || !timePart) return interaction.editReply({ content: t('error_date_format') });
         const [day, month, year] = datePart.split('/');
         const [hour, minute] = timePart.split(':');
-        let scheduledTime = new Date(`${year}-${month}-${day}T${hour}:${minute}:00`);
 
-        if (isNaN(scheduledTime.getTime())) {
-            return interaction.editReply({ content: t(locale, 'error_date_format') });
+        if (!day || !month || !year || !hour || !minute) {
+            return interaction.editReply({ content: t('error_date_format') });
+        }
+
+        const playerRes = await db.query('SELECT timezone FROM players WHERE id = $1', [creatorId]);
+        const playerTimezone = playerRes.rows[0]?.timezone;
+        if (!playerTimezone) {
+            return interaction.editReply({ content: 'Error: Timezone not found for creator. Please try again.' });
+        }
+
+        let scheduledTime;
+        try {
+            const tempDate = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute)));
+            if (isNaN(tempDate.getTime())) throw new Error('Invalid date components');
+
+            const offsetString = getOffsetString(tempDate, playerTimezone);
+            const isoString = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${hour.padStart(2, '0')}:${minute.padStart(2, '0')}:00${offsetString}`;
+            scheduledTime = new Date(isoString);
+            if (isNaN(scheduledTime.getTime())) throw new Error('Invalid ISO string conversion');
+
+        } catch(e) {
+            console.error("Date parsing error:", e);
+            return interaction.editReply({ content: t('error_date_format') });
         }
 
         try {
+            // *** MODIFICATION : Plus de thread ***
             const insertRes = await db.query(`
                 INSERT INTO planned_activities (activity_type, activity_subtype, scheduled_time, creator_id, notes, discord_channel_id)
                 VALUES ($1, $2, $3, $4, $5, $6)
                 RETURNING id, scheduled_time
-            `, [activityType, subtype, scheduledTime.toISOString(), creator.id, notes, interaction.channelId]);
+            `, [activityType, subtype, scheduledTime.toISOString(), creatorId, notes, interaction.channelId]); // Utilise l'ID du canal principal
+
             const activityId = insertRes.rows[0].id;
-            const finalTimestamp = Math.floor(new Date(insertRes.rows[0].scheduled_time).getTime() / 1000);
 
-            await db.query('INSERT INTO activity_participants (activity_id, player_id) VALUES ($1, $2)', [activityId, creator.id]);
+            await db.query('INSERT INTO activity_participants (activity_id, player_id) VALUES ($1, $2)', [activityId, creatorId]);
 
-            const { embed, row } = await createActivityEmbedData(activityId, locale);
+            const { embed, row } = await createActivityEmbedData(activityId);
+            // Envoyer l'embed DANS LE CANAL PRINCIPAL
             const message = await interaction.channel.send({ embeds: [embed], components: [row] });
+
             await db.query('UPDATE planned_activities SET discord_message_id = $1 WHERE id = $2', [message.id, activityId]);
 
-            await interaction.editReply({ content: t(locale, 'activity_created', { type: activityType, timestamp: finalTimestamp }) });
+            await interaction.editReply({
+                content: t('activity_created') // Réponse simple
+            });
+            // *** FIN MODIFICATION ***
 
         } catch (err) {
             console.error("Error creating activity:", err);
-            await interaction.editReply({ content: t(locale, 'error_db') });
+            await interaction.editReply({ content: t('error_db') });
         }
     }
-    else if (customId.startsWith('modal_join_search_')) {
+
+    else if (customId.startsWith('modal_join_search|')) {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-        const activityId = customId.replace('modal_join_search_', '');
+        const activityId = customId.split('|')[1];
         const searchName = fields.getTextInputValue('search_name').trim();
 
         try {
             const res = await db.query('SELECT id, name, class, combat_power FROM players WHERE name ILIKE $1 ORDER BY combat_power DESC LIMIT 25', [`%${searchName}%`]);
 
             if (res.rows.length === 0) {
-                return interaction.editReply({ content: t(locale, 'search_no_results') });
+                return interaction.editReply({ content: t('search_no_results') });
             }
 
             const options = res.rows.map(p => {
@@ -360,15 +576,15 @@ async function handleModalSubmit(interaction) {
             const row = new ActionRowBuilder().addComponents(
                 new StringSelectMenuBuilder()
                     .setCustomId(`menu_join_player_${activityId}`)
-                    .setPlaceholder(t(locale, 'placeholder_select_player'))
+                    .setPlaceholder(t('placeholder_select_player'))
                     .addOptions(options)
             );
 
-            await interaction.editReply({ content: t(locale, 'placeholder_select_player') + ' :', components: [row] });
+            await interaction.editReply({ content: t('placeholder_select_player') + ' :', components: [row] });
 
         } catch (err) {
             console.error("Error searching player:", err);
-            await interaction.editReply({ content: t(locale, 'error_db') });
+            await interaction.editReply({ content: t('error_db') });
         }
     }
 }
@@ -376,46 +592,49 @@ async function handleModalSubmit(interaction) {
 // --- 4. LEAVE & DELETE ---
 async function handleLeave(interaction) {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-    const { customId, locale, user } = interaction;
+    const { customId, user } = interaction;
     const activityId = customId.replace('btn_leave_', '');
 
     const playerRes = await db.query('SELECT id FROM players WHERE discord_user_id = $1', [user.id]);
     if (playerRes.rows.length === 0) {
-        return interaction.editReply({ content: t(locale, 'join_not_linked') });
+        return interaction.editReply({ content: t('join_not_linked') });
     }
     const playerId = playerRes.rows[0].id;
 
     try {
         await db.query('DELETE FROM activity_participants WHERE activity_id = $1 AND player_id = $2', [activityId, playerId]);
-        await interaction.editReply({ content: t(locale, 'left_activity') });
+        await interaction.editReply({ content: t('left_activity') });
         await updateActivityEmbed(activityId);
     } catch (err) {
         console.error("Error leaving:", err);
-        await interaction.editReply({ content: t(locale, 'error_db') });
+        await interaction.editReply({ content: t('error_db') });
     }
 }
 
 async function handleDeleteActivity(interaction) {
-    const { customId, locale, user } = interaction;
+    const { customId, user } = interaction;
     const activityId = customId.replace('btn_delete_', '');
 
     const actRes = await db.query(`SELECT creator_id FROM planned_activities WHERE id = $1`, [activityId]);
-    if (actRes.rows.length === 0) return interaction.reply({ content: t(locale, 'activity_not_found'), flags: MessageFlags.Ephemeral });
+    if (actRes.rows.length === 0) return interaction.reply({ content: t('activity_not_found'), flags: MessageFlags.Ephemeral });
 
     const creatorRes = await db.query('SELECT discord_user_id FROM players WHERE id = $1', [actRes.rows[0].creator_id]);
     const creatorDiscordId = creatorRes.rows[0]?.discord_user_id;
 
     if (creatorDiscordId !== user.id) {
-        return interaction.reply({ content: t(locale, 'only_creator_delete'), flags: MessageFlags.Ephemeral });
+        return interaction.reply({ content: t('only_creator_delete'), flags: MessageFlags.Ephemeral });
     }
 
     await interaction.deferUpdate();
+
+    // *** MODIFICATION : Plus de thread ***
     await db.query('DELETE FROM planned_activities WHERE id = $1', [activityId]);
-    await interaction.message.delete().catch(() => {});
+    await interaction.message.delete().catch((e) => console.warn(`Warn: Could not delete message: ${e.message}`));
+    // *** FIN MODIFICATION ***
 }
 
 // --- HELPERS & EXPORTS ---
-async function createActivityEmbedData(activityId, targetLocale = DEFAULT_LOCALE) {
+async function createActivityEmbedData(activityId) {
     const res = await db.query(`
         SELECT pa.*, pc.name as creator_name,
                (SELECT json_agg(json_build_object('name', p.name, 'class', p.class, 'cp', p.combat_power))
@@ -437,19 +656,19 @@ async function createActivityEmbedData(activityId, targetLocale = DEFAULT_LOCALE
     const classEmojis = { 'Swordbearer': '🛡️', 'Acolyte': '💖', 'Wayfarer': '🏹', 'Scholar': '✨', 'Shadowlash': '🗡️', 'Unknown': '❓' };
 
     let participantsText = participants.map(p => `${classEmojis[p.class] || '❓'} **${p.name}** (${formatCP(p.cp)})`).join('\n');
-    if (participants.length === 0) participantsText = t(targetLocale, 'no_participants');
-    for (let i = participants.length; i < maxPlayers; i++) participantsText += `\n${t(targetLocale, 'empty_slot')}`;
+    if (participants.length === 0) participantsText = t('no_participants');
+    for (let i = participants.length; i < maxPlayers; i++) participantsText += `\n${t('empty_slot')}`;
 
     const embed = new EmbedBuilder()
         .setColor(colors[act.activity_type] || 0xffffff)
         .setTitle(`${act.activity_type} ${act.activity_subtype ? `- ${act.activity_subtype}` : ''}`)
-        .setDescription(`**📅 :** <t:${timestamp}:F> (<t:${timestamp}:R>)\n**👑 :** ${act.creator_name}\n\n${act.notes ? `📝 **Notes :**\n${act.notes}\n\n` : ''}${t(targetLocale, 'participants_list', {current: participants.length, max: maxPlayers})}\n${participantsText}`)
-        .setFooter({ text: `ID: ${activityId} • ${t(targetLocale, 'footer_text')}` });
+        .setDescription(`**📅 :** <t:${timestamp}:F> (<t:${timestamp}:R>)\n**👑 :** ${act.creator_name}\n\n${act.notes ? `📝 **Notes :**\n${act.notes}\n\n` : ''}${t('participants_list', {current: participants.length, max: maxPlayers})}\n${participantsText}`)
+        .setFooter({ text: `ID: ${activityId} • ${t('footer_text')}` });
 
     const isFull = participants.length >= maxPlayers;
     const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId(`btn_join_${activityId}`).setLabel(t(targetLocale, 'btn_join')).setStyle(isFull ? ButtonStyle.Secondary : ButtonStyle.Primary).setDisabled(isFull),
-        new ButtonBuilder().setCustomId(`btn_leave_${activityId}`).setLabel(t(targetLocale, 'btn_leave')).setStyle(ButtonStyle.Danger),
+        new ButtonBuilder().setCustomId(`btn_join_${activityId}`).setLabel(t('btn_join')).setStyle(isFull ? ButtonStyle.Secondary : ButtonStyle.Primary).setDisabled(isFull),
+        new ButtonBuilder().setCustomId(`btn_leave_${activityId}`).setLabel(t('btn_leave')).setStyle(ButtonStyle.Danger),
         new ButtonBuilder().setCustomId(`btn_delete_${activityId}`).setLabel('🗑️').setStyle(ButtonStyle.Secondary)
     );
 
@@ -466,10 +685,15 @@ async function updateActivityEmbed(activityId) {
 
         const channel = await discordClient.channels.fetch(discord_channel_id);
         if (!channel) return;
-        const message = await channel.messages.fetch(discord_message_id);
-        if (!message) return;
 
-        const data = await createActivityEmbedData(activityId, DEFAULT_LOCALE);
+        // Gérer le cas où le message a été supprimé (par ex. par le nettoyage)
+        const message = await channel.messages.fetch(discord_message_id).catch(() => null);
+        if (!message) {
+            console.warn(`[Update] Message ${discord_message_id} not found for activity ${activityId}. Maybe deleted by restart?`);
+            return;
+        }
+
+        const data = await createActivityEmbedData(activityId);
         if (data) await message.edit({ embeds: [data.embed], components: [data.row] });
         else await message.delete().catch(() => {});
     } catch (e) { console.error(`Failed to update Discord embed for activity ${activityId}:`, e.message); }
@@ -480,29 +704,53 @@ async function deleteActivityMessage(activityId) {
     try {
         const res = await db.query('SELECT discord_channel_id, discord_message_id FROM planned_activities WHERE id = $1', [activityId]);
         if (res.rows.length > 0 && res.rows[0].discord_message_id) {
-            const channel = await discordClient.channels.fetch(res.rows[0].discord_channel_id);
+            const channelId = res.rows[0].discord_channel_id;
+            const messageId = res.rows[0].discord_message_id;
+
+            const channel = await discordClient.channels.fetch(channelId);
             if (channel) {
-                const msg = await channel.messages.fetch(res.rows[0].discord_message_id);
+                const msg = await channel.messages.fetch(messageId).catch(() => null); // Gérer si déjà supprimé
                 if (msg) await msg.delete();
             }
         }
-    } catch (e) { /* Ignorer si déjà supprimé */ }
+    } catch (e) {
+        console.warn(`Warn: Failed to delete activity message ${activityId}: ${e.message}`);
+    }
 }
 
+// *** MODIFIÉ : Le rappel se fait en réponse au message ***
 async function sendActivityReminder(activity) {
-    if (!discordClient || !isReady || !activity.discord_channel_id) return;
+    if (!discordClient || !isReady || !activity.discord_channel_id || !activity.discord_message_id) return;
     try {
         const channel = await discordClient.channels.fetch(activity.discord_channel_id);
         if (!channel) return;
 
-        const res = await db.query(`SELECT p.discord_user_id FROM activity_participants ap JOIN players p ON ap.player_id = p.id WHERE ap.activity_id = $1 AND p.discord_user_id IS NOT NULL`, [activity.id]);
-        const mentions = res.rows.map(r => `<@${r.discord_user_id}>`).join(' ');
+        // Trouver le message original de l'activité
+        const message = await channel.messages.fetch(activity.discord_message_id).catch(() => null);
+        if (!message) {
+            console.warn(`[Reminder] Could not find original message ${activity.discord_message_id} for activity ${activity.id}`);
+            return;
+        }
 
-        if (mentions) {
-            await channel.send(`${t(DEFAULT_LOCALE, 'reminder_text', { type: activity.activity_type })} ${mentions}`);
+        const res = await db.query(`SELECT p.discord_user_id FROM activity_participants ap JOIN players p ON ap.player_id = p.id WHERE ap.activity_id = $1 AND p.discord_user_id IS NOT NULL`, [activity.id]);
+
+        // Extraire juste les IDs pour la mention
+        const mentionUserIds = res.rows.map(r => r.discord_user_id);
+        const mentionText = mentionUserIds.map(id => `<@${id}>`).join(' ');
+
+        if (mentionText) {
+            // Envoyer le rappel EN RÉPONSE au message de l'activité
+            await message.reply({
+                content: `${t('reminder_text', { type: activity.activity_type })} ${mentionText}`,
+                allowed_mentions: {
+                    repliedUser: false, // Ne pas ping l'auteur du message (le bot)
+                    users: mentionUserIds // Ping seulement les participants
+                }
+            });
         }
     } catch (e) { console.error("Failed to send reminder:", e); }
 }
+// *** FIN MODIFICATION ***
 
 function formatCP(num) {
     if (!num) return 'N/A';

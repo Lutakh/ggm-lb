@@ -21,6 +21,7 @@ export function initPlayerForm() {
     const guildSelect = document.getElementById('guild-select');
     const notesInput = document.getElementById('notes-input');
     const discordIdInput = document.getElementById('discord-user-id-input');
+    const timezoneSelect = document.getElementById('timezone-select'); // NOUVEAU
     const slotsContainer = document.getElementById('time-slots-container');
     const addSlotBtn = document.getElementById('add-slot-btn');
 
@@ -109,6 +110,7 @@ export function initPlayerForm() {
         if(guildSelect) guildSelect.value = ''; // Vide par défaut
         if(notesInput) notesInput.value = '';
         if(discordIdInput) discordIdInput.value = '';
+        if(timezoneSelect) timezoneSelect.value = ''; // NOUVEAU
         if(slotsContainer) {
             // Vider slots sauf le label
             const label = slotsContainer.querySelector('label');
@@ -138,7 +140,8 @@ export function initPlayerForm() {
         }
 
         // --- Fetch les détails pour un joueur existant ---
-        if (!formDetails || !imageContainer || !classSelect || !cpInput || !guildSelect || !notesInput || !discordIdInput || !slotsContainer) {
+        // AJOUT de timezoneSelect
+        if (!formDetails || !imageContainer || !classSelect || !cpInput || !guildSelect || !notesInput || !discordIdInput || !timezoneSelect || !slotsContainer) {
             console.error("One or more form detail elements are missing.");
             return;
         }
@@ -172,6 +175,7 @@ export function initPlayerForm() {
                 guildSelect.value = data.guild || '';
                 notesInput.value = data.notes || '';
                 discordIdInput.value = data.discord_user_id || '';
+                timezoneSelect.value = data.timezone || ''; // NOUVEAU
 
                 // Traiter les play_slots
                 if (data.play_slots && data.play_slots.length > 0) {

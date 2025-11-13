@@ -42,6 +42,42 @@ const initialPlayerBackdropZIndex = playerDetailBackdrop?.style.zIndex || 1000;
 const playerRankMap = new Map();
 const allPlayersMap = new Map();
 
+// *** NOUVEAU (Request 2) : Helper pour la Timezone ***
+function getOffsetFor(timezone) {
+    if (!timezone) return null;
+    try {
+        const date = new Date();
+        const formatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: timezone,
+            hour12: false,
+            hour: '2-digit', // 00-23
+            minute: '2-digit', // 00-59
+            timeZoneName: 'shortOffset' // Donne GMT+2, GMT-5
+        });
+
+        // 1. Obtenir l'offset (ex: "GMT+2")
+        const parts = formatter.formatToParts(date);
+        const offsetString = parts.find(p => p.type === 'timeZoneName')?.value || null; // ex: "GMT+2"
+
+        // 2. Obtenir l'heure locale dans ce fuseau horaire (ex: "14:30")
+        // Nous devons formater SANS le nom de la timezone pour l'obtenir
+        const timeFormatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: timezone,
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        const localTime = timeFormatter.format(date); // ex: "14:30"
+
+        return { offset: offsetString, localTime: localTime }; // { offset: "GMT+2", localTime: "14:30" }
+    } catch (e) {
+        console.warn("Could not get offset for timezone:", timezone, e);
+        return null; // Timezone invalide (ex: "PDT")
+    }
+}
+// *** FIN NOUVEAU ***
+
+
 // MODIFIÉ : Fonction asynchrone pour charger les détails ET l'historique PT
 async function showPlayerDetails(playerRow, isFromTeamModal = false) {
     if (!playerDetailModal || !playerRow || !playerRow.dataset) return;
@@ -58,11 +94,12 @@ async function showPlayerDetails(playerRow, isFromTeamModal = false) {
     playerDetailModal.classList.add('modal-wide');
 
     const data = playerRow.dataset;
-    const fullPlayerData = allPlayersMap.get(data.name);
+    const fullPlayerData = allPlayersMap.get(data.name); // Vient de la map (qui a la timezone)
 
     // Récupération des données de base (fusion dataset / fullPlayerData)
     let playSlots = [];
     try {
+        // Utiliser fullPlayerData en priorité car il vient de la source de vérité (JSON)
         const slotsSource = fullPlayerData?.play_slots ? fullPlayerData.play_slots : JSON.parse(data.playSlots || '[]');
         playSlots = Array.isArray(slotsSource) ? slotsSource : [];
     } catch (e) { console.error("Error processing playSlots:", data.playSlots, e); playSlots = []; }
@@ -75,6 +112,52 @@ async function showPlayerDetails(playerRow, isFromTeamModal = false) {
     const team = fullPlayerData?.team ?? (data.team || 'No Team');
     const updatedAt = fullPlayerData?.updated_at ?? data.updated;
     const rank = playerRankMap.get(data.name) || data.rank || 'N/A';
+
+    // *** NOUVEAU (Request 2) : Logique Timezone ***
+    const playerTZ = fullPlayerData?.timezone || null;
+    let timezoneHtml = `<li><strong>Timezone:</strong> <span>Not Set</span></li>`;
+
+    if (playerTZ) {
+        const visitorTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const pTZInfo = getOffsetFor(playerTZ); // { offset: "GMT+2", localTime: "15:00" }
+        const vTZInfo = getOffsetFor(visitorTZ); // { offset: "GMT+1", localTime: "14:00" }
+
+        let diffText = "(Same as you)";
+        if (pTZInfo && vTZInfo && pTZInfo.offset !== vTZInfo.offset) {
+            // Calculer la différence d'heure
+            try {
+                const playerHour = parseInt(pTZInfo.localTime.split(':')[0], 10);
+                const visitorHour = parseInt(vTZInfo.localTime.split(':')[0], 10);
+                let hourDiff = playerHour - visitorHour;
+
+                // Gérer le passage de minuit (ex: +23h ou -23h)
+                if (hourDiff > 12) hourDiff -= 24;
+                if (hourDiff < -12) hourDiff += 24;
+
+                if (hourDiff > 0) {
+                    diffText = `(${hourDiff} hour(s) ahead of you)`;
+                } else if (hourDiff < 0) {
+                    diffText = `(${Math.abs(hourDiff)} hour(s) behind you)`;
+                }
+                // S'ils ont le même offset (ex: GMT+2) mais que l'heure locale est différente (DST bizarre), on garde "Same as you"
+
+            } catch(e) {
+                console.warn("Could not calculate hour difference:", e);
+                diffText = `(Visitor: ${vTZInfo.offset})`;
+            }
+        }
+
+        timezoneHtml = `
+            <li>
+                <strong>Timezone:</strong> 
+                <span style="display: flex; flex-direction: column; align-items: flex-end;">
+                    ${playerTZ} <em style="font-size: 0.9em; opacity: 0.7;">${pTZInfo?.offset || ''}</em>
+                </span>
+            </li>
+            <li><strong>Local Time:</strong> <span>${pTZInfo?.localTime || 'N/A'} <em style="font-size: 0.9em; opacity: 0.7;">${diffText}</em></span></li>
+        `;
+    }
+    // *** FIN NOUVEAU ***
 
     // Formatage des heures de jeu
     let playHoursHtml = '-';
@@ -98,7 +181,7 @@ async function showPlayerDetails(playerRow, isFromTeamModal = false) {
             <li><strong>Class:</strong> <span><span class="class-tag class-${classNameLower}">${playerClass || 'Unknown'}</span></span></li>
             <li><strong>Guild:</strong> <span>${guild}</span></li>
             <li><strong>Team:</strong> <span>${team}</span></li>
-            <li><strong>Play Hours:</strong> ${playHoursHtml}</li>
+            ${timezoneHtml} <li><strong>Play Hours:</strong> ${playHoursHtml}</li>
             <li><strong>Notes:</strong> <span style="white-space: pre-wrap;">${notes}</span></li>
             <li><strong>Updated:</strong> <span>${formatRelativeTimeShort(updatedAt)}</span></li>
         </ul>
@@ -237,17 +320,14 @@ function showTeamDetails(teamRow) {
             const playerName = playerEl.dataset.playerName;
             const playerFullData = allPlayersMap.get(playerName);
             if (playerFullData) {
+                // *** MODIFIÉ : S'assurer que les données complètes (y compris timezone) sont passées ***
                 const fakeRow = {
                     dataset: {
-                        name: playerFullData.name,
-                        class: playerFullData.class,
-                        cp: playerFullData.combat_power,
-                        guild: playerFullData.guild,
-                        team: playerFullData.team,
-                        notes: playerFullData.notes,
-                        updated: playerFullData.updated_at,
-                        playSlots: JSON.stringify(playerFullData.play_slots || '[]'),
-                        rank: playerRankMap.get(playerName) || 'N/A'
+                        ...playerFullData, // Utilise toutes les données de la map
+                        rank: playerRankMap.get(playerName) || 'N/A', // Ajoute le rang si on l'a
+                        cp: playerFullData.combat_power, // S'assurer que cp est là
+                        playSlots: JSON.stringify(playerFullData.play_slots || '[]'), // Stringify
+                        ptTags: JSON.stringify(playerFullData.pt_tags || '[]') // Stringify
                     }
                 };
                 showPlayerDetails(fakeRow, true);
@@ -367,17 +447,13 @@ async function showGuildDetails(guildRow) {
 
                         const fullPlayerData = allPlayersMap.get(member.name);
                         if (fullPlayerData) {
+                            // *** MODIFIÉ : S'assurer que les données complètes (y compris timezone) sont passées ***
                             const fakeRow = {
                                 dataset: {
-                                    name: fullPlayerData.name,
-                                    class: fullPlayerData.class,
-                                    cp: fullPlayerData.combat_power,
-                                    guild: fullPlayerData.guild,
-                                    team: fullPlayerData.team,
-                                    notes: fullPlayerData.notes,
-                                    updated: fullPlayerData.updated_at,
-                                    playSlots: JSON.stringify(fullPlayerData.play_slots || '[]'),
+                                    ...fullPlayerData, // Utilise toutes les données de la map
                                     rank: playerRankMap.get(member.name) || 'N/A',
+                                    cp: fullPlayerData.combat_power,
+                                    playSlots: JSON.stringify(fullPlayerData.play_slots || '[]'),
                                     ptTags: JSON.stringify(fullPlayerData.pt_tags || '[]')
                                 }
                             };
@@ -506,12 +582,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (playersDataEl) {
         try {
+            // *** MODIFIÉ : playersForModal inclut maintenant la timezone ***
             playersForModal = JSON.parse(playersDataEl.textContent || '[]');
         } catch (e) { console.error("Error parsing players-data JSON:", e); }
     } else if (playersSelectorDataEl) {
         try {
-            playersForModal = JSON.parse(playersSelectorDataEl.textContent || '[]').map(p => ({...p, class: 'Unknown'}));
-            console.warn("Using player-selector-data for modal; class info might be missing.");
+            playersForModal = JSON.parse(playersSelectorDataEl.textContent || '[]').map(p => ({...p, class: 'Unknown', timezone: null}));
+            console.warn("Using player-selector-data for modal; class/timezone info might be missing.");
         } catch (e) { console.error("Error parsing player-selector-data JSON:", e); }
     } else {
         console.error("Player data script tag not found!");
@@ -523,6 +600,29 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (e) { console.error("Error parsing guilds-data JSON:", e); }
     }
 
+    // *** MODIFIÉ : Logique de population de allPlayersMap corrigée ***
+    // 1. Peupler la map avec les données complètes du JSON
+    playersForModal.forEach(p => {
+        if (p && p.name) {
+            allPlayersMap.set(p.name, {
+                id: p.id,
+                name: p.name,
+                class: p.class || 'Unknown',
+                timezone: p.timezone || null,
+                // Initialiser les autres champs pour qu'ils existent
+                combat_power: 0,
+                cp_last_updated: null,
+                team: 'No Team',
+                guild: null,
+                notes: '',
+                updated_at: null,
+                play_slots: [],
+                pt_tags: []
+            });
+        }
+    });
+
+    // 2. Mettre à jour la map avec les données des lignes du tableau (qui sont plus à jour)
     document.querySelectorAll('#leaderboard-table tbody tr').forEach((row, index) => {
         const playerName = row.dataset.name;
         const rank = row.dataset.rank || (index + 1);
@@ -530,37 +630,31 @@ document.addEventListener('DOMContentLoaded', function() {
             playerRankMap.set(playerName, rank);
             row.dataset.originalRank = rank;
 
-            if (!allPlayersMap.has(playerName)) {
-                try {
-                    const playerData = {
-                        id: row.dataset.id || playersForModal.find(p => p.name === playerName)?.id || null,
-                        name: playerName,
-                        class: row.dataset.class,
-                        combat_power: row.dataset.cp,
-                        cp_last_updated: row.dataset.cpUpdated,
-                        team: row.dataset.team || 'No Team',
-                        guild: row.dataset.guild || null,
-                        notes: row.dataset.notes === '-' ? '' : row.dataset.notes,
-                        updated_at: row.dataset.updated,
-                        play_slots: JSON.parse(row.dataset.playSlots || '[]'),
-                        pt_tags: JSON.parse(row.dataset.ptTags || '[]')
-                    };
-                    allPlayersMap.set(playerName, playerData);
-                } catch(e){ console.error("Error reconstructing player data from row dataset:", e, row.dataset); }
-            }
+            const existingData = allPlayersMap.get(playerName) || {};
+
+            try {
+                // Fusionner les données : celles du JSON (id, class, timezone) + celles du <tr> (cp, guild, etc.)
+                allPlayersMap.set(playerName, {
+                    ...existingData, // Garde id, name, class, timezone de l'étape 1
+                    combat_power: row.dataset.cp, // Écrase avec les données du <tr>
+                    cp_last_updated: row.dataset.cpUpdated,
+                    team: row.dataset.team || 'No Team',
+                    guild: row.dataset.guild || null,
+                    notes: row.dataset.notes === '-' ? '' : row.dataset.notes,
+                    updated_at: row.dataset.updated,
+                    play_slots: JSON.parse(row.dataset.playSlots || '[]'),
+                    pt_tags: JSON.parse(row.dataset.ptTags || '[]')
+                });
+            } catch(e){ console.error("Error reconstructing player data from row dataset:", e, row.dataset); }
         }
     });
-    playersForModal.forEach(p => {
-        if (p && p.name && !allPlayersMap.has(p.name)) {
-            allPlayersMap.set(p.name, { id: p.id, name: p.name, class: p.class || 'Unknown' });
-        }
-    });
+    // *** FIN MODIFICATION POPULATION MAP ***
 
     console.log(`Populated allPlayersMap with ${allPlayersMap.size} players.`);
 
     // --- Initialisation des Modules ---
     initNavigation();
-    initPlayerSelectModal(playersForModal);
+    initPlayerSelectModal(playersForModal); // Utilise 'playersForModal' (version simple) pour la recherche rapide
     initGuildSelectModal(guildsForModal);
     initPlayerForm();
     initLeaderboardFilters();
@@ -627,10 +721,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Fusionner les données du row et de la map pour être sûr d'avoir le rang et autres infos d'affichage
                 const mergedDataRow = {
                     dataset: {
-                        ...playerRow.dataset,
-                        ...fullData,
+                        ...fullData, // Utilise les données complètes (id, class, timezone, etc.)
+                        ...playerRow.dataset, // Écrase avec les données à jour du <tr> (cp, guild, notes...)
                         // Assurer que playSlots est une chaîne JSON pour showPlayerDetails
-                        playSlots: typeof fullData.play_slots === 'string' ? fullData.play_slots : JSON.stringify(fullData.play_slots || [])
+                        playSlots: JSON.stringify(fullData.play_slots || '[]')
                     }
                 };
                 showPlayerDetails(mergedDataRow);
